@@ -65,11 +65,10 @@ their vendor MIB.
 
 ## Known caveats (please verify against your device)
 
-- **`sfIfInRate` / `sfIfOutRate` semantics are ambiguous in the MIB.** They are
-  typed `Counter64` with a "byte/s" description. This template treats them as
-  accumulated byte counters and applies *Change per second × 8* to get bits/s.
-  If your firmware already returns an instantaneous rate and the values look
-  wrong, remove the preprocessing steps on those item prototypes.
+- **`sfIfInRate` / `sfIfOutRate` are instantaneous rates**, despite being typed
+  `Counter64` in the MIB (verified with two-sample deltas on a live NGAF — see
+  *Verified against live hardware* below). Older draft of this template wrongly
+  applied *Change per second*; that has been removed.
 - `sfSysIn/OutThroughput` and swap objects do not state units in the MIB; they
   are stored raw. Adjust `Units` on the item if your device reports bps or KB/s.
 - Memory counters are assumed **kB**, disk counters **MB** (per MIB DESCRIPTION);
@@ -80,6 +79,31 @@ their vendor MIB.
   (config change, dual-active switch, interface failure, firewall-under-attack —
   OIDs under `.1.3.6.1.4.1.35047.200.200`). Trap receiving needs snmptrapd +
   Zabbix trap setup and is **not** included here.
+
+## Verified against live hardware (2026-11-16)
+
+Tested over SNMPv3 authPriv (SHA1/AES128) against a Sangfor NGAF running
+**AF8.0.108.657 Build20260923** (nsf-1050a-i):
+
+- `sfIfInRate`/`sfIfOutRate` **are instantaneous byte/s gauges** — two samples
+  12 s apart went down on a busy interface (302 → 274). Template applies
+  `×8` only (bits/s), no *Change per second*.
+- `sfIfInPkts`/`sfIfOutPkts` **are cumulative counters** — template keeps
+  *Change per second* (pps). Discards (.15/.16) treated as counters too.
+- `sfSysMemoryUsage` (.13.5) returns a numeric string (`"56"`) that matches the
+  web UI; free/total ints (.13.3/.13.4, kB) would give a higher number because
+  cache/buffer counts as available. Template polls .13.5 with a regex
+  extraction step — this is the usage % that matches the vendor UI.
+- Disk table (.5) values are in **MB** as documented (e.g. size 3967,
+  used 2205, avail 1762) — converted to bytes.
+- `sfSysDiskUsage` (.52.1) returns **noSuchObject** on AF 8.0.108 — removed.
+- Fan (.14), PSU (.15), temperature-sensor (.59) tables return **noSuchObject**
+  on this platform — the LLD rules simply discover nothing; kept for models
+  that do expose them. Delete those discovery rules if you want a clean list.
+- Throughput (.48.1/.48.2) confirmed instantaneous (87→63, 96→49 in 8 s) but
+  **units are not stated in the MIB** — stored raw; check against your UI and
+  set Units on those two items if you identify them (likely Mbps).
+- Sessions (.27), CPU (.19/.20/.21), HA (.64.1–.64.8) all poll cleanly.
 
 ## Files
 

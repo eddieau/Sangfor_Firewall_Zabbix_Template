@@ -30,14 +30,15 @@ ET.SubElement(t, "description").text = (
     "Sangfor NGAF monitoring via private SANGFOR-MIB (enterprises 35047), "
     "converted from the vendor MIB file SANGFOR-MIB.txt. "
     "Requires SNMP v2c or later (Counter64 objects). "
-    "Interface rate/discard objects are converted with Change per second; "
-    "if the device actually reports instantaneous rates, remove that "
-    "preprocessing step. Memory counters arrive in kB and disk counters in MB.")
+    "Verified against a live NGAF running AF8.0.108.657: sfIfInRate/"
+    "sfIfOutRate are instantaneous byte/s gauges (x8 only); sfIfInPkts/"
+    "sfIfOutPkts and drops are cumulative counters (change per second); "
+    "memory counters are kB, disk counters MB.")
 tg = ET.SubElement(t, "groups")
 g2 = ET.SubElement(tg, "group")
 ET.SubElement(g2, "name").text = GNAME
 
-CPS8 = [("CHANGE_PER_SECOND", None), ("MULTIPLIER", "8")]
+X8 = [("MULTIPLIER", "8")]          # instantaneous byte/s -> bit/s gauge
 CPS = [("CHANGE_PER_SECOND", None)]
 K2B = [("MULTIPLIER", "1024")]
 M2B = [("MULTIPLIER", "1048576")]
@@ -173,9 +174,11 @@ I(name="Memory free", key="sangfor.mem.free", units="B",
   oid=GEN + ".13.3.0", desc="sfIntSysFreeMemory (kB -> B)",
   pre=K2B, tags=[("component", "memory")])
 I(name="Memory usage", key="sangfor.mem.util", units="%",
-  desc="Calculated: (total - free) / total * 100",
-  calc="(last(/%s/sangfor.mem.total)-last(/%s/sangfor.mem.free))"
-       "/last(/%s/sangfor.mem.total)*100" % (TPL, TPL, TPL),
+  oid=GEN + ".13.5.0", vtype="CHAR" if False else "FLOAT",
+  desc="sfSysMemoryUsage - device-reported usage % (returns a numeric "
+       "string; regex-extracted). Free/total would give a different "
+       "number because the device counts cache/buffer as available.",
+  pre=[("REGEX_EXTRACT", "([0-9]+)")],
   tags=[("component", "memory")],
   trig=TR("AVERAGE", "last(/%s/sangfor.mem.util)>{$SANGFOR.MEM.MAX}" % TPL,
           "High memory usage: over {$SANGFOR.MEM.MAX}% on {HOST.NAME}"))
@@ -202,11 +205,6 @@ I(name="Inbound throughput", key="sangfor.throughput.in",
 I(name="Outbound throughput", key="sangfor.throughput.out",
   oid=GEN + ".48.1.0", desc="sfSysOutThroughput (units as reported by device)",
   tags=[("component", "throughput")])
-
-I(name="System disk usage", key="sangfor.disk.usage", units="%",
-  oid=GEN + ".52.1.0", desc="sfSysDiskUsage", tags=[("component", "disk")],
-  trig=TR("WARNING", "last(/%s/sangfor.disk.usage)>{$SANGFOR.DISK.MAX}" % TPL,
-          "High system disk usage: over {$SANGFOR.DISK.MAX}% on {HOST.NAME}"))
 
 I(name="HA enabled", key="sangfor.ha.enabled",
   oid=GEN + ".64.1.0", desc="sfHAEnable: 0 - disabled, 1 - enabled",
@@ -258,12 +256,12 @@ render_lld(dr_el, dict(
     filter=[("{#SNMPVALUE}", "^(?!(l.o|Loopback|lo$))", "MATCHES_REGEX")],
     protos=[
         P("Interface {#SNMPVALUE}: Inbound traffic", "sangfor.if.in.bps[{#SNMPINDEX}]",
-          IF + ".8.{#SNMPINDEX}", "bps", CPS8, vtype="UNSIGNED",
-          desc="sfIfInRate (Counter64, bytes -> bits/s)",
+          IF + ".8.{#SNMPINDEX}", "bps", X8, vtype="FLOAT",
+          desc="sfIfInRate - instantaneous byte/s (verified on AF 8.0.108), x8 -> bit/s",
           tags=[("component", "network")]),
         P("Interface {#SNMPVALUE}: Outbound traffic", "sangfor.if.out.bps[{#SNMPINDEX}]",
-          IF + ".9.{#SNMPINDEX}", "bps", CPS8, vtype="UNSIGNED",
-          desc="sfIfOutRate (Counter64, bytes -> bits/s)",
+          IF + ".9.{#SNMPINDEX}", "bps", X8, vtype="FLOAT",
+          desc="sfIfOutRate - instantaneous byte/s (verified on AF 8.0.108), x8 -> bit/s",
           tags=[("component", "network")]),
         P("Interface {#SNMPVALUE}: Inbound packets rate", "sangfor.if.in.pps[{#SNMPINDEX}]",
           IF + ".13.{#SNMPINDEX}", "pps", CPS, vtype="UNSIGNED",

@@ -1,19 +1,19 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <zabbix_export>
     <version>8.0</version>
-    <date>2026-11-16T20:51:29Z</date>
+    <date>2026-11-16T21:08:34Z</date>
     <groups>
         <group>
-            <uuid>d7540f03647043ad9d7e7badfcba09b6</uuid>
+            <uuid>f20cfb646ff74d0686593097e40dabfb</uuid>
             <name>Templates/Network devices</name>
         </group>
     </groups>
     <templates>
         <template>
-            <uuid>23697d4b0fe84b98a44dee436e859a47</uuid>
+            <uuid>8cdf2f73647f4a2984c6c24f5e471ac6</uuid>
             <template>Sangfor NGAF by SNMP</template>
             <name>Sangfor NGAF by SNMP</name>
-            <description>Sangfor NGAF monitoring via private SANGFOR-MIB (enterprises 35047), converted from the vendor MIB file SANGFOR-MIB.txt. Requires SNMP v2c or later (Counter64 objects). Interface rate/discard objects are converted with Change per second; if the device actually reports instantaneous rates, remove that preprocessing step. Memory counters arrive in kB and disk counters in MB.</description>
+            <description>Sangfor NGAF monitoring via private SANGFOR-MIB (enterprises 35047), converted from the vendor MIB file SANGFOR-MIB.txt. Requires SNMP v2c or later (Counter64 objects). Verified against a live NGAF running AF8.0.108.657: sfIfInRate/sfIfOutRate are instantaneous byte/s gauges (x8 only); sfIfInPkts/sfIfOutPkts and drops are cumulative counters (change per second); memory counters are kB, disk counters MB.</description>
             <groups>
                 <group>
                     <name>Templates/Network devices</name>
@@ -21,7 +21,7 @@
             </groups>
             <items>
                 <item>
-                    <uuid>022aff43decc4f0f81a17f386e23c61f</uuid>
+                    <uuid>180a8848314f4015957258485d9892df</uuid>
                     <name>Device description</name>
                     <key>sangfor.device.descr</key>
                     <description>sfDeviceDescr</description>
@@ -33,7 +33,7 @@
                     <value_type>CHAR</value_type>
                 </item>
                 <item>
-                    <uuid>0b2513e45fa646a4a13d2d7ddbc9ab31</uuid>
+                    <uuid>67dcb3ede6db45b9a306e051c8f52f53</uuid>
                     <name>Device name</name>
                     <key>sangfor.device.name</key>
                     <description>sfSysDevName</description>
@@ -45,7 +45,7 @@
                     <value_type>CHAR</value_type>
                 </item>
                 <item>
-                    <uuid>7ea200da834a40d289d9006b09d63932</uuid>
+                    <uuid>69e4228f797f4ea19fc5509bffdec298</uuid>
                     <name>Software version</name>
                     <key>sangfor.software.version</key>
                     <description>sfSysSoftVersion</description>
@@ -57,7 +57,7 @@
                     <value_type>CHAR</value_type>
                 </item>
                 <item>
-                    <uuid>d3d3937266f64a1680d07e3578e6150e</uuid>
+                    <uuid>5e2abe2ea4584d62b13d2df2a7fec818</uuid>
                     <name>AF version</name>
                     <key>sangfor.af.version</key>
                     <description>afSysSoftVersion</description>
@@ -69,7 +69,7 @@
                     <value_type>CHAR</value_type>
                 </item>
                 <item>
-                    <uuid>e1769d75ff2641f195a3e5459c810a4e</uuid>
+                    <uuid>d6589cb4d25e4de88b0c1fa878a0365e</uuid>
                     <name>Serial number</name>
                     <key>sangfor.serial.number</key>
                     <description>sfSnGW (serial number of the appliance)</description>
@@ -81,7 +81,7 @@
                     <value_type>CHAR</value_type>
                 </item>
                 <item>
-                    <uuid>4d02a23f87dc423499cbb242cc87bed6</uuid>
+                    <uuid>ff055793cd38484fa057ce9a886a0668</uuid>
                     <name>Device status</name>
                     <key>sangfor.device.status</key>
                     <description>sfDeviceStatus: 0 - Warning, 1 - Normal</description>
@@ -99,7 +99,7 @@
                     </tags>
                     <triggers>
                         <trigger>
-                            <uuid>63d252eafe0540cfbc7dba2a9c895adf</uuid>
+                            <uuid>144c3bde1d58446a97987aa77c4be83b</uuid>
                             <expression>last(/Sangfor NGAF by SNMP/sangfor.device.status)=0</expression>
                             <name>Device reports WARNING status on {HOST.NAME}</name>
                             <priority>WARNING</priority>
@@ -107,7 +107,7 @@
                     </triggers>
                 </item>
                 <item>
-                    <uuid>8d6de04b20e748ceb524964c1a25028d</uuid>
+                    <uuid>e2f0f67e25d6472fa5c8fcc3b59bab21</uuid>
                     <name>CPU utilization (30s)</name>
                     <key>sangfor.cpu.util.30s</key>
                     <description>sfCpuAllCostRateLast30Sec</description>
@@ -126,7 +126,7 @@
                     </tags>
                 </item>
                 <item>
-                    <uuid>1189c0b9f901424ead36aaee0bb6197e</uuid>
+                    <uuid>934019c7a14248468520e4c90d4612c1</uuid>
                     <name>CPU utilization (1 min)</name>
                     <key>sangfor.cpu.util.1m</key>
                     <description>sfCpuAllCostRateLast1Min</description>
@@ -145,7 +145,7 @@
                     </tags>
                     <triggers>
                         <trigger>
-                            <uuid>fea0c37715424aac8941b86f4f977eae</uuid>
+                            <uuid>9d0e59e42d764905b2337c6d9c378ded</uuid>
                             <expression>last(/Sangfor NGAF by SNMP/sangfor.cpu.util.1m)&gt;{$SANGFOR.CPU.MAX}</expression>
                             <name>High CPU utilization: over {$SANGFOR.CPU.MAX}% on {HOST.NAME}</name>
                             <priority>AVERAGE</priority>
@@ -153,7 +153,7 @@
                     </triggers>
                 </item>
                 <item>
-                    <uuid>96cf4bda60c7418c9f0cf5083742edf1</uuid>
+                    <uuid>de13334d9fe944c5b37c4f6a9d3fe395</uuid>
                     <name>CPU utilization (5 min)</name>
                     <key>sangfor.cpu.util.5m</key>
                     <description>sfCpuAllCostRateLast5Min</description>
@@ -172,7 +172,7 @@
                     </tags>
                 </item>
                 <item>
-                    <uuid>479a8092e9ca4637a4121895acb2ad8d</uuid>
+                    <uuid>063b83be0b1c413995c9048b6827ab89</uuid>
                     <name>CPU core count</name>
                     <key>sangfor.cpu.num</key>
                     <description>sfCpuNum</description>
@@ -190,7 +190,7 @@
                     </tags>
                 </item>
                 <item>
-                    <uuid>90ec7552a69b4df2bcc830279920afb9</uuid>
+                    <uuid>9a73e43bd9f2474c9dda679018bc9ca6</uuid>
                     <name>Memory total</name>
                     <key>sangfor.mem.total</key>
                     <description>sfIntSysTotalMemory (kB -&gt; B)</description>
@@ -216,7 +216,7 @@
                     </tags>
                 </item>
                 <item>
-                    <uuid>d4975577a74f4108b15b5f7fe47eccf4</uuid>
+                    <uuid>9e92eba0bdbc475aba910bc435c41af1</uuid>
                     <name>Memory free</name>
                     <key>sangfor.mem.free</key>
                     <description>sfIntSysFreeMemory (kB -&gt; B)</description>
@@ -242,16 +242,24 @@
                     </tags>
                 </item>
                 <item>
-                    <uuid>ad90635ecd8b4ff5989ac90526a0f5dc</uuid>
+                    <uuid>57fd788370b442a3b011c62ada0098dd</uuid>
                     <name>Memory usage</name>
                     <key>sangfor.mem.util</key>
-                    <description>Calculated: (total - free) / total * 100</description>
-                    <type>CALCULATED</type>
-                    <delay>1m</delay>
-                    <params>(last(/Sangfor NGAF by SNMP/sangfor.mem.total)-last(/Sangfor NGAF by SNMP/sangfor.mem.free))/last(/Sangfor NGAF by SNMP/sangfor.mem.total)*100</params>
+                    <description>sfSysMemoryUsage - device-reported usage % (returns a numeric string; regex-extracted). Free/total would give a different number because the device counts cache/buffer as available.</description>
+                    <type>SNMP_AGENT</type>
+                    <snmp_oid>.1.3.6.1.4.1.35047.1.13.5.0</snmp_oid>
+                    <snmp_community>{$SANGFOR.SNMP.COMMUNITY}</snmp_community>
+                    <delay>{$SANGFOR.UPDATE.FREQ}</delay>
                     <history>7d</history>
                     <value_type>FLOAT</value_type>
                     <units>%</units>
+                    <preprocessing>
+                        <step>
+                            <type>REGEX_EXTRACT</type>
+                            <parameter>([0-9]+)</parameter>
+                            <statement>1</statement>
+                        </step>
+                    </preprocessing>
                     <tags>
                         <tag>
                             <tag>component</tag>
@@ -260,7 +268,7 @@
                     </tags>
                     <triggers>
                         <trigger>
-                            <uuid>ebb3676cdd47477aa88b688decff6caa</uuid>
+                            <uuid>bd4a577b71e74efeae40bdc000f3a198</uuid>
                             <expression>last(/Sangfor NGAF by SNMP/sangfor.mem.util)&gt;{$SANGFOR.MEM.MAX}</expression>
                             <name>High memory usage: over {$SANGFOR.MEM.MAX}% on {HOST.NAME}</name>
                             <priority>AVERAGE</priority>
@@ -268,7 +276,7 @@
                     </triggers>
                 </item>
                 <item>
-                    <uuid>dec0ea8a9c2243528cc45fcc7115bc8a</uuid>
+                    <uuid>2406ca15c705407f8094700b46df5e69</uuid>
                     <name>Swap total</name>
                     <key>sangfor.swap.total</key>
                     <description>sfMemTotalSwap (units as reported by device)</description>
@@ -280,7 +288,7 @@
                     <value_type>FLOAT</value_type>
                 </item>
                 <item>
-                    <uuid>cdbc3ec720714fe78a0c4ff972071cf6</uuid>
+                    <uuid>22af945724114b3cb3d6df06f44f61ba</uuid>
                     <name>Swap available</name>
                     <key>sangfor.swap.avail</key>
                     <description>sfMemAvailSwap (units as reported by device)</description>
@@ -292,7 +300,7 @@
                     <value_type>FLOAT</value_type>
                 </item>
                 <item>
-                    <uuid>05ac911d929045c2b00fcabe41b42fc3</uuid>
+                    <uuid>571c3375d868402eb7dddbac033db618</uuid>
                     <name>Current sessions</name>
                     <key>sangfor.sessions.current</key>
                     <description>sfCurSession</description>
@@ -310,7 +318,7 @@
                     </tags>
                 </item>
                 <item>
-                    <uuid>0e00209da9654acf8a7495965322809f</uuid>
+                    <uuid>7423a8c1f9d04e49a1e2863ebac29563</uuid>
                     <name>New sessions</name>
                     <key>sangfor.sessions.new</key>
                     <description>sfNewSessions</description>
@@ -328,7 +336,7 @@
                     </tags>
                 </item>
                 <item>
-                    <uuid>ec9298696bbc4ee396e8ff9b4738a914</uuid>
+                    <uuid>87e040174a154db48cdd560442117211</uuid>
                     <name>Total sessions</name>
                     <key>sangfor.sessions.total</key>
                     <description>sfTotalSessions</description>
@@ -346,7 +354,7 @@
                     </tags>
                 </item>
                 <item>
-                    <uuid>64126be4c32448cba4e2a6b79667f23a</uuid>
+                    <uuid>436df404c6bd4fd692936a14e67d726b</uuid>
                     <name>New sessions per second</name>
                     <key>sangfor.sessions.new.persec</key>
                     <description>sfNewSessionPerSec</description>
@@ -364,7 +372,7 @@
                     </tags>
                 </item>
                 <item>
-                    <uuid>23c2d2d8da564922bdb838b80bbe0d29</uuid>
+                    <uuid>345149cb11f04cf29fc3b48b7b32aef2</uuid>
                     <name>Online users</name>
                     <key>sangfor.users</key>
                     <description>sfUsers</description>
@@ -382,7 +390,7 @@
                     </tags>
                 </item>
                 <item>
-                    <uuid>2203832ea0d54c9aaf775a7be3f33d2e</uuid>
+                    <uuid>4ab7d6498a434f8b819b011af31b414f</uuid>
                     <name>Inbound throughput</name>
                     <key>sangfor.throughput.in</key>
                     <description>sfSysInThroughput (units as reported by device)</description>
@@ -400,7 +408,7 @@
                     </tags>
                 </item>
                 <item>
-                    <uuid>757884e91a1f4371a166ec960f2de293</uuid>
+                    <uuid>b81c8694a18a48bbb09a485f8535600c</uuid>
                     <name>Outbound throughput</name>
                     <key>sangfor.throughput.out</key>
                     <description>sfSysOutThroughput (units as reported by device)</description>
@@ -418,34 +426,7 @@
                     </tags>
                 </item>
                 <item>
-                    <uuid>a346517790914cf4929279d6c8df4dfa</uuid>
-                    <name>System disk usage</name>
-                    <key>sangfor.disk.usage</key>
-                    <description>sfSysDiskUsage</description>
-                    <type>SNMP_AGENT</type>
-                    <snmp_oid>.1.3.6.1.4.1.35047.1.52.1.0</snmp_oid>
-                    <snmp_community>{$SANGFOR.SNMP.COMMUNITY}</snmp_community>
-                    <delay>{$SANGFOR.UPDATE.FREQ}</delay>
-                    <history>7d</history>
-                    <value_type>FLOAT</value_type>
-                    <units>%</units>
-                    <tags>
-                        <tag>
-                            <tag>component</tag>
-                            <value>disk</value>
-                        </tag>
-                    </tags>
-                    <triggers>
-                        <trigger>
-                            <uuid>e0c3b66b8564456abb5f295c7a456b55</uuid>
-                            <expression>last(/Sangfor NGAF by SNMP/sangfor.disk.usage)&gt;{$SANGFOR.DISK.MAX}</expression>
-                            <name>High system disk usage: over {$SANGFOR.DISK.MAX}% on {HOST.NAME}</name>
-                            <priority>WARNING</priority>
-                        </trigger>
-                    </triggers>
-                </item>
-                <item>
-                    <uuid>7311f2a9e76e443a8b5cbb567a27a59e</uuid>
+                    <uuid>888dbffc8f214eb29063e601136b6b84</uuid>
                     <name>HA enabled</name>
                     <key>sangfor.ha.enabled</key>
                     <description>sfHAEnable: 0 - disabled, 1 - enabled</description>
@@ -463,7 +444,7 @@
                     </tags>
                 </item>
                 <item>
-                    <uuid>d2e604baceeb445fa12544d5e4fd6174</uuid>
+                    <uuid>526d161274a146e5b067aa467b784a89</uuid>
                     <name>HA mode</name>
                     <key>sangfor.ha.mode</key>
                     <description>sfHAMode: 0 - invalid, 1 - master-master, 2 - master-slave, 3 - mirror</description>
@@ -481,7 +462,7 @@
                     </tags>
                 </item>
                 <item>
-                    <uuid>ae9b7684276d46839c601e0d3c50f81c</uuid>
+                    <uuid>e0931e1ce59743ea9de179552b87fee6</uuid>
                     <name>HA current status</name>
                     <key>sangfor.ha.status</key>
                     <description>sfHACurStatus: 0 - invalid, 1 - init, 4 - master, 5 - slave</description>
@@ -499,7 +480,7 @@
                     </tags>
                 </item>
                 <item>
-                    <uuid>ad326bbd1c154384a660fbc65edcc89f</uuid>
+                    <uuid>33fed3cc9cc34688bda9ca37f188be72</uuid>
                     <name>HA control link status</name>
                     <key>sangfor.ha.ctrllink</key>
                     <description>sfHACtrlLinkStatus: 0 - invalid, 1 - normal, 2 - abnormal</description>
@@ -517,7 +498,7 @@
                     </tags>
                     <triggers>
                         <trigger>
-                            <uuid>74371613e3064e738a86648ff81c1a24</uuid>
+                            <uuid>1d44031d73de4a0ab44ca47df36c2de1</uuid>
                             <expression>last(/Sangfor NGAF by SNMP/sangfor.ha.ctrllink)=2</expression>
                             <name>HA control link is ABNORMAL on {HOST.NAME}</name>
                             <priority>HIGH</priority>
@@ -525,7 +506,7 @@
                     </triggers>
                 </item>
                 <item>
-                    <uuid>a9258b3285024a379a9d965ddbb35d67</uuid>
+                    <uuid>e245e22f615c42de8a458d30a0d6be6f</uuid>
                     <name>HA data link status</name>
                     <key>sangfor.ha.datalink</key>
                     <description>sfHADataLinkStatus: 0 - invalid, 1 - normal, 2 - abnormal</description>
@@ -543,7 +524,7 @@
                     </tags>
                     <triggers>
                         <trigger>
-                            <uuid>d9aaf2de63da4f59ae74a53f0725afbb</uuid>
+                            <uuid>d861cb95a0b440d38b5ae9b5ed63e997</uuid>
                             <expression>last(/Sangfor NGAF by SNMP/sangfor.ha.datalink)=2</expression>
                             <name>HA data link is ABNORMAL on {HOST.NAME}</name>
                             <priority>HIGH</priority>
@@ -551,7 +532,7 @@
                     </triggers>
                 </item>
                 <item>
-                    <uuid>ba653f0d2ffb4eb390e4dc227455ccce</uuid>
+                    <uuid>acbbb396d4af4b60a6531a25372bad22</uuid>
                     <name>HA sync state</name>
                     <key>sangfor.ha.sync</key>
                     <description>sfHASyncState: 0 - invalid, 1 - sync running, 2 - sync end, 3 - unknown</description>
@@ -571,7 +552,7 @@
             </items>
             <discovery_rules>
                 <discovery_rule>
-                    <uuid>1afab9a1ce6a4df09997321e312ed59b</uuid>
+                    <uuid>3979d5287041451b93e3c4e5937a7856</uuid>
                     <name>Interface discovery</name>
                     <key>sangfor.if.discovery</key>
                     <description>Interfaces from SANGFOR-MIB::sfIfTable (column sfIfName).</description>
@@ -596,23 +577,19 @@
                             <uuid />
                             <name>Interface {#SNMPVALUE}: Inbound traffic</name>
                             <key>sangfor.if.in.bps[{#SNMPINDEX}]</key>
-                            <description>sfIfInRate (Counter64, bytes -&gt; bits/s)</description>
+                            <description>sfIfInRate - instantaneous byte/s (verified on AF 8.0.108), x8 -&gt; bit/s</description>
                             <type>SNMP_AGENT</type>
                             <snmp_oid>.1.3.6.1.4.1.35047.1.34.1.8.{#SNMPINDEX}</snmp_oid>
                             <snmp_community>{$SANGFOR.SNMP.COMMUNITY}</snmp_community>
                             <delay>{$SANGFOR.UPDATE.FREQ}</delay>
                             <history>7d</history>
-                            <value_type>UNSIGNED</value_type>
+                            <value_type>FLOAT</value_type>
                             <units>bps</units>
                             <preprocessing>
                                 <step>
-                                    <type>CHANGE_PER_SECOND</type>
-                                    <statement>1</statement>
-                                </step>
-                                <step>
                                     <type>MULTIPLIER</type>
                                     <parameter>8</parameter>
-                                    <statement>2</statement>
+                                    <statement>1</statement>
                                 </step>
                             </preprocessing>
                             <tags>
@@ -626,23 +603,19 @@
                             <uuid />
                             <name>Interface {#SNMPVALUE}: Outbound traffic</name>
                             <key>sangfor.if.out.bps[{#SNMPINDEX}]</key>
-                            <description>sfIfOutRate (Counter64, bytes -&gt; bits/s)</description>
+                            <description>sfIfOutRate - instantaneous byte/s (verified on AF 8.0.108), x8 -&gt; bit/s</description>
                             <type>SNMP_AGENT</type>
                             <snmp_oid>.1.3.6.1.4.1.35047.1.34.1.9.{#SNMPINDEX}</snmp_oid>
                             <snmp_community>{$SANGFOR.SNMP.COMMUNITY}</snmp_community>
                             <delay>{$SANGFOR.UPDATE.FREQ}</delay>
                             <history>7d</history>
-                            <value_type>UNSIGNED</value_type>
+                            <value_type>FLOAT</value_type>
                             <units>bps</units>
                             <preprocessing>
                                 <step>
-                                    <type>CHANGE_PER_SECOND</type>
-                                    <statement>1</statement>
-                                </step>
-                                <step>
                                     <type>MULTIPLIER</type>
                                     <parameter>8</parameter>
-                                    <statement>2</statement>
+                                    <statement>1</statement>
                                 </step>
                             </preprocessing>
                             <tags>
@@ -728,7 +701,7 @@
                             </tags>
                             <triggers>
                                 <trigger>
-                                    <uuid>29591c835eb14155b488c1a31dab1b3e</uuid>
+                                    <uuid>9a770c13c7f44aa49791918d6f8abea8</uuid>
                                     <expression>last(/Sangfor NGAF by SNMP/sangfor.if.in.drop[{#SNMPINDEX}])&gt;{$SANGFOR.IF_DROP.MAX}</expression>
                                     <name>Interface {#SNMPVALUE}: high inbound discard rate (&gt;{ITEM.LASTVALUE1} ps)</name>
                                     <priority>WARNING</priority>
@@ -761,7 +734,7 @@
                             </tags>
                             <triggers>
                                 <trigger>
-                                    <uuid>5a50f2af3bed42929f67231cd87940a7</uuid>
+                                    <uuid>4720bcbbe3bb436ea658ad3dc6d55a33</uuid>
                                     <expression>last(/Sangfor NGAF by SNMP/sangfor.if.out.drop[{#SNMPINDEX}])&gt;{$SANGFOR.IF_DROP.MAX}</expression>
                                     <name>Interface {#SNMPVALUE}: high outbound discard rate (&gt;{ITEM.LASTVALUE1} ps)</name>
                                     <priority>WARNING</priority>
@@ -789,13 +762,13 @@
                     </item_prototypes>
                     <trigger_prototypes>
                         <trigger>
-                            <uuid>4985d34680e64e0ca819055e1bb89ee1</uuid>
+                            <uuid>de964a3f3fb343aeb37b8f39f5bcdcb8</uuid>
                             <expression>last(/Sangfor NGAF by SNMP/sangfor.if.in.drop[{#SNMPINDEX}])&gt;{$SANGFOR.IF_DROP.MAX}</expression>
                             <name>Interface {#SNMPVALUE}: high inbound discard rate (&gt;{ITEM.LASTVALUE1} ps)</name>
                             <priority>WARNING</priority>
                         </trigger>
                         <trigger>
-                            <uuid>83cba9047845429d9a369f9e4fa109ab</uuid>
+                            <uuid>ada769e418814f07a87921ea67ebe5b2</uuid>
                             <expression>last(/Sangfor NGAF by SNMP/sangfor.if.out.drop[{#SNMPINDEX}])&gt;{$SANGFOR.IF_DROP.MAX}</expression>
                             <name>Interface {#SNMPVALUE}: high outbound discard rate (&gt;{ITEM.LASTVALUE1} ps)</name>
                             <priority>WARNING</priority>
@@ -803,7 +776,7 @@
                     </trigger_prototypes>
                 </discovery_rule>
                 <discovery_rule>
-                    <uuid>5210dcc0a9c046a1ae4b369951f6aaa6</uuid>
+                    <uuid>1a2ca4b831a8459491186c2ab6a3f5d0</uuid>
                     <name>Disk discovery</name>
                     <key>sangfor.disk.discovery</key>
                     <description>Filesystems from SANGFOR-MIB::sfDiskTable (column sfFilesystemName).</description>
@@ -914,7 +887,7 @@
                             </tags>
                             <triggers>
                                 <trigger>
-                                    <uuid>462ebf611b8748f2a205f9dca8c894af</uuid>
+                                    <uuid>f8f08a50810a4dc98722b0cef9d1ee10</uuid>
                                     <expression>last(/Sangfor NGAF by SNMP/sangfor.disk.pused[{#SNMPINDEX}])&gt;{$SANGFOR.DISK.MAX}</expression>
                                     <name>Disk {#SNMPVALUE}: space usage over {$SANGFOR.DISK.MAX}%</name>
                                     <priority>WARNING</priority>
@@ -941,7 +914,7 @@
                             </tags>
                             <triggers>
                                 <trigger>
-                                    <uuid>aaf07473ed9b47bf8bbff0964cf7d4b0</uuid>
+                                    <uuid>db04fe7f410f40af939ad036b18c3536</uuid>
                                     <expression>last(/Sangfor NGAF by SNMP/sangfor.disk.temp[{#SNMPINDEX}])&gt;{$SANGFOR.DISK_TEMP.MAX}</expression>
                                     <name>Disk {#SNMPVALUE}: high temperature ({ITEM.LASTVALUE1})</name>
                                     <priority>WARNING</priority>
@@ -951,13 +924,13 @@
                     </item_prototypes>
                     <trigger_prototypes>
                         <trigger>
-                            <uuid>afc0d85f87c049199cb71763a861b8bc</uuid>
+                            <uuid>ef3dcffc4df043df8b379271a11b3314</uuid>
                             <expression>last(/Sangfor NGAF by SNMP/sangfor.disk.pused[{#SNMPINDEX}])&gt;{$SANGFOR.DISK.MAX}</expression>
                             <name>Disk {#SNMPVALUE}: space usage over {$SANGFOR.DISK.MAX}%</name>
                             <priority>WARNING</priority>
                         </trigger>
                         <trigger>
-                            <uuid>687db42a70d845038c5a7bb2383dc0f6</uuid>
+                            <uuid>0bbaa4d5d72647d0af3f474f53b1474e</uuid>
                             <expression>last(/Sangfor NGAF by SNMP/sangfor.disk.temp[{#SNMPINDEX}])&gt;{$SANGFOR.DISK_TEMP.MAX}</expression>
                             <name>Disk {#SNMPVALUE}: high temperature ({ITEM.LASTVALUE1})</name>
                             <priority>WARNING</priority>
@@ -965,7 +938,7 @@
                     </trigger_prototypes>
                 </discovery_rule>
                 <discovery_rule>
-                    <uuid>5ad83ae8ec224fc497035c0cdd53771c</uuid>
+                    <uuid>6152f283af84408c96b66092a26ce4b1</uuid>
                     <name>CPU core discovery</name>
                     <key>sangfor.cpu.discovery</key>
                     <description>Per-core load from SANGFOR-MIB::sfCpuCostRateTable (column sfCpuAll).</description>
@@ -1037,7 +1010,7 @@
                             </tags>
                             <triggers>
                                 <trigger>
-                                    <uuid>049ee3550581444f98a31db14fa67b10</uuid>
+                                    <uuid>bae67075fbff42eebf32eb9dd9b51d4c</uuid>
                                     <expression>last(/Sangfor NGAF by SNMP/sangfor.cpu.util[{#SNMPINDEX}])&gt;{$SANGFOR.CPU_CORE.MAX}</expression>
                                     <name>CPU core {#SNMPINDEX}: utilization over {$SANGFOR.CPU_CORE.MAX}%</name>
                                     <priority>WARNING</priority>
@@ -1047,7 +1020,7 @@
                     </item_prototypes>
                     <trigger_prototypes>
                         <trigger>
-                            <uuid>c6cf15743e834ef0905ea94cc9816837</uuid>
+                            <uuid>71b6a650353146b1b0dc8b9d64784226</uuid>
                             <expression>last(/Sangfor NGAF by SNMP/sangfor.cpu.util[{#SNMPINDEX}])&gt;{$SANGFOR.CPU_CORE.MAX}</expression>
                             <name>CPU core {#SNMPINDEX}: utilization over {$SANGFOR.CPU_CORE.MAX}%</name>
                             <priority>WARNING</priority>
@@ -1055,7 +1028,7 @@
                     </trigger_prototypes>
                 </discovery_rule>
                 <discovery_rule>
-                    <uuid>ceb991335fdf4133a663c50610e36cda</uuid>
+                    <uuid>4cd147c0a97a49ecae856d8c6fae2f39</uuid>
                     <name>Fan discovery</name>
                     <key>sangfor.fan.discovery</key>
                     <description>Fans from SANGFOR-MIB::sfSysFanTable (column sfFanName).</description>
@@ -1107,7 +1080,7 @@
                             </tags>
                             <triggers>
                                 <trigger>
-                                    <uuid>47b8687f23aa4dbeafe081818f57e52d</uuid>
+                                    <uuid>5df1945df4aa4f5fb8c4277ce0c91664</uuid>
                                     <expression>last(/Sangfor NGAF by SNMP/sangfor.fan.state[{#SNMPINDEX}])=0</expression>
                                     <name>Fan {#SNMPVALUE} is ABNORMAL on {HOST.NAME}</name>
                                     <priority>AVERAGE</priority>
@@ -1117,7 +1090,7 @@
                     </item_prototypes>
                     <trigger_prototypes>
                         <trigger>
-                            <uuid>02bba742b470483fa25577b38e1c8d6c</uuid>
+                            <uuid>de35284bd5cd447bb33964e2bbe998c6</uuid>
                             <expression>last(/Sangfor NGAF by SNMP/sangfor.fan.state[{#SNMPINDEX}])=0</expression>
                             <name>Fan {#SNMPVALUE} is ABNORMAL on {HOST.NAME}</name>
                             <priority>AVERAGE</priority>
@@ -1125,7 +1098,7 @@
                     </trigger_prototypes>
                 </discovery_rule>
                 <discovery_rule>
-                    <uuid>ce9147a4a1ea4645b5b366660bfd35f5</uuid>
+                    <uuid>896b70a363d6460b9f0a306edfe31ca1</uuid>
                     <name>Power supply discovery</name>
                     <key>sangfor.psu.discovery</key>
                     <description>PSUs from SANGFOR-MIB::sfSysPowerTable (column sfPowerName).</description>
@@ -1158,7 +1131,7 @@
                             </tags>
                             <triggers>
                                 <trigger>
-                                    <uuid>b68d1d2f494540658cb70facb856a8d1</uuid>
+                                    <uuid>e05f8efe680742e6baaff88efa433e26</uuid>
                                     <expression>last(/Sangfor NGAF by SNMP/sangfor.psu.state[{#SNMPINDEX}])=0</expression>
                                     <name>Power supply {#SNMPVALUE} is ABNORMAL on {HOST.NAME}</name>
                                     <priority>HIGH</priority>
@@ -1168,7 +1141,7 @@
                     </item_prototypes>
                     <trigger_prototypes>
                         <trigger>
-                            <uuid>b6a19f4222864bb790042d73c4bf75af</uuid>
+                            <uuid>18188485dbe841bca6dec4fe397ffa1e</uuid>
                             <expression>last(/Sangfor NGAF by SNMP/sangfor.psu.state[{#SNMPINDEX}])=0</expression>
                             <name>Power supply {#SNMPVALUE} is ABNORMAL on {HOST.NAME}</name>
                             <priority>HIGH</priority>
@@ -1176,7 +1149,7 @@
                     </trigger_prototypes>
                 </discovery_rule>
                 <discovery_rule>
-                    <uuid>9a9d5c6f02eb4152aec51705cb23938c</uuid>
+                    <uuid>09fcb431ca5143a0a8d301b17a2b1d1c</uuid>
                     <name>Temperature sensor discovery</name>
                     <key>sangfor.temp.discovery</key>
                     <description>Temperature sensors from SANGFOR-MIB::sfTempSensorTable (column sfTempSensorName).</description>
