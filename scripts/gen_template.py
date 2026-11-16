@@ -427,19 +427,10 @@ for hname, title, prio, desc in trap_defs:
         }],
     })
 
-items.append({
-    "uuid": UN("trap-fallback"),
-    "name": "SNMP trap: catch-all (unmatched)",
-    "type": "SNMP_TRAP",
-    "key": "snmptrap.fallback",
-    "delay": "0",
-    "history": "31d",
-    "value_type": "TEXT",
-    "description": "Catches any Sangfor SNMP trap not matched by a named "
-                   "snmptrap[] item. Inspect values here to add new trap "
-                   "items; no trigger by design.",
-    "tags": [{"tag": "component", "value": "trap"}],
-})
+# NOTE: no snmptrap.fallback here on purpose - the standard
+# "Network Generic Device by SNMP" template already ships one, and Zabbix
+# rejects linking two templates that both define the same trap key.
+# Unmatched traps land in the generic template's fallback item.
 
 # ================= macros =================
 for m, v, d in [

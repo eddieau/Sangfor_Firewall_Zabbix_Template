@@ -705,22 +705,6 @@
                 "priority": "HIGH"
               }
             ]
-          },
-          {
-            "uuid": "52169d6058574f2e99c029d03e298587",
-            "name": "SNMP trap: catch-all (unmatched)",
-            "type": "SNMP_TRAP",
-            "key": "snmptrap.fallback",
-            "delay": "0",
-            "history": "31d",
-            "value_type": "TEXT",
-            "description": "Catches any Sangfor SNMP trap not matched by a named snmptrap[] item. Inspect values here to add new trap items; no trigger by design.",
-            "tags": [
-              {
-                "tag": "component",
-                "value": "trap"
-              }
-            ]
           }
         ],
         "discovery_rules": [
