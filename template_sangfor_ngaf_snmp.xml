@@ -1,0 +1,1264 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<zabbix_export>
+    <version>8.0</version>
+    <date>2026-11-16T20:51:29Z</date>
+    <groups>
+        <group>
+            <uuid>d7540f03647043ad9d7e7badfcba09b6</uuid>
+            <name>Templates/Network devices</name>
+        </group>
+    </groups>
+    <templates>
+        <template>
+            <uuid>23697d4b0fe84b98a44dee436e859a47</uuid>
+            <template>Sangfor NGAF by SNMP</template>
+            <name>Sangfor NGAF by SNMP</name>
+            <description>Sangfor NGAF monitoring via private SANGFOR-MIB (enterprises 35047), converted from the vendor MIB file SANGFOR-MIB.txt. Requires SNMP v2c or later (Counter64 objects). Interface rate/discard objects are converted with Change per second; if the device actually reports instantaneous rates, remove that preprocessing step. Memory counters arrive in kB and disk counters in MB.</description>
+            <groups>
+                <group>
+                    <name>Templates/Network devices</name>
+                </group>
+            </groups>
+            <items>
+                <item>
+                    <uuid>022aff43decc4f0f81a17f386e23c61f</uuid>
+                    <name>Device description</name>
+                    <key>sangfor.device.descr</key>
+                    <description>sfDeviceDescr</description>
+                    <type>SNMP_AGENT</type>
+                    <snmp_oid>.1.3.6.1.4.1.35047.1.1.0</snmp_oid>
+                    <snmp_community>{$SANGFOR.SNMP.COMMUNITY}</snmp_community>
+                    <delay>{$SANGFOR.UPDATE.FREQ}</delay>
+                    <history>7d</history>
+                    <value_type>CHAR</value_type>
+                </item>
+                <item>
+                    <uuid>0b2513e45fa646a4a13d2d7ddbc9ab31</uuid>
+                    <name>Device name</name>
+                    <key>sangfor.device.name</key>
+                    <description>sfSysDevName</description>
+                    <type>SNMP_AGENT</type>
+                    <snmp_oid>.1.3.6.1.4.1.35047.1.17.0</snmp_oid>
+                    <snmp_community>{$SANGFOR.SNMP.COMMUNITY}</snmp_community>
+                    <delay>{$SANGFOR.UPDATE.FREQ}</delay>
+                    <history>7d</history>
+                    <value_type>CHAR</value_type>
+                </item>
+                <item>
+                    <uuid>7ea200da834a40d289d9006b09d63932</uuid>
+                    <name>Software version</name>
+                    <key>sangfor.software.version</key>
+                    <description>sfSysSoftVersion</description>
+                    <type>SNMP_AGENT</type>
+                    <snmp_oid>.1.3.6.1.4.1.35047.1.18.0</snmp_oid>
+                    <snmp_community>{$SANGFOR.SNMP.COMMUNITY}</snmp_community>
+                    <delay>{$SANGFOR.UPDATE.FREQ}</delay>
+                    <history>7d</history>
+                    <value_type>CHAR</value_type>
+                </item>
+                <item>
+                    <uuid>d3d3937266f64a1680d07e3578e6150e</uuid>
+                    <name>AF version</name>
+                    <key>sangfor.af.version</key>
+                    <description>afSysSoftVersion</description>
+                    <type>SNMP_AGENT</type>
+                    <snmp_oid>.1.3.6.1.4.1.35047.1.24.0</snmp_oid>
+                    <snmp_community>{$SANGFOR.SNMP.COMMUNITY}</snmp_community>
+                    <delay>{$SANGFOR.UPDATE.FREQ}</delay>
+                    <history>7d</history>
+                    <value_type>CHAR</value_type>
+                </item>
+                <item>
+                    <uuid>e1769d75ff2641f195a3e5459c810a4e</uuid>
+                    <name>Serial number</name>
+                    <key>sangfor.serial.number</key>
+                    <description>sfSnGW (serial number of the appliance)</description>
+                    <type>SNMP_AGENT</type>
+                    <snmp_oid>.1.3.6.1.4.1.35047.1.40.0</snmp_oid>
+                    <snmp_community>{$SANGFOR.SNMP.COMMUNITY}</snmp_community>
+                    <delay>{$SANGFOR.UPDATE.FREQ}</delay>
+                    <history>7d</history>
+                    <value_type>CHAR</value_type>
+                </item>
+                <item>
+                    <uuid>4d02a23f87dc423499cbb242cc87bed6</uuid>
+                    <name>Device status</name>
+                    <key>sangfor.device.status</key>
+                    <description>sfDeviceStatus: 0 - Warning, 1 - Normal</description>
+                    <type>SNMP_AGENT</type>
+                    <snmp_oid>.1.3.6.1.4.1.35047.1.12.0</snmp_oid>
+                    <snmp_community>{$SANGFOR.SNMP.COMMUNITY}</snmp_community>
+                    <delay>{$SANGFOR.UPDATE.FREQ}</delay>
+                    <history>7d</history>
+                    <value_type>FLOAT</value_type>
+                    <tags>
+                        <tag>
+                            <tag>component</tag>
+                            <value>health</value>
+                        </tag>
+                    </tags>
+                    <triggers>
+                        <trigger>
+                            <uuid>63d252eafe0540cfbc7dba2a9c895adf</uuid>
+                            <expression>last(/Sangfor NGAF by SNMP/sangfor.device.status)=0</expression>
+                            <name>Device reports WARNING status on {HOST.NAME}</name>
+                            <priority>WARNING</priority>
+                        </trigger>
+                    </triggers>
+                </item>
+                <item>
+                    <uuid>8d6de04b20e748ceb524964c1a25028d</uuid>
+                    <name>CPU utilization (30s)</name>
+                    <key>sangfor.cpu.util.30s</key>
+                    <description>sfCpuAllCostRateLast30Sec</description>
+                    <type>SNMP_AGENT</type>
+                    <snmp_oid>.1.3.6.1.4.1.35047.1.19.4.0</snmp_oid>
+                    <snmp_community>{$SANGFOR.SNMP.COMMUNITY}</snmp_community>
+                    <delay>{$SANGFOR.UPDATE.FREQ}</delay>
+                    <history>7d</history>
+                    <value_type>FLOAT</value_type>
+                    <units>%</units>
+                    <tags>
+                        <tag>
+                            <tag>component</tag>
+                            <value>cpu</value>
+                        </tag>
+                    </tags>
+                </item>
+                <item>
+                    <uuid>1189c0b9f901424ead36aaee0bb6197e</uuid>
+                    <name>CPU utilization (1 min)</name>
+                    <key>sangfor.cpu.util.1m</key>
+                    <description>sfCpuAllCostRateLast1Min</description>
+                    <type>SNMP_AGENT</type>
+                    <snmp_oid>.1.3.6.1.4.1.35047.1.19.5.0</snmp_oid>
+                    <snmp_community>{$SANGFOR.SNMP.COMMUNITY}</snmp_community>
+                    <delay>{$SANGFOR.UPDATE.FREQ}</delay>
+                    <history>7d</history>
+                    <value_type>FLOAT</value_type>
+                    <units>%</units>
+                    <tags>
+                        <tag>
+                            <tag>component</tag>
+                            <value>cpu</value>
+                        </tag>
+                    </tags>
+                    <triggers>
+                        <trigger>
+                            <uuid>fea0c37715424aac8941b86f4f977eae</uuid>
+                            <expression>last(/Sangfor NGAF by SNMP/sangfor.cpu.util.1m)&gt;{$SANGFOR.CPU.MAX}</expression>
+                            <name>High CPU utilization: over {$SANGFOR.CPU.MAX}% on {HOST.NAME}</name>
+                            <priority>AVERAGE</priority>
+                        </trigger>
+                    </triggers>
+                </item>
+                <item>
+                    <uuid>96cf4bda60c7418c9f0cf5083742edf1</uuid>
+                    <name>CPU utilization (5 min)</name>
+                    <key>sangfor.cpu.util.5m</key>
+                    <description>sfCpuAllCostRateLast5Min</description>
+                    <type>SNMP_AGENT</type>
+                    <snmp_oid>.1.3.6.1.4.1.35047.1.19.6.0</snmp_oid>
+                    <snmp_community>{$SANGFOR.SNMP.COMMUNITY}</snmp_community>
+                    <delay>{$SANGFOR.UPDATE.FREQ}</delay>
+                    <history>7d</history>
+                    <value_type>FLOAT</value_type>
+                    <units>%</units>
+                    <tags>
+                        <tag>
+                            <tag>component</tag>
+                            <value>cpu</value>
+                        </tag>
+                    </tags>
+                </item>
+                <item>
+                    <uuid>479a8092e9ca4637a4121895acb2ad8d</uuid>
+                    <name>CPU core count</name>
+                    <key>sangfor.cpu.num</key>
+                    <description>sfCpuNum</description>
+                    <type>SNMP_AGENT</type>
+                    <snmp_oid>.1.3.6.1.4.1.35047.1.21.0</snmp_oid>
+                    <snmp_community>{$SANGFOR.SNMP.COMMUNITY}</snmp_community>
+                    <delay>{$SANGFOR.UPDATE.FREQ}</delay>
+                    <history>7d</history>
+                    <value_type>FLOAT</value_type>
+                    <tags>
+                        <tag>
+                            <tag>component</tag>
+                            <value>cpu</value>
+                        </tag>
+                    </tags>
+                </item>
+                <item>
+                    <uuid>90ec7552a69b4df2bcc830279920afb9</uuid>
+                    <name>Memory total</name>
+                    <key>sangfor.mem.total</key>
+                    <description>sfIntSysTotalMemory (kB -&gt; B)</description>
+                    <type>SNMP_AGENT</type>
+                    <snmp_oid>.1.3.6.1.4.1.35047.1.13.4.0</snmp_oid>
+                    <snmp_community>{$SANGFOR.SNMP.COMMUNITY}</snmp_community>
+                    <delay>{$SANGFOR.UPDATE.FREQ}</delay>
+                    <history>7d</history>
+                    <value_type>FLOAT</value_type>
+                    <units>B</units>
+                    <preprocessing>
+                        <step>
+                            <type>MULTIPLIER</type>
+                            <parameter>1024</parameter>
+                            <statement>1</statement>
+                        </step>
+                    </preprocessing>
+                    <tags>
+                        <tag>
+                            <tag>component</tag>
+                            <value>memory</value>
+                        </tag>
+                    </tags>
+                </item>
+                <item>
+                    <uuid>d4975577a74f4108b15b5f7fe47eccf4</uuid>
+                    <name>Memory free</name>
+                    <key>sangfor.mem.free</key>
+                    <description>sfIntSysFreeMemory (kB -&gt; B)</description>
+                    <type>SNMP_AGENT</type>
+                    <snmp_oid>.1.3.6.1.4.1.35047.1.13.3.0</snmp_oid>
+                    <snmp_community>{$SANGFOR.SNMP.COMMUNITY}</snmp_community>
+                    <delay>{$SANGFOR.UPDATE.FREQ}</delay>
+                    <history>7d</history>
+                    <value_type>FLOAT</value_type>
+                    <units>B</units>
+                    <preprocessing>
+                        <step>
+                            <type>MULTIPLIER</type>
+                            <parameter>1024</parameter>
+                            <statement>1</statement>
+                        </step>
+                    </preprocessing>
+                    <tags>
+                        <tag>
+                            <tag>component</tag>
+                            <value>memory</value>
+                        </tag>
+                    </tags>
+                </item>
+                <item>
+                    <uuid>ad90635ecd8b4ff5989ac90526a0f5dc</uuid>
+                    <name>Memory usage</name>
+                    <key>sangfor.mem.util</key>
+                    <description>Calculated: (total - free) / total * 100</description>
+                    <type>CALCULATED</type>
+                    <delay>1m</delay>
+                    <params>(last(/Sangfor NGAF by SNMP/sangfor.mem.total)-last(/Sangfor NGAF by SNMP/sangfor.mem.free))/last(/Sangfor NGAF by SNMP/sangfor.mem.total)*100</params>
+                    <history>7d</history>
+                    <value_type>FLOAT</value_type>
+                    <units>%</units>
+                    <tags>
+                        <tag>
+                            <tag>component</tag>
+                            <value>memory</value>
+                        </tag>
+                    </tags>
+                    <triggers>
+                        <trigger>
+                            <uuid>ebb3676cdd47477aa88b688decff6caa</uuid>
+                            <expression>last(/Sangfor NGAF by SNMP/sangfor.mem.util)&gt;{$SANGFOR.MEM.MAX}</expression>
+                            <name>High memory usage: over {$SANGFOR.MEM.MAX}% on {HOST.NAME}</name>
+                            <priority>AVERAGE</priority>
+                        </trigger>
+                    </triggers>
+                </item>
+                <item>
+                    <uuid>dec0ea8a9c2243528cc45fcc7115bc8a</uuid>
+                    <name>Swap total</name>
+                    <key>sangfor.swap.total</key>
+                    <description>sfMemTotalSwap (units as reported by device)</description>
+                    <type>SNMP_AGENT</type>
+                    <snmp_oid>.1.3.6.1.4.1.35047.1.38.1.0</snmp_oid>
+                    <snmp_community>{$SANGFOR.SNMP.COMMUNITY}</snmp_community>
+                    <delay>{$SANGFOR.UPDATE.FREQ}</delay>
+                    <history>7d</history>
+                    <value_type>FLOAT</value_type>
+                </item>
+                <item>
+                    <uuid>cdbc3ec720714fe78a0c4ff972071cf6</uuid>
+                    <name>Swap available</name>
+                    <key>sangfor.swap.avail</key>
+                    <description>sfMemAvailSwap (units as reported by device)</description>
+                    <type>SNMP_AGENT</type>
+                    <snmp_oid>.1.3.6.1.4.1.35047.1.38.2.0</snmp_oid>
+                    <snmp_community>{$SANGFOR.SNMP.COMMUNITY}</snmp_community>
+                    <delay>{$SANGFOR.UPDATE.FREQ}</delay>
+                    <history>7d</history>
+                    <value_type>FLOAT</value_type>
+                </item>
+                <item>
+                    <uuid>05ac911d929045c2b00fcabe41b42fc3</uuid>
+                    <name>Current sessions</name>
+                    <key>sangfor.sessions.current</key>
+                    <description>sfCurSession</description>
+                    <type>SNMP_AGENT</type>
+                    <snmp_oid>.1.3.6.1.4.1.35047.1.27.3.0</snmp_oid>
+                    <snmp_community>{$SANGFOR.SNMP.COMMUNITY}</snmp_community>
+                    <delay>{$SANGFOR.UPDATE.FREQ}</delay>
+                    <history>7d</history>
+                    <value_type>FLOAT</value_type>
+                    <tags>
+                        <tag>
+                            <tag>component</tag>
+                            <value>sessions</value>
+                        </tag>
+                    </tags>
+                </item>
+                <item>
+                    <uuid>0e00209da9654acf8a7495965322809f</uuid>
+                    <name>New sessions</name>
+                    <key>sangfor.sessions.new</key>
+                    <description>sfNewSessions</description>
+                    <type>SNMP_AGENT</type>
+                    <snmp_oid>.1.3.6.1.4.1.35047.1.27.1.0</snmp_oid>
+                    <snmp_community>{$SANGFOR.SNMP.COMMUNITY}</snmp_community>
+                    <delay>{$SANGFOR.UPDATE.FREQ}</delay>
+                    <history>7d</history>
+                    <value_type>FLOAT</value_type>
+                    <tags>
+                        <tag>
+                            <tag>component</tag>
+                            <value>sessions</value>
+                        </tag>
+                    </tags>
+                </item>
+                <item>
+                    <uuid>ec9298696bbc4ee396e8ff9b4738a914</uuid>
+                    <name>Total sessions</name>
+                    <key>sangfor.sessions.total</key>
+                    <description>sfTotalSessions</description>
+                    <type>SNMP_AGENT</type>
+                    <snmp_oid>.1.3.6.1.4.1.35047.1.27.2.0</snmp_oid>
+                    <snmp_community>{$SANGFOR.SNMP.COMMUNITY}</snmp_community>
+                    <delay>{$SANGFOR.UPDATE.FREQ}</delay>
+                    <history>7d</history>
+                    <value_type>FLOAT</value_type>
+                    <tags>
+                        <tag>
+                            <tag>component</tag>
+                            <value>sessions</value>
+                        </tag>
+                    </tags>
+                </item>
+                <item>
+                    <uuid>64126be4c32448cba4e2a6b79667f23a</uuid>
+                    <name>New sessions per second</name>
+                    <key>sangfor.sessions.new.persec</key>
+                    <description>sfNewSessionPerSec</description>
+                    <type>SNMP_AGENT</type>
+                    <snmp_oid>.1.3.6.1.4.1.35047.1.27.4.0</snmp_oid>
+                    <snmp_community>{$SANGFOR.SNMP.COMMUNITY}</snmp_community>
+                    <delay>{$SANGFOR.UPDATE.FREQ}</delay>
+                    <history>7d</history>
+                    <value_type>FLOAT</value_type>
+                    <tags>
+                        <tag>
+                            <tag>component</tag>
+                            <value>sessions</value>
+                        </tag>
+                    </tags>
+                </item>
+                <item>
+                    <uuid>23c2d2d8da564922bdb838b80bbe0d29</uuid>
+                    <name>Online users</name>
+                    <key>sangfor.users</key>
+                    <description>sfUsers</description>
+                    <type>SNMP_AGENT</type>
+                    <snmp_oid>.1.3.6.1.4.1.35047.1.23.0</snmp_oid>
+                    <snmp_community>{$SANGFOR.SNMP.COMMUNITY}</snmp_community>
+                    <delay>{$SANGFOR.UPDATE.FREQ}</delay>
+                    <history>7d</history>
+                    <value_type>FLOAT</value_type>
+                    <tags>
+                        <tag>
+                            <tag>component</tag>
+                            <value>users</value>
+                        </tag>
+                    </tags>
+                </item>
+                <item>
+                    <uuid>2203832ea0d54c9aaf775a7be3f33d2e</uuid>
+                    <name>Inbound throughput</name>
+                    <key>sangfor.throughput.in</key>
+                    <description>sfSysInThroughput (units as reported by device)</description>
+                    <type>SNMP_AGENT</type>
+                    <snmp_oid>.1.3.6.1.4.1.35047.1.48.2.0</snmp_oid>
+                    <snmp_community>{$SANGFOR.SNMP.COMMUNITY}</snmp_community>
+                    <delay>{$SANGFOR.UPDATE.FREQ}</delay>
+                    <history>7d</history>
+                    <value_type>FLOAT</value_type>
+                    <tags>
+                        <tag>
+                            <tag>component</tag>
+                            <value>throughput</value>
+                        </tag>
+                    </tags>
+                </item>
+                <item>
+                    <uuid>757884e91a1f4371a166ec960f2de293</uuid>
+                    <name>Outbound throughput</name>
+                    <key>sangfor.throughput.out</key>
+                    <description>sfSysOutThroughput (units as reported by device)</description>
+                    <type>SNMP_AGENT</type>
+                    <snmp_oid>.1.3.6.1.4.1.35047.1.48.1.0</snmp_oid>
+                    <snmp_community>{$SANGFOR.SNMP.COMMUNITY}</snmp_community>
+                    <delay>{$SANGFOR.UPDATE.FREQ}</delay>
+                    <history>7d</history>
+                    <value_type>FLOAT</value_type>
+                    <tags>
+                        <tag>
+                            <tag>component</tag>
+                            <value>throughput</value>
+                        </tag>
+                    </tags>
+                </item>
+                <item>
+                    <uuid>a346517790914cf4929279d6c8df4dfa</uuid>
+                    <name>System disk usage</name>
+                    <key>sangfor.disk.usage</key>
+                    <description>sfSysDiskUsage</description>
+                    <type>SNMP_AGENT</type>
+                    <snmp_oid>.1.3.6.1.4.1.35047.1.52.1.0</snmp_oid>
+                    <snmp_community>{$SANGFOR.SNMP.COMMUNITY}</snmp_community>
+                    <delay>{$SANGFOR.UPDATE.FREQ}</delay>
+                    <history>7d</history>
+                    <value_type>FLOAT</value_type>
+                    <units>%</units>
+                    <tags>
+                        <tag>
+                            <tag>component</tag>
+                            <value>disk</value>
+                        </tag>
+                    </tags>
+                    <triggers>
+                        <trigger>
+                            <uuid>e0c3b66b8564456abb5f295c7a456b55</uuid>
+                            <expression>last(/Sangfor NGAF by SNMP/sangfor.disk.usage)&gt;{$SANGFOR.DISK.MAX}</expression>
+                            <name>High system disk usage: over {$SANGFOR.DISK.MAX}% on {HOST.NAME}</name>
+                            <priority>WARNING</priority>
+                        </trigger>
+                    </triggers>
+                </item>
+                <item>
+                    <uuid>7311f2a9e76e443a8b5cbb567a27a59e</uuid>
+                    <name>HA enabled</name>
+                    <key>sangfor.ha.enabled</key>
+                    <description>sfHAEnable: 0 - disabled, 1 - enabled</description>
+                    <type>SNMP_AGENT</type>
+                    <snmp_oid>.1.3.6.1.4.1.35047.1.64.1.0</snmp_oid>
+                    <snmp_community>{$SANGFOR.SNMP.COMMUNITY}</snmp_community>
+                    <delay>{$SANGFOR.UPDATE.FREQ}</delay>
+                    <history>7d</history>
+                    <value_type>FLOAT</value_type>
+                    <tags>
+                        <tag>
+                            <tag>component</tag>
+                            <value>ha</value>
+                        </tag>
+                    </tags>
+                </item>
+                <item>
+                    <uuid>d2e604baceeb445fa12544d5e4fd6174</uuid>
+                    <name>HA mode</name>
+                    <key>sangfor.ha.mode</key>
+                    <description>sfHAMode: 0 - invalid, 1 - master-master, 2 - master-slave, 3 - mirror</description>
+                    <type>SNMP_AGENT</type>
+                    <snmp_oid>.1.3.6.1.4.1.35047.1.64.2.0</snmp_oid>
+                    <snmp_community>{$SANGFOR.SNMP.COMMUNITY}</snmp_community>
+                    <delay>{$SANGFOR.UPDATE.FREQ}</delay>
+                    <history>7d</history>
+                    <value_type>FLOAT</value_type>
+                    <tags>
+                        <tag>
+                            <tag>component</tag>
+                            <value>ha</value>
+                        </tag>
+                    </tags>
+                </item>
+                <item>
+                    <uuid>ae9b7684276d46839c601e0d3c50f81c</uuid>
+                    <name>HA current status</name>
+                    <key>sangfor.ha.status</key>
+                    <description>sfHACurStatus: 0 - invalid, 1 - init, 4 - master, 5 - slave</description>
+                    <type>SNMP_AGENT</type>
+                    <snmp_oid>.1.3.6.1.4.1.35047.1.64.3.0</snmp_oid>
+                    <snmp_community>{$SANGFOR.SNMP.COMMUNITY}</snmp_community>
+                    <delay>{$SANGFOR.UPDATE.FREQ}</delay>
+                    <history>7d</history>
+                    <value_type>FLOAT</value_type>
+                    <tags>
+                        <tag>
+                            <tag>component</tag>
+                            <value>ha</value>
+                        </tag>
+                    </tags>
+                </item>
+                <item>
+                    <uuid>ad326bbd1c154384a660fbc65edcc89f</uuid>
+                    <name>HA control link status</name>
+                    <key>sangfor.ha.ctrllink</key>
+                    <description>sfHACtrlLinkStatus: 0 - invalid, 1 - normal, 2 - abnormal</description>
+                    <type>SNMP_AGENT</type>
+                    <snmp_oid>.1.3.6.1.4.1.35047.1.64.6.0</snmp_oid>
+                    <snmp_community>{$SANGFOR.SNMP.COMMUNITY}</snmp_community>
+                    <delay>{$SANGFOR.UPDATE.FREQ}</delay>
+                    <history>7d</history>
+                    <value_type>FLOAT</value_type>
+                    <tags>
+                        <tag>
+                            <tag>component</tag>
+                            <value>ha</value>
+                        </tag>
+                    </tags>
+                    <triggers>
+                        <trigger>
+                            <uuid>74371613e3064e738a86648ff81c1a24</uuid>
+                            <expression>last(/Sangfor NGAF by SNMP/sangfor.ha.ctrllink)=2</expression>
+                            <name>HA control link is ABNORMAL on {HOST.NAME}</name>
+                            <priority>HIGH</priority>
+                        </trigger>
+                    </triggers>
+                </item>
+                <item>
+                    <uuid>a9258b3285024a379a9d965ddbb35d67</uuid>
+                    <name>HA data link status</name>
+                    <key>sangfor.ha.datalink</key>
+                    <description>sfHADataLinkStatus: 0 - invalid, 1 - normal, 2 - abnormal</description>
+                    <type>SNMP_AGENT</type>
+                    <snmp_oid>.1.3.6.1.4.1.35047.1.64.7.0</snmp_oid>
+                    <snmp_community>{$SANGFOR.SNMP.COMMUNITY}</snmp_community>
+                    <delay>{$SANGFOR.UPDATE.FREQ}</delay>
+                    <history>7d</history>
+                    <value_type>FLOAT</value_type>
+                    <tags>
+                        <tag>
+                            <tag>component</tag>
+                            <value>ha</value>
+                        </tag>
+                    </tags>
+                    <triggers>
+                        <trigger>
+                            <uuid>d9aaf2de63da4f59ae74a53f0725afbb</uuid>
+                            <expression>last(/Sangfor NGAF by SNMP/sangfor.ha.datalink)=2</expression>
+                            <name>HA data link is ABNORMAL on {HOST.NAME}</name>
+                            <priority>HIGH</priority>
+                        </trigger>
+                    </triggers>
+                </item>
+                <item>
+                    <uuid>ba653f0d2ffb4eb390e4dc227455ccce</uuid>
+                    <name>HA sync state</name>
+                    <key>sangfor.ha.sync</key>
+                    <description>sfHASyncState: 0 - invalid, 1 - sync running, 2 - sync end, 3 - unknown</description>
+                    <type>SNMP_AGENT</type>
+                    <snmp_oid>.1.3.6.1.4.1.35047.1.64.8.0</snmp_oid>
+                    <snmp_community>{$SANGFOR.SNMP.COMMUNITY}</snmp_community>
+                    <delay>{$SANGFOR.UPDATE.FREQ}</delay>
+                    <history>7d</history>
+                    <value_type>FLOAT</value_type>
+                    <tags>
+                        <tag>
+                            <tag>component</tag>
+                            <value>ha</value>
+                        </tag>
+                    </tags>
+                </item>
+            </items>
+            <discovery_rules>
+                <discovery_rule>
+                    <uuid>1afab9a1ce6a4df09997321e312ed59b</uuid>
+                    <name>Interface discovery</name>
+                    <key>sangfor.if.discovery</key>
+                    <description>Interfaces from SANGFOR-MIB::sfIfTable (column sfIfName).</description>
+                    <type>SNMP_AGENT</type>
+                    <snmp_oid>.1.3.6.1.4.1.35047.1.34.1.2</snmp_oid>
+                    <snmp_community>{$SANGFOR.SNMP.COMMUNITY}</snmp_community>
+                    <delay>{$SANGFOR.DISCOVERY.FREQ}</delay>
+                    <status>ENABLED</status>
+                    <filter>
+                        <evaltype>AND</evaltype>
+                        <conditions>
+                            <condition>
+                                <macro>{#SNMPVALUE}</macro>
+                                <value>^(?!(l.o|Loopback|lo$))</value>
+                                <operator>MATCHES_REGEX</operator>
+                            </condition>
+                        </conditions>
+                    </filter>
+                    <lifetime>30d</lifetime>
+                    <item_prototypes>
+                        <item>
+                            <uuid />
+                            <name>Interface {#SNMPVALUE}: Inbound traffic</name>
+                            <key>sangfor.if.in.bps[{#SNMPINDEX}]</key>
+                            <description>sfIfInRate (Counter64, bytes -&gt; bits/s)</description>
+                            <type>SNMP_AGENT</type>
+                            <snmp_oid>.1.3.6.1.4.1.35047.1.34.1.8.{#SNMPINDEX}</snmp_oid>
+                            <snmp_community>{$SANGFOR.SNMP.COMMUNITY}</snmp_community>
+                            <delay>{$SANGFOR.UPDATE.FREQ}</delay>
+                            <history>7d</history>
+                            <value_type>UNSIGNED</value_type>
+                            <units>bps</units>
+                            <preprocessing>
+                                <step>
+                                    <type>CHANGE_PER_SECOND</type>
+                                    <statement>1</statement>
+                                </step>
+                                <step>
+                                    <type>MULTIPLIER</type>
+                                    <parameter>8</parameter>
+                                    <statement>2</statement>
+                                </step>
+                            </preprocessing>
+                            <tags>
+                                <tag>
+                                    <tag>component</tag>
+                                    <value>network</value>
+                                </tag>
+                            </tags>
+                        </item>
+                        <item>
+                            <uuid />
+                            <name>Interface {#SNMPVALUE}: Outbound traffic</name>
+                            <key>sangfor.if.out.bps[{#SNMPINDEX}]</key>
+                            <description>sfIfOutRate (Counter64, bytes -&gt; bits/s)</description>
+                            <type>SNMP_AGENT</type>
+                            <snmp_oid>.1.3.6.1.4.1.35047.1.34.1.9.{#SNMPINDEX}</snmp_oid>
+                            <snmp_community>{$SANGFOR.SNMP.COMMUNITY}</snmp_community>
+                            <delay>{$SANGFOR.UPDATE.FREQ}</delay>
+                            <history>7d</history>
+                            <value_type>UNSIGNED</value_type>
+                            <units>bps</units>
+                            <preprocessing>
+                                <step>
+                                    <type>CHANGE_PER_SECOND</type>
+                                    <statement>1</statement>
+                                </step>
+                                <step>
+                                    <type>MULTIPLIER</type>
+                                    <parameter>8</parameter>
+                                    <statement>2</statement>
+                                </step>
+                            </preprocessing>
+                            <tags>
+                                <tag>
+                                    <tag>component</tag>
+                                    <value>network</value>
+                                </tag>
+                            </tags>
+                        </item>
+                        <item>
+                            <uuid />
+                            <name>Interface {#SNMPVALUE}: Inbound packets rate</name>
+                            <key>sangfor.if.in.pps[{#SNMPINDEX}]</key>
+                            <description>sfIfInPkts (Counter64 -&gt; packets/s)</description>
+                            <type>SNMP_AGENT</type>
+                            <snmp_oid>.1.3.6.1.4.1.35047.1.34.1.13.{#SNMPINDEX}</snmp_oid>
+                            <snmp_community>{$SANGFOR.SNMP.COMMUNITY}</snmp_community>
+                            <delay>{$SANGFOR.UPDATE.FREQ}</delay>
+                            <history>7d</history>
+                            <value_type>UNSIGNED</value_type>
+                            <units>pps</units>
+                            <preprocessing>
+                                <step>
+                                    <type>CHANGE_PER_SECOND</type>
+                                    <statement>1</statement>
+                                </step>
+                            </preprocessing>
+                            <tags>
+                                <tag>
+                                    <tag>component</tag>
+                                    <value>network</value>
+                                </tag>
+                            </tags>
+                        </item>
+                        <item>
+                            <uuid />
+                            <name>Interface {#SNMPVALUE}: Outbound packets rate</name>
+                            <key>sangfor.if.out.pps[{#SNMPINDEX}]</key>
+                            <description>sfIfOutPkts (Counter64 -&gt; packets/s)</description>
+                            <type>SNMP_AGENT</type>
+                            <snmp_oid>.1.3.6.1.4.1.35047.1.34.1.14.{#SNMPINDEX}</snmp_oid>
+                            <snmp_community>{$SANGFOR.SNMP.COMMUNITY}</snmp_community>
+                            <delay>{$SANGFOR.UPDATE.FREQ}</delay>
+                            <history>7d</history>
+                            <value_type>UNSIGNED</value_type>
+                            <units>pps</units>
+                            <preprocessing>
+                                <step>
+                                    <type>CHANGE_PER_SECOND</type>
+                                    <statement>1</statement>
+                                </step>
+                            </preprocessing>
+                            <tags>
+                                <tag>
+                                    <tag>component</tag>
+                                    <value>network</value>
+                                </tag>
+                            </tags>
+                        </item>
+                        <item>
+                            <uuid />
+                            <name>Interface {#SNMPVALUE}: Inbound discards</name>
+                            <key>sangfor.if.in.drop[{#SNMPINDEX}]</key>
+                            <description>sfIfInDrop (Counter64 -&gt; rate)</description>
+                            <type>SNMP_AGENT</type>
+                            <snmp_oid>.1.3.6.1.4.1.35047.1.34.1.15.{#SNMPINDEX}</snmp_oid>
+                            <snmp_community>{$SANGFOR.SNMP.COMMUNITY}</snmp_community>
+                            <delay>{$SANGFOR.UPDATE.FREQ}</delay>
+                            <history>7d</history>
+                            <value_type>UNSIGNED</value_type>
+                            <units>ps</units>
+                            <preprocessing>
+                                <step>
+                                    <type>CHANGE_PER_SECOND</type>
+                                    <statement>1</statement>
+                                </step>
+                            </preprocessing>
+                            <tags>
+                                <tag>
+                                    <tag>component</tag>
+                                    <value>network</value>
+                                </tag>
+                            </tags>
+                            <triggers>
+                                <trigger>
+                                    <uuid>29591c835eb14155b488c1a31dab1b3e</uuid>
+                                    <expression>last(/Sangfor NGAF by SNMP/sangfor.if.in.drop[{#SNMPINDEX}])&gt;{$SANGFOR.IF_DROP.MAX}</expression>
+                                    <name>Interface {#SNMPVALUE}: high inbound discard rate (&gt;{ITEM.LASTVALUE1} ps)</name>
+                                    <priority>WARNING</priority>
+                                </trigger>
+                            </triggers>
+                        </item>
+                        <item>
+                            <uuid />
+                            <name>Interface {#SNMPVALUE}: Outbound discards</name>
+                            <key>sangfor.if.out.drop[{#SNMPINDEX}]</key>
+                            <description>sfIfOutDrop (Counter64 -&gt; rate)</description>
+                            <type>SNMP_AGENT</type>
+                            <snmp_oid>.1.3.6.1.4.1.35047.1.34.1.16.{#SNMPINDEX}</snmp_oid>
+                            <snmp_community>{$SANGFOR.SNMP.COMMUNITY}</snmp_community>
+                            <delay>{$SANGFOR.UPDATE.FREQ}</delay>
+                            <history>7d</history>
+                            <value_type>UNSIGNED</value_type>
+                            <units>ps</units>
+                            <preprocessing>
+                                <step>
+                                    <type>CHANGE_PER_SECOND</type>
+                                    <statement>1</statement>
+                                </step>
+                            </preprocessing>
+                            <tags>
+                                <tag>
+                                    <tag>component</tag>
+                                    <value>network</value>
+                                </tag>
+                            </tags>
+                            <triggers>
+                                <trigger>
+                                    <uuid>5a50f2af3bed42929f67231cd87940a7</uuid>
+                                    <expression>last(/Sangfor NGAF by SNMP/sangfor.if.out.drop[{#SNMPINDEX}])&gt;{$SANGFOR.IF_DROP.MAX}</expression>
+                                    <name>Interface {#SNMPVALUE}: high outbound discard rate (&gt;{ITEM.LASTVALUE1} ps)</name>
+                                    <priority>WARNING</priority>
+                                </trigger>
+                            </triggers>
+                        </item>
+                        <item>
+                            <uuid />
+                            <name>Interface {#SNMPVALUE}: IPv4 address</name>
+                            <key>sangfor.if.ipv4[{#SNMPINDEX}]</key>
+                            <description>sfIfAddr</description>
+                            <type>SNMP_AGENT</type>
+                            <snmp_oid>.1.3.6.1.4.1.35047.1.34.1.4.{#SNMPINDEX}</snmp_oid>
+                            <snmp_community>{$SANGFOR.SNMP.COMMUNITY}</snmp_community>
+                            <delay>{$SANGFOR.UPDATE.FREQ}</delay>
+                            <history>7d</history>
+                            <value_type>CHAR</value_type>
+                            <tags>
+                                <tag>
+                                    <tag>component</tag>
+                                    <value>network</value>
+                                </tag>
+                            </tags>
+                        </item>
+                    </item_prototypes>
+                    <trigger_prototypes>
+                        <trigger>
+                            <uuid>4985d34680e64e0ca819055e1bb89ee1</uuid>
+                            <expression>last(/Sangfor NGAF by SNMP/sangfor.if.in.drop[{#SNMPINDEX}])&gt;{$SANGFOR.IF_DROP.MAX}</expression>
+                            <name>Interface {#SNMPVALUE}: high inbound discard rate (&gt;{ITEM.LASTVALUE1} ps)</name>
+                            <priority>WARNING</priority>
+                        </trigger>
+                        <trigger>
+                            <uuid>83cba9047845429d9a369f9e4fa109ab</uuid>
+                            <expression>last(/Sangfor NGAF by SNMP/sangfor.if.out.drop[{#SNMPINDEX}])&gt;{$SANGFOR.IF_DROP.MAX}</expression>
+                            <name>Interface {#SNMPVALUE}: high outbound discard rate (&gt;{ITEM.LASTVALUE1} ps)</name>
+                            <priority>WARNING</priority>
+                        </trigger>
+                    </trigger_prototypes>
+                </discovery_rule>
+                <discovery_rule>
+                    <uuid>5210dcc0a9c046a1ae4b369951f6aaa6</uuid>
+                    <name>Disk discovery</name>
+                    <key>sangfor.disk.discovery</key>
+                    <description>Filesystems from SANGFOR-MIB::sfDiskTable (column sfFilesystemName).</description>
+                    <type>SNMP_AGENT</type>
+                    <snmp_oid>.1.3.6.1.4.1.35047.1.5.1.2</snmp_oid>
+                    <snmp_community>{$SANGFOR.SNMP.COMMUNITY}</snmp_community>
+                    <delay>{$SANGFOR.DISCOVERY.FREQ}</delay>
+                    <status>ENABLED</status>
+                    <filter>
+                        <evaltype>AND</evaltype>
+                    </filter>
+                    <lifetime>30d</lifetime>
+                    <item_prototypes>
+                        <item>
+                            <uuid />
+                            <name>Disk {#SNMPVALUE}: Total space</name>
+                            <key>sangfor.disk.size[{#SNMPINDEX}]</key>
+                            <description>sfIntDiskSize (MB -&gt; B)</description>
+                            <type>SNMP_AGENT</type>
+                            <snmp_oid>.1.3.6.1.4.1.35047.1.5.1.7.{#SNMPINDEX}</snmp_oid>
+                            <snmp_community>{$SANGFOR.SNMP.COMMUNITY}</snmp_community>
+                            <delay>{$SANGFOR.UPDATE.FREQ}</delay>
+                            <history>7d</history>
+                            <value_type>FLOAT</value_type>
+                            <units>B</units>
+                            <preprocessing>
+                                <step>
+                                    <type>MULTIPLIER</type>
+                                    <parameter>1048576</parameter>
+                                    <statement>1</statement>
+                                </step>
+                            </preprocessing>
+                            <tags>
+                                <tag>
+                                    <tag>component</tag>
+                                    <value>disk</value>
+                                </tag>
+                            </tags>
+                        </item>
+                        <item>
+                            <uuid />
+                            <name>Disk {#SNMPVALUE}: Used space</name>
+                            <key>sangfor.disk.used[{#SNMPINDEX}]</key>
+                            <description>sfIntDiskUsed (MB -&gt; B)</description>
+                            <type>SNMP_AGENT</type>
+                            <snmp_oid>.1.3.6.1.4.1.35047.1.5.1.8.{#SNMPINDEX}</snmp_oid>
+                            <snmp_community>{$SANGFOR.SNMP.COMMUNITY}</snmp_community>
+                            <delay>{$SANGFOR.UPDATE.FREQ}</delay>
+                            <history>7d</history>
+                            <value_type>FLOAT</value_type>
+                            <units>B</units>
+                            <preprocessing>
+                                <step>
+                                    <type>MULTIPLIER</type>
+                                    <parameter>1048576</parameter>
+                                    <statement>1</statement>
+                                </step>
+                            </preprocessing>
+                            <tags>
+                                <tag>
+                                    <tag>component</tag>
+                                    <value>disk</value>
+                                </tag>
+                            </tags>
+                        </item>
+                        <item>
+                            <uuid />
+                            <name>Disk {#SNMPVALUE}: Available space</name>
+                            <key>sangfor.disk.avail[{#SNMPINDEX}]</key>
+                            <description>sfIntDiskAvail (MB -&gt; B)</description>
+                            <type>SNMP_AGENT</type>
+                            <snmp_oid>.1.3.6.1.4.1.35047.1.5.1.9.{#SNMPINDEX}</snmp_oid>
+                            <snmp_community>{$SANGFOR.SNMP.COMMUNITY}</snmp_community>
+                            <delay>{$SANGFOR.UPDATE.FREQ}</delay>
+                            <history>7d</history>
+                            <value_type>FLOAT</value_type>
+                            <units>B</units>
+                            <preprocessing>
+                                <step>
+                                    <type>MULTIPLIER</type>
+                                    <parameter>1048576</parameter>
+                                    <statement>1</statement>
+                                </step>
+                            </preprocessing>
+                            <tags>
+                                <tag>
+                                    <tag>component</tag>
+                                    <value>disk</value>
+                                </tag>
+                            </tags>
+                        </item>
+                        <item>
+                            <uuid />
+                            <name>Disk {#SNMPVALUE}: Space usage</name>
+                            <key>sangfor.disk.pused[{#SNMPINDEX}]</key>
+                            <description>Calculated used/total</description>
+                            <type>CALCULATED</type>
+                            <delay>1m</delay>
+                            <params>(last(/Sangfor NGAF by SNMP/sangfor.disk.used[{#SNMPINDEX}])/last(/Sangfor NGAF by SNMP/sangfor.disk.size[{#SNMPINDEX}]))*100</params>
+                            <history>7d</history>
+                            <value_type>FLOAT</value_type>
+                            <units>%</units>
+                            <tags>
+                                <tag>
+                                    <tag>component</tag>
+                                    <value>disk</value>
+                                </tag>
+                            </tags>
+                            <triggers>
+                                <trigger>
+                                    <uuid>462ebf611b8748f2a205f9dca8c894af</uuid>
+                                    <expression>last(/Sangfor NGAF by SNMP/sangfor.disk.pused[{#SNMPINDEX}])&gt;{$SANGFOR.DISK.MAX}</expression>
+                                    <name>Disk {#SNMPVALUE}: space usage over {$SANGFOR.DISK.MAX}%</name>
+                                    <priority>WARNING</priority>
+                                </trigger>
+                            </triggers>
+                        </item>
+                        <item>
+                            <uuid />
+                            <name>Disk {#SNMPVALUE}: Temperature</name>
+                            <key>sangfor.disk.temp[{#SNMPINDEX}]</key>
+                            <description>sfDiskTemp</description>
+                            <type>SNMP_AGENT</type>
+                            <snmp_oid>.1.3.6.1.4.1.35047.1.5.1.10.{#SNMPINDEX}</snmp_oid>
+                            <snmp_community>{$SANGFOR.SNMP.COMMUNITY}</snmp_community>
+                            <delay>{$SANGFOR.UPDATE.FREQ}</delay>
+                            <history>7d</history>
+                            <value_type>FLOAT</value_type>
+                            <units>°C</units>
+                            <tags>
+                                <tag>
+                                    <tag>component</tag>
+                                    <value>disk</value>
+                                </tag>
+                            </tags>
+                            <triggers>
+                                <trigger>
+                                    <uuid>aaf07473ed9b47bf8bbff0964cf7d4b0</uuid>
+                                    <expression>last(/Sangfor NGAF by SNMP/sangfor.disk.temp[{#SNMPINDEX}])&gt;{$SANGFOR.DISK_TEMP.MAX}</expression>
+                                    <name>Disk {#SNMPVALUE}: high temperature ({ITEM.LASTVALUE1})</name>
+                                    <priority>WARNING</priority>
+                                </trigger>
+                            </triggers>
+                        </item>
+                    </item_prototypes>
+                    <trigger_prototypes>
+                        <trigger>
+                            <uuid>afc0d85f87c049199cb71763a861b8bc</uuid>
+                            <expression>last(/Sangfor NGAF by SNMP/sangfor.disk.pused[{#SNMPINDEX}])&gt;{$SANGFOR.DISK.MAX}</expression>
+                            <name>Disk {#SNMPVALUE}: space usage over {$SANGFOR.DISK.MAX}%</name>
+                            <priority>WARNING</priority>
+                        </trigger>
+                        <trigger>
+                            <uuid>687db42a70d845038c5a7bb2383dc0f6</uuid>
+                            <expression>last(/Sangfor NGAF by SNMP/sangfor.disk.temp[{#SNMPINDEX}])&gt;{$SANGFOR.DISK_TEMP.MAX}</expression>
+                            <name>Disk {#SNMPVALUE}: high temperature ({ITEM.LASTVALUE1})</name>
+                            <priority>WARNING</priority>
+                        </trigger>
+                    </trigger_prototypes>
+                </discovery_rule>
+                <discovery_rule>
+                    <uuid>5ad83ae8ec224fc497035c0cdd53771c</uuid>
+                    <name>CPU core discovery</name>
+                    <key>sangfor.cpu.discovery</key>
+                    <description>Per-core load from SANGFOR-MIB::sfCpuCostRateTable (column sfCpuAll).</description>
+                    <type>SNMP_AGENT</type>
+                    <snmp_oid>.1.3.6.1.4.1.35047.1.20.1.4</snmp_oid>
+                    <snmp_community>{$SANGFOR.SNMP.COMMUNITY}</snmp_community>
+                    <delay>{$SANGFOR.DISCOVERY.FREQ}</delay>
+                    <status>ENABLED</status>
+                    <filter>
+                        <evaltype>AND</evaltype>
+                    </filter>
+                    <lifetime>30d</lifetime>
+                    <item_prototypes>
+                        <item>
+                            <uuid />
+                            <name>CPU core {#SNMPINDEX}: User time</name>
+                            <key>sangfor.cpu.user[{#SNMPINDEX}]</key>
+                            <description>sfCpuUser per core</description>
+                            <type>SNMP_AGENT</type>
+                            <snmp_oid>.1.3.6.1.4.1.35047.1.20.1.2.{#SNMPINDEX}</snmp_oid>
+                            <snmp_community>{$SANGFOR.SNMP.COMMUNITY}</snmp_community>
+                            <delay>{$SANGFOR.UPDATE.FREQ}</delay>
+                            <history>7d</history>
+                            <value_type>FLOAT</value_type>
+                            <units>%</units>
+                            <tags>
+                                <tag>
+                                    <tag>component</tag>
+                                    <value>cpu</value>
+                                </tag>
+                            </tags>
+                        </item>
+                        <item>
+                            <uuid />
+                            <name>CPU core {#SNMPINDEX}: System time</name>
+                            <key>sangfor.cpu.sys[{#SNMPINDEX}]</key>
+                            <description>sfCpuSys per core</description>
+                            <type>SNMP_AGENT</type>
+                            <snmp_oid>.1.3.6.1.4.1.35047.1.20.1.3.{#SNMPINDEX}</snmp_oid>
+                            <snmp_community>{$SANGFOR.SNMP.COMMUNITY}</snmp_community>
+                            <delay>{$SANGFOR.UPDATE.FREQ}</delay>
+                            <history>7d</history>
+                            <value_type>FLOAT</value_type>
+                            <units>%</units>
+                            <tags>
+                                <tag>
+                                    <tag>component</tag>
+                                    <value>cpu</value>
+                                </tag>
+                            </tags>
+                        </item>
+                        <item>
+                            <uuid />
+                            <name>CPU core {#SNMPINDEX}: CPU utilization</name>
+                            <key>sangfor.cpu.util[{#SNMPINDEX}]</key>
+                            <description>sfCpuAll per core</description>
+                            <type>SNMP_AGENT</type>
+                            <snmp_oid>.1.3.6.1.4.1.35047.1.20.1.4.{#SNMPINDEX}</snmp_oid>
+                            <snmp_community>{$SANGFOR.SNMP.COMMUNITY}</snmp_community>
+                            <delay>{$SANGFOR.UPDATE.FREQ}</delay>
+                            <history>7d</history>
+                            <value_type>FLOAT</value_type>
+                            <units>%</units>
+                            <tags>
+                                <tag>
+                                    <tag>component</tag>
+                                    <value>cpu</value>
+                                </tag>
+                            </tags>
+                            <triggers>
+                                <trigger>
+                                    <uuid>049ee3550581444f98a31db14fa67b10</uuid>
+                                    <expression>last(/Sangfor NGAF by SNMP/sangfor.cpu.util[{#SNMPINDEX}])&gt;{$SANGFOR.CPU_CORE.MAX}</expression>
+                                    <name>CPU core {#SNMPINDEX}: utilization over {$SANGFOR.CPU_CORE.MAX}%</name>
+                                    <priority>WARNING</priority>
+                                </trigger>
+                            </triggers>
+                        </item>
+                    </item_prototypes>
+                    <trigger_prototypes>
+                        <trigger>
+                            <uuid>c6cf15743e834ef0905ea94cc9816837</uuid>
+                            <expression>last(/Sangfor NGAF by SNMP/sangfor.cpu.util[{#SNMPINDEX}])&gt;{$SANGFOR.CPU_CORE.MAX}</expression>
+                            <name>CPU core {#SNMPINDEX}: utilization over {$SANGFOR.CPU_CORE.MAX}%</name>
+                            <priority>WARNING</priority>
+                        </trigger>
+                    </trigger_prototypes>
+                </discovery_rule>
+                <discovery_rule>
+                    <uuid>ceb991335fdf4133a663c50610e36cda</uuid>
+                    <name>Fan discovery</name>
+                    <key>sangfor.fan.discovery</key>
+                    <description>Fans from SANGFOR-MIB::sfSysFanTable (column sfFanName).</description>
+                    <type>SNMP_AGENT</type>
+                    <snmp_oid>.1.3.6.1.4.1.35047.1.14.1.2</snmp_oid>
+                    <snmp_community>{$SANGFOR.SNMP.COMMUNITY}</snmp_community>
+                    <delay>{$SANGFOR.DISCOVERY.FREQ}</delay>
+                    <status>ENABLED</status>
+                    <filter>
+                        <evaltype>AND</evaltype>
+                    </filter>
+                    <lifetime>30d</lifetime>
+                    <item_prototypes>
+                        <item>
+                            <uuid />
+                            <name>Fan {#SNMPVALUE}: Speed</name>
+                            <key>sangfor.fan.speed[{#SNMPINDEX}]</key>
+                            <description>sfFanSpeed</description>
+                            <type>SNMP_AGENT</type>
+                            <snmp_oid>.1.3.6.1.4.1.35047.1.14.1.3.{#SNMPINDEX}</snmp_oid>
+                            <snmp_community>{$SANGFOR.SNMP.COMMUNITY}</snmp_community>
+                            <delay>{$SANGFOR.UPDATE.FREQ}</delay>
+                            <history>7d</history>
+                            <value_type>FLOAT</value_type>
+                            <units>rpm</units>
+                            <tags>
+                                <tag>
+                                    <tag>component</tag>
+                                    <value>hardware</value>
+                                </tag>
+                            </tags>
+                        </item>
+                        <item>
+                            <uuid />
+                            <name>Fan {#SNMPVALUE}: State</name>
+                            <key>sangfor.fan.state[{#SNMPINDEX}]</key>
+                            <description>sfFanState: 0 - abnormal, 1 - normal</description>
+                            <type>SNMP_AGENT</type>
+                            <snmp_oid>.1.3.6.1.4.1.35047.1.14.1.4.{#SNMPINDEX}</snmp_oid>
+                            <snmp_community>{$SANGFOR.SNMP.COMMUNITY}</snmp_community>
+                            <delay>{$SANGFOR.UPDATE.FREQ}</delay>
+                            <history>7d</history>
+                            <value_type>FLOAT</value_type>
+                            <tags>
+                                <tag>
+                                    <tag>component</tag>
+                                    <value>hardware</value>
+                                </tag>
+                            </tags>
+                            <triggers>
+                                <trigger>
+                                    <uuid>47b8687f23aa4dbeafe081818f57e52d</uuid>
+                                    <expression>last(/Sangfor NGAF by SNMP/sangfor.fan.state[{#SNMPINDEX}])=0</expression>
+                                    <name>Fan {#SNMPVALUE} is ABNORMAL on {HOST.NAME}</name>
+                                    <priority>AVERAGE</priority>
+                                </trigger>
+                            </triggers>
+                        </item>
+                    </item_prototypes>
+                    <trigger_prototypes>
+                        <trigger>
+                            <uuid>02bba742b470483fa25577b38e1c8d6c</uuid>
+                            <expression>last(/Sangfor NGAF by SNMP/sangfor.fan.state[{#SNMPINDEX}])=0</expression>
+                            <name>Fan {#SNMPVALUE} is ABNORMAL on {HOST.NAME}</name>
+                            <priority>AVERAGE</priority>
+                        </trigger>
+                    </trigger_prototypes>
+                </discovery_rule>
+                <discovery_rule>
+                    <uuid>ce9147a4a1ea4645b5b366660bfd35f5</uuid>
+                    <name>Power supply discovery</name>
+                    <key>sangfor.psu.discovery</key>
+                    <description>PSUs from SANGFOR-MIB::sfSysPowerTable (column sfPowerName).</description>
+                    <type>SNMP_AGENT</type>
+                    <snmp_oid>.1.3.6.1.4.1.35047.1.15.1.2</snmp_oid>
+                    <snmp_community>{$SANGFOR.SNMP.COMMUNITY}</snmp_community>
+                    <delay>{$SANGFOR.DISCOVERY.FREQ}</delay>
+                    <status>ENABLED</status>
+                    <filter>
+                        <evaltype>AND</evaltype>
+                    </filter>
+                    <lifetime>30d</lifetime>
+                    <item_prototypes>
+                        <item>
+                            <uuid />
+                            <name>PSU {#SNMPVALUE}: State</name>
+                            <key>sangfor.psu.state[{#SNMPINDEX}]</key>
+                            <description>sfPowerState: 0 - abnormal, 1 - normal</description>
+                            <type>SNMP_AGENT</type>
+                            <snmp_oid>.1.3.6.1.4.1.35047.1.15.1.3.{#SNMPINDEX}</snmp_oid>
+                            <snmp_community>{$SANGFOR.SNMP.COMMUNITY}</snmp_community>
+                            <delay>{$SANGFOR.UPDATE.FREQ}</delay>
+                            <history>7d</history>
+                            <value_type>FLOAT</value_type>
+                            <tags>
+                                <tag>
+                                    <tag>component</tag>
+                                    <value>hardware</value>
+                                </tag>
+                            </tags>
+                            <triggers>
+                                <trigger>
+                                    <uuid>b68d1d2f494540658cb70facb856a8d1</uuid>
+                                    <expression>last(/Sangfor NGAF by SNMP/sangfor.psu.state[{#SNMPINDEX}])=0</expression>
+                                    <name>Power supply {#SNMPVALUE} is ABNORMAL on {HOST.NAME}</name>
+                                    <priority>HIGH</priority>
+                                </trigger>
+                            </triggers>
+                        </item>
+                    </item_prototypes>
+                    <trigger_prototypes>
+                        <trigger>
+                            <uuid>b6a19f4222864bb790042d73c4bf75af</uuid>
+                            <expression>last(/Sangfor NGAF by SNMP/sangfor.psu.state[{#SNMPINDEX}])=0</expression>
+                            <name>Power supply {#SNMPVALUE} is ABNORMAL on {HOST.NAME}</name>
+                            <priority>HIGH</priority>
+                        </trigger>
+                    </trigger_prototypes>
+                </discovery_rule>
+                <discovery_rule>
+                    <uuid>9a9d5c6f02eb4152aec51705cb23938c</uuid>
+                    <name>Temperature sensor discovery</name>
+                    <key>sangfor.temp.discovery</key>
+                    <description>Temperature sensors from SANGFOR-MIB::sfTempSensorTable (column sfTempSensorName).</description>
+                    <type>SNMP_AGENT</type>
+                    <snmp_oid>.1.3.6.1.4.1.35047.1.59.1.2</snmp_oid>
+                    <snmp_community>{$SANGFOR.SNMP.COMMUNITY}</snmp_community>
+                    <delay>{$SANGFOR.DISCOVERY.FREQ}</delay>
+                    <status>ENABLED</status>
+                    <filter>
+                        <evaltype>AND</evaltype>
+                    </filter>
+                    <lifetime>30d</lifetime>
+                    <item_prototypes>
+                        <item>
+                            <uuid />
+                            <name>Sensor {#SNMPVALUE}: Temperature</name>
+                            <key>sangfor.temp.value[{#SNMPINDEX}]</key>
+                            <description>sfTempSensorReading</description>
+                            <type>SNMP_AGENT</type>
+                            <snmp_oid>.1.3.6.1.4.1.35047.1.59.1.3.{#SNMPINDEX}</snmp_oid>
+                            <snmp_community>{$SANGFOR.SNMP.COMMUNITY}</snmp_community>
+                            <delay>{$SANGFOR.UPDATE.FREQ}</delay>
+                            <history>7d</history>
+                            <value_type>FLOAT</value_type>
+                            <units>°C</units>
+                            <tags>
+                                <tag>
+                                    <tag>component</tag>
+                                    <value>hardware</value>
+                                </tag>
+                            </tags>
+                        </item>
+                    </item_prototypes>
+                </discovery_rule>
+            </discovery_rules>
+            <macros>
+                <macro>
+                    <macro>{$SANGFOR.SNMP.COMMUNITY}</macro>
+                    <value>public</value>
+                    <description>SNMP community used by all Sangfor items. Override on host level.</description>
+                </macro>
+                <macro>
+                    <macro>{$SANGFOR.UPDATE.FREQ}</macro>
+                    <value>1m</value>
+                    <description>Update interval for metrics.</description>
+                </macro>
+                <macro>
+                    <macro>{$SANGFOR.DISCOVERY.FREQ}</macro>
+                    <value>1h</value>
+                    <description>Low-level discovery interval.</description>
+                </macro>
+                <macro>
+                    <macro>{$SANGFOR.CPU.MAX}</macro>
+                    <value>90</value>
+                    <description>CPU utilization (%) warning threshold.</description>
+                </macro>
+                <macro>
+                    <macro>{$SANGFOR.CPU_CORE.MAX}</macro>
+                    <value>95</value>
+                    <description>Per-core CPU utilization (%) threshold.</description>
+                </macro>
+                <macro>
+                    <macro>{$SANGFOR.MEM.MAX}</macro>
+                    <value>90</value>
+                    <description>Memory usage (%) warning threshold.</description>
+                </macro>
+                <macro>
+                    <macro>{$SANGFOR.DISK.MAX}</macro>
+                    <value>85</value>
+                    <description>Filesystem usage (%) warning threshold.</description>
+                </macro>
+                <macro>
+                    <macro>{$SANGFOR.DISK_TEMP.MAX}</macro>
+                    <value>70</value>
+                    <description>Disk temperature warning threshold.</description>
+                </macro>
+                <macro>
+                    <macro>{$SANGFOR.IF_DROP.MAX}</macro>
+                    <value>1000</value>
+                    <description>Interface discard rate (ps) warning threshold. Lower it if your policy drops are noisy.</description>
+                </macro>
+            </macros>
+        </template>
+    </templates>
+</zabbix_export>
