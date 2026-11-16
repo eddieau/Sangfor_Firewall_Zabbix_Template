@@ -3,13 +3,13 @@
     "version": "8.0",
     "template_groups": [
       {
-        "uuid": "9e9136779aaa5d82a51af0a0201e5ee8",
+        "uuid": "9e9136779aaa4d82a51af0a0201e5ee8",
         "name": "Templates/Network devices"
       }
     ],
     "templates": [
       {
-        "uuid": "124dfd83b4f65697a3bdd8662960b6f0",
+        "uuid": "124dfd83b4f64697a3bdd8662960b6f0",
         "template": "Sangfor NGAF by SNMP",
         "name": "Sangfor NGAF by SNMP",
         "description": "Sangfor NGAF monitoring via private SANGFOR-MIB (enterprises 1.3.6.1.4.1.35047). Requires SNMP v2c or later; community/v3 credentials are configured on the host SNMP interface (8.0 items have no community field). Verified against a live NGAF running AF8.0.108.657 (nsf-1050a-i): sfIfInRate/sfIfOutRate are instantaneous byte/s gauges (x8 only, no Change per second); sfIfInPkts/sfIfOutPkts/drops are cumulative counters (Change per second); memory ints are kB; disk ints are MB; sfSysDiskUsage (.52.1) is not implemented on AF 8.0 and is NOT polled; fan/PSU/temp tables may be empty on some models.",
@@ -20,7 +20,7 @@
         ],
         "items": [
           {
-            "uuid": "8700675ac9e955b8ba272b4e1dd0173f",
+            "uuid": "8700675ac9e945b8ba272b4e1dd0173f",
             "name": "Sangfor: Device description",
             "type": "SNMP_AGENT",
             "snmp_oid": "get[1.3.6.1.4.1.35047.1.1.0]",
@@ -31,7 +31,7 @@
             "description": "sfDeviceDescr."
           },
           {
-            "uuid": "af825924d9b75b87b3b90e6e36664471",
+            "uuid": "af825924d9b74b87b3b90e6e36664471",
             "name": "Sangfor: Device name",
             "type": "SNMP_AGENT",
             "snmp_oid": "get[1.3.6.1.4.1.35047.1.17.0]",
@@ -42,7 +42,7 @@
             "description": "sfSysDevName."
           },
           {
-            "uuid": "46b5bcff813b556db3265f03b1814195",
+            "uuid": "46b5bcff813b456db3265f03b1814195",
             "name": "Sangfor: Software version",
             "type": "SNMP_AGENT",
             "snmp_oid": "get[1.3.6.1.4.1.35047.1.18.0]",
@@ -53,7 +53,7 @@
             "description": "sfSysSoftVersion."
           },
           {
-            "uuid": "cf139a62b28a5dfd8549167a907896c1",
+            "uuid": "cf139a62b28a4dfd8549167a907896c1",
             "name": "Sangfor: AF version",
             "type": "SNMP_AGENT",
             "snmp_oid": "get[1.3.6.1.4.1.35047.1.24.0]",
@@ -64,7 +64,7 @@
             "description": "afSysSoftVersion."
           },
           {
-            "uuid": "6009b3d59c0354ef847c4022f6ad2972",
+            "uuid": "6009b3d59c0344ef847c4022f6ad2972",
             "name": "Sangfor: Serial number",
             "type": "SNMP_AGENT",
             "snmp_oid": "get[1.3.6.1.4.1.35047.1.40.0]",
@@ -76,7 +76,7 @@
             "status": "DISABLED"
           },
           {
-            "uuid": "d0ecb02ead3457b3b3b47a39c1dec45d",
+            "uuid": "d0ecb02ead3447b3b3b47a39c1dec45d",
             "name": "Sangfor: Device status",
             "type": "SNMP_AGENT",
             "snmp_oid": "get[1.3.6.1.4.1.35047.1.12.0]",
@@ -93,7 +93,7 @@
             ],
             "triggers": [
               {
-                "uuid": "ec45f85bc430564eabdf7b1ad902360d",
+                "uuid": "ec45f85bc430464eabdf7b1ad902360d",
                 "expression": "last(/Sangfor NGAF by SNMP/sangfor.device.status)=0",
                 "name": "Sangfor: Device reports WARNING status on {HOST.NAME}",
                 "priority": "WARNING"
@@ -101,7 +101,7 @@
             ]
           },
           {
-            "uuid": "9b0217407bac5c2c85d85193b9b0b15f",
+            "uuid": "9b0217407bac4c2c85d85193b9b0b15f",
             "name": "Sangfor: CPU utilization (30s)",
             "type": "SNMP_AGENT",
             "snmp_oid": "get[1.3.6.1.4.1.35047.1.19.4.0]",
@@ -119,7 +119,7 @@
             ]
           },
           {
-            "uuid": "e6fd544b0b5b5b3293d20820144e45c7",
+            "uuid": "e6fd544b0b5b4b3293d20820144e45c7",
             "name": "Sangfor: CPU utilization (1 min)",
             "type": "SNMP_AGENT",
             "snmp_oid": "get[1.3.6.1.4.1.35047.1.19.5.0]",
@@ -137,7 +137,7 @@
             ],
             "triggers": [
               {
-                "uuid": "37199121c5305f5d8e9a49c97bf3567e",
+                "uuid": "37199121c5304f5d8e9a49c97bf3567e",
                 "expression": "last(/Sangfor NGAF by SNMP/sangfor.cpu.util.1m)>{$SANGFOR.CPU.MAX}",
                 "name": "Sangfor: High CPU utilization over {$SANGFOR.CPU.MAX}% on {HOST.NAME}",
                 "priority": "AVERAGE"
@@ -145,7 +145,7 @@
             ]
           },
           {
-            "uuid": "8874706702cf53969cf65334ad170a32",
+            "uuid": "8874706702cf43969cf65334ad170a32",
             "name": "Sangfor: CPU utilization (5 min)",
             "type": "SNMP_AGENT",
             "snmp_oid": "get[1.3.6.1.4.1.35047.1.19.6.0]",
@@ -163,7 +163,7 @@
             ]
           },
           {
-            "uuid": "f1807542f21353d5844ee2cd5c58f422",
+            "uuid": "f1807542f21343d5844ee2cd5c58f422",
             "name": "Sangfor: CPU core count",
             "type": "SNMP_AGENT",
             "snmp_oid": "get[1.3.6.1.4.1.35047.1.21.0]",
@@ -180,7 +180,7 @@
             ]
           },
           {
-            "uuid": "d9562dcbac2e5439aa3d7f4608bd12c5",
+            "uuid": "d9562dcbac2e4439aa3d7f4608bd12c5",
             "name": "Sangfor: Memory total",
             "type": "SNMP_AGENT",
             "snmp_oid": "get[1.3.6.1.4.1.35047.1.13.4.0]",
@@ -206,7 +206,7 @@
             ]
           },
           {
-            "uuid": "a08dcf4f046e5a14a7a218afffe7c2d0",
+            "uuid": "a08dcf4f046e4a14a7a218afffe7c2d0",
             "name": "Sangfor: Memory free",
             "type": "SNMP_AGENT",
             "snmp_oid": "get[1.3.6.1.4.1.35047.1.13.3.0]",
@@ -232,7 +232,7 @@
             ]
           },
           {
-            "uuid": "a07013f5d4f056eb9299dd85c5852ef6",
+            "uuid": "a07013f5d4f046eb9299dd85c5852ef6",
             "name": "Sangfor: Memory usage",
             "type": "SNMP_AGENT",
             "snmp_oid": "get[1.3.6.1.4.1.35047.1.13.5.0]",
@@ -258,7 +258,7 @@
             ],
             "triggers": [
               {
-                "uuid": "085a00db086755ae8ab8b3935dac1f82",
+                "uuid": "085a00db086745ae8ab8b3935dac1f82",
                 "expression": "last(/Sangfor NGAF by SNMP/sangfor.mem.util)>{$SANGFOR.MEM.MAX}",
                 "name": "Sangfor: High memory usage over {$SANGFOR.MEM.MAX}% on {HOST.NAME}",
                 "priority": "AVERAGE"
@@ -266,7 +266,7 @@
             ]
           },
           {
-            "uuid": "975ca29d33d35d51ada7bcbaf4684662",
+            "uuid": "975ca29d33d34d51ada7bcbaf4684662",
             "name": "Sangfor: Swap total",
             "type": "SNMP_AGENT",
             "snmp_oid": "get[1.3.6.1.4.1.35047.1.38.1.0]",
@@ -277,7 +277,7 @@
             "description": "sfMemTotalSwap. Units as reported by device."
           },
           {
-            "uuid": "b76e278ffe185a00a8f6936cb1a6cdd4",
+            "uuid": "b76e278ffe184a00a8f6936cb1a6cdd4",
             "name": "Sangfor: Swap available",
             "type": "SNMP_AGENT",
             "snmp_oid": "get[1.3.6.1.4.1.35047.1.38.2.0]",
@@ -288,7 +288,7 @@
             "description": "sfMemAvailSwap. Units as reported by device."
           },
           {
-            "uuid": "dbc2dc9cd1b15c1b8701711d4a6e1418",
+            "uuid": "dbc2dc9cd1b14c1b8701711d4a6e1418",
             "name": "Sangfor: Current sessions",
             "type": "SNMP_AGENT",
             "snmp_oid": "get[1.3.6.1.4.1.35047.1.27.3.0]",
@@ -305,7 +305,7 @@
             ]
           },
           {
-            "uuid": "7865a483a7be58c8b9f953ee53cd9983",
+            "uuid": "7865a483a7be48c8b9f953ee53cd9983",
             "name": "Sangfor: New sessions",
             "type": "SNMP_AGENT",
             "snmp_oid": "get[1.3.6.1.4.1.35047.1.27.1.0]",
@@ -322,7 +322,7 @@
             ]
           },
           {
-            "uuid": "bdc1988924865c7387f24b900f8d0f12",
+            "uuid": "bdc1988924864c7387f24b900f8d0f12",
             "name": "Sangfor: Total sessions",
             "type": "SNMP_AGENT",
             "snmp_oid": "get[1.3.6.1.4.1.35047.1.27.2.0]",
@@ -339,7 +339,7 @@
             ]
           },
           {
-            "uuid": "6491d1d8deb75648b20f58396b4c5be1",
+            "uuid": "6491d1d8deb74648b20f58396b4c5be1",
             "name": "Sangfor: New sessions per second",
             "type": "SNMP_AGENT",
             "snmp_oid": "get[1.3.6.1.4.1.35047.1.27.4.0]",
@@ -356,7 +356,7 @@
             ]
           },
           {
-            "uuid": "94fad9c89cc45c4e9d0dc5c59da208e7",
+            "uuid": "94fad9c89cc44c4e9d0dc5c59da208e7",
             "name": "Sangfor: Online users",
             "type": "SNMP_AGENT",
             "snmp_oid": "get[1.3.6.1.4.1.35047.1.23.0]",
@@ -373,7 +373,7 @@
             ]
           },
           {
-            "uuid": "741fdfb6aa1855daa17965df90a68264",
+            "uuid": "741fdfb6aa1845daa17965df90a68264",
             "name": "Sangfor: Inbound throughput",
             "type": "SNMP_AGENT",
             "snmp_oid": "get[1.3.6.1.4.1.35047.1.48.2.0]",
@@ -390,7 +390,7 @@
             ]
           },
           {
-            "uuid": "38d6f9cf0fa55f61a444cb211cb28cdd",
+            "uuid": "38d6f9cf0fa54f61a444cb211cb28cdd",
             "name": "Sangfor: Outbound throughput",
             "type": "SNMP_AGENT",
             "snmp_oid": "get[1.3.6.1.4.1.35047.1.48.1.0]",
@@ -407,7 +407,7 @@
             ]
           },
           {
-            "uuid": "352bb52e7f08582fa6da0db54275c56b",
+            "uuid": "352bb52e7f08482fa6da0db54275c56b",
             "name": "Sangfor: HA enabled",
             "type": "SNMP_AGENT",
             "snmp_oid": "get[1.3.6.1.4.1.35047.1.64.1.0]",
@@ -424,7 +424,7 @@
             ]
           },
           {
-            "uuid": "be585ade5ca85adcb199ae636070ca3b",
+            "uuid": "be585ade5ca84adcb199ae636070ca3b",
             "name": "Sangfor: HA mode",
             "type": "SNMP_AGENT",
             "snmp_oid": "get[1.3.6.1.4.1.35047.1.64.2.0]",
@@ -441,7 +441,7 @@
             ]
           },
           {
-            "uuid": "7df648b7893057ee8c02600f2aa12062",
+            "uuid": "7df648b7893047ee8c02600f2aa12062",
             "name": "Sangfor: HA current status",
             "type": "SNMP_AGENT",
             "snmp_oid": "get[1.3.6.1.4.1.35047.1.64.3.0]",
@@ -458,7 +458,7 @@
             ]
           },
           {
-            "uuid": "b55397a095f85d5e800dc9c48109062f",
+            "uuid": "b55397a095f84d5e800dc9c48109062f",
             "name": "Sangfor: HA control link status",
             "type": "SNMP_AGENT",
             "snmp_oid": "get[1.3.6.1.4.1.35047.1.64.6.0]",
@@ -475,7 +475,7 @@
             ],
             "triggers": [
               {
-                "uuid": "9ed2fa2c1a1b5d748f4c26538b6b9ac0",
+                "uuid": "9ed2fa2c1a1b4d748f4c26538b6b9ac0",
                 "expression": "last(/Sangfor NGAF by SNMP/sangfor.ha.ctrllink)=2",
                 "name": "Sangfor: HA control link ABNORMAL on {HOST.NAME}",
                 "priority": "HIGH"
@@ -483,7 +483,7 @@
             ]
           },
           {
-            "uuid": "2eacd0dd863c5b548bef1be947680d0f",
+            "uuid": "2eacd0dd863c4b548bef1be947680d0f",
             "name": "Sangfor: HA data link status",
             "type": "SNMP_AGENT",
             "snmp_oid": "get[1.3.6.1.4.1.35047.1.64.7.0]",
@@ -500,7 +500,7 @@
             ],
             "triggers": [
               {
-                "uuid": "07b260fd6b715a639b197d44e45b9320",
+                "uuid": "07b260fd6b714a639b197d44e45b9320",
                 "expression": "last(/Sangfor NGAF by SNMP/sangfor.ha.datalink)=2",
                 "name": "Sangfor: HA data link ABNORMAL on {HOST.NAME}",
                 "priority": "HIGH"
@@ -508,7 +508,7 @@
             ]
           },
           {
-            "uuid": "889740f336675d9e9f84d3c75e1c99e9",
+            "uuid": "889740f336674d9e9f84d3c75e1c99e9",
             "name": "Sangfor: HA sync state",
             "type": "SNMP_AGENT",
             "snmp_oid": "get[1.3.6.1.4.1.35047.1.64.8.0]",
@@ -523,11 +523,209 @@
                 "value": "ha"
               }
             ]
+          },
+          {
+            "uuid": "875f7b59397d4a628dd8526f2f8f703e",
+            "name": "SNMP trap: Configuration changed",
+            "type": "SNMP_TRAP",
+            "key": "snmptrap[sfFirewallTrapConfChange]",
+            "delay": "0",
+            "history": "31d",
+            "value_type": "TEXT",
+            "description": "sfFirewallTrapConfChange (.1.3.6.1.4.1.35047.200.200.1) - NGAF configuration was updated.",
+            "tags": [
+              {
+                "tag": "component",
+                "value": "trap"
+              }
+            ],
+            "triggers": [
+              {
+                "uuid": "abf394e97b144df29ac47d810ed634bf",
+                "expression": "find(/Sangfor NGAF by SNMP/snmptrap[sfFirewallTrapConfChange],#1,\"regexp\",\"sfFirewallTrapConfChange\")=1",
+                "recovery_mode": "RECOVERY_EXPRESSION",
+                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfFirewallTrapConfChange],1d)=1",
+                "name": "Sangfor: Configuration changed on {HOST.NAME}",
+                "priority": "INFO"
+              }
+            ]
+          },
+          {
+            "uuid": "30fc1ebd92cd41a4b32c4103deba854d",
+            "name": "SNMP trap: HA dual-active switch event",
+            "type": "SNMP_TRAP",
+            "key": "snmptrap[sfFirewallTrapDualSwitch]",
+            "delay": "0",
+            "history": "31d",
+            "value_type": "TEXT",
+            "description": "sfFirewallTrapDualSwitch (.1.3.6.1.4.1.35047.200.200.2) - HA failover/dual switch occurred.",
+            "tags": [
+              {
+                "tag": "component",
+                "value": "trap"
+              }
+            ],
+            "triggers": [
+              {
+                "uuid": "e8d856e298934745a8f78d7a4f584455",
+                "expression": "find(/Sangfor NGAF by SNMP/snmptrap[sfFirewallTrapDualSwitch],#1,\"regexp\",\"sfFirewallTrapDualSwitch\")=1",
+                "recovery_mode": "RECOVERY_EXPRESSION",
+                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfFirewallTrapDualSwitch],1d)=1",
+                "name": "Sangfor: HA dual-active switch event on {HOST.NAME}",
+                "priority": "HIGH"
+              }
+            ]
+          },
+          {
+            "uuid": "54356f8e5a364757934104a2cb862ba4",
+            "name": "SNMP trap: Security rulebase updated",
+            "type": "SNMP_TRAP",
+            "key": "snmptrap[sfFirewallRulebaseUpdate]",
+            "delay": "0",
+            "history": "31d",
+            "value_type": "TEXT",
+            "description": "sfFirewallRulebaseUpdate (.1.3.6.1.4.1.35047.200.200.3) - firewall rules were updated.",
+            "tags": [
+              {
+                "tag": "component",
+                "value": "trap"
+              }
+            ],
+            "triggers": [
+              {
+                "uuid": "db6f11f905c548b48640c34ff5019312",
+                "expression": "find(/Sangfor NGAF by SNMP/snmptrap[sfFirewallRulebaseUpdate],#1,\"regexp\",\"sfFirewallRulebaseUpdate\")=1",
+                "recovery_mode": "RECOVERY_EXPRESSION",
+                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfFirewallRulebaseUpdate],1d)=1",
+                "name": "Sangfor: Security rulebase updated on {HOST.NAME}",
+                "priority": "INFO"
+              }
+            ]
+          },
+          {
+            "uuid": "14290309e2d944b0851b63e6cff9802e",
+            "name": "SNMP trap: Interface link back to normal",
+            "type": "SNMP_TRAP",
+            "key": "snmptrap[sfFirewallTrapIfNormal]",
+            "delay": "0",
+            "history": "31d",
+            "value_type": "TEXT",
+            "description": "sfFirewallTrapIfNormal (.1.3.6.1.4.1.35047.200.200.4) - interface link working properly.",
+            "tags": [
+              {
+                "tag": "component",
+                "value": "trap"
+              }
+            ],
+            "triggers": [
+              {
+                "uuid": "7a01199682e0498da6a75251471c7685",
+                "expression": "find(/Sangfor NGAF by SNMP/snmptrap[sfFirewallTrapIfNormal],#1,\"regexp\",\"sfFirewallTrapIfNormal\")=1",
+                "recovery_mode": "RECOVERY_EXPRESSION",
+                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfFirewallTrapIfNormal],1d)=1",
+                "name": "Sangfor: Interface link back to normal on {HOST.NAME}",
+                "priority": "INFO"
+              }
+            ]
+          },
+          {
+            "uuid": "7c88dce7c2b14d7892b9557c20c10b2f",
+            "name": "SNMP trap: Interface link failure",
+            "type": "SNMP_TRAP",
+            "key": "snmptrap[sfFirewallTrapIfFail]",
+            "delay": "0",
+            "history": "31d",
+            "value_type": "TEXT",
+            "description": "sfFirewallTrapIfFail (.1.3.6.1.4.1.35047.200.200.5) - interface link went wrong.",
+            "tags": [
+              {
+                "tag": "component",
+                "value": "trap"
+              }
+            ],
+            "triggers": [
+              {
+                "uuid": "f4991f31b6c74ee58adacaab6ea68cdc",
+                "expression": "find(/Sangfor NGAF by SNMP/snmptrap[sfFirewallTrapIfFail],#1,\"regexp\",\"sfFirewallTrapIfFail\")=1",
+                "recovery_mode": "RECOVERY_EXPRESSION",
+                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfFirewallTrapIfFail],1d)=1",
+                "name": "Sangfor: Interface link failure on {HOST.NAME}",
+                "priority": "HIGH"
+              }
+            ]
+          },
+          {
+            "uuid": "fb6e9a966fb74d529a870c1cd4bac9ea",
+            "name": "SNMP trap: Firewall under attack",
+            "type": "SNMP_TRAP",
+            "key": "snmptrap[sfFirewallTrapFwAttack]",
+            "delay": "0",
+            "history": "31d",
+            "value_type": "TEXT",
+            "description": "sfFirewallTrapFwAttack (.1.3.6.1.4.1.35047.200.200.6) - firewall itself under attack.",
+            "tags": [
+              {
+                "tag": "component",
+                "value": "trap"
+              }
+            ],
+            "triggers": [
+              {
+                "uuid": "7467f6e4431f44359fccd79aae86a08e",
+                "expression": "find(/Sangfor NGAF by SNMP/snmptrap[sfFirewallTrapFwAttack],#1,\"regexp\",\"sfFirewallTrapFwAttack\")=1",
+                "recovery_mode": "RECOVERY_EXPRESSION",
+                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfFirewallTrapFwAttack],1d)=1",
+                "name": "Sangfor: Firewall under attack on {HOST.NAME}",
+                "priority": "HIGH"
+              }
+            ]
+          },
+          {
+            "uuid": "442cfb2a3c594c3d8431aa7d6a889bc6",
+            "name": "SNMP trap: Protected network under attack",
+            "type": "SNMP_TRAP",
+            "key": "snmptrap[sfFirewallTrapNetworkAttack]",
+            "delay": "0",
+            "history": "31d",
+            "value_type": "TEXT",
+            "description": "sfFirewallTrapNetworkAttack (.1.3.6.1.4.1.35047.200.200.7) - protected network under attack.",
+            "tags": [
+              {
+                "tag": "component",
+                "value": "trap"
+              }
+            ],
+            "triggers": [
+              {
+                "uuid": "497f0fcac444426fa2971db59fde7971",
+                "expression": "find(/Sangfor NGAF by SNMP/snmptrap[sfFirewallTrapNetworkAttack],#1,\"regexp\",\"sfFirewallTrapNetworkAttack\")=1",
+                "recovery_mode": "RECOVERY_EXPRESSION",
+                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfFirewallTrapNetworkAttack],1d)=1",
+                "name": "Sangfor: Protected network under attack on {HOST.NAME}",
+                "priority": "HIGH"
+              }
+            ]
+          },
+          {
+            "uuid": "52169d6058574f2e99c029d03e298587",
+            "name": "SNMP trap: catch-all (unmatched)",
+            "type": "SNMP_TRAP",
+            "key": "snmptrap.fallback",
+            "delay": "0",
+            "history": "31d",
+            "value_type": "TEXT",
+            "description": "Catches any Sangfor SNMP trap not matched by a named snmptrap[] item. Inspect values here to add new trap items; no trigger by design.",
+            "tags": [
+              {
+                "tag": "component",
+                "value": "trap"
+              }
+            ]
           }
         ],
         "discovery_rules": [
           {
-            "uuid": "6927835705725b4d9911aae2024b14ff",
+            "uuid": "6927835705724b4d9911aae2024b14ff",
             "name": "Interface discovery",
             "type": "SNMP_AGENT",
             "snmp_oid": "discovery[{#SNMPVALUE},1.3.6.1.4.1.35047.1.34.1.2]",
@@ -539,7 +737,7 @@
             },
             "item_prototypes": [
               {
-                "uuid": "2d3a2b337c065a46a17c6b28f1e0c919",
+                "uuid": "2d3a2b337c064a46a17c6b28f1e0c919",
                 "name": "Interface {#SNMPVALUE}: Inbound traffic",
                 "type": "SNMP_AGENT",
                 "snmp_oid": "get[1.3.6.1.4.1.35047.1.34.1.8.{#SNMPINDEX}]",
@@ -565,7 +763,7 @@
                 ]
               },
               {
-                "uuid": "f5f6f95c7474542993c87c176889667a",
+                "uuid": "f5f6f95c7474442993c87c176889667a",
                 "name": "Interface {#SNMPVALUE}: Outbound traffic",
                 "type": "SNMP_AGENT",
                 "snmp_oid": "get[1.3.6.1.4.1.35047.1.34.1.9.{#SNMPINDEX}]",
@@ -591,7 +789,7 @@
                 ]
               },
               {
-                "uuid": "bcb0b582947b53c3b2df2a0ed238c8c2",
+                "uuid": "bcb0b582947b43c3b2df2a0ed238c8c2",
                 "name": "Interface {#SNMPVALUE}: Inbound packets",
                 "type": "SNMP_AGENT",
                 "snmp_oid": "get[1.3.6.1.4.1.35047.1.34.1.13.{#SNMPINDEX}]",
@@ -614,7 +812,7 @@
                 ]
               },
               {
-                "uuid": "732bdabffcb25b43a6154d13a73442e6",
+                "uuid": "732bdabffcb24b43a6154d13a73442e6",
                 "name": "Interface {#SNMPVALUE}: Outbound packets",
                 "type": "SNMP_AGENT",
                 "snmp_oid": "get[1.3.6.1.4.1.35047.1.34.1.14.{#SNMPINDEX}]",
@@ -637,7 +835,7 @@
                 ]
               },
               {
-                "uuid": "6c2fc58e0d6e535c8f16239495f22c72",
+                "uuid": "6c2fc58e0d6e435c8f16239495f22c72",
                 "name": "Interface {#SNMPVALUE}: Inbound discards",
                 "type": "SNMP_AGENT",
                 "snmp_oid": "get[1.3.6.1.4.1.35047.1.34.1.15.{#SNMPINDEX}]",
@@ -660,7 +858,7 @@
                 ]
               },
               {
-                "uuid": "bd4571d672d855bbafb04fcd99f49de9",
+                "uuid": "bd4571d672d845bbafb04fcd99f49de9",
                 "name": "Interface {#SNMPVALUE}: Outbound discards",
                 "type": "SNMP_AGENT",
                 "snmp_oid": "get[1.3.6.1.4.1.35047.1.34.1.16.{#SNMPINDEX}]",
@@ -683,7 +881,7 @@
                 ]
               },
               {
-                "uuid": "a891c7e8f64152d3bdafee3d424eff35",
+                "uuid": "a891c7e8f64142d3bdafee3d424eff35",
                 "name": "Interface {#SNMPVALUE}: IPv4 address",
                 "type": "SNMP_AGENT",
                 "snmp_oid": "get[1.3.6.1.4.1.35047.1.34.1.4.{#SNMPINDEX}]",
@@ -702,13 +900,13 @@
             ],
             "trigger_prototypes": [
               {
-                "uuid": "b0809f21135f5478bfb04b9e314c7631",
+                "uuid": "b0809f21135f4478bfb04b9e314c7631",
                 "expression": "last(/Sangfor NGAF by SNMP/sangfor.if.in.drop[{#SNMPINDEX}])>{$SANGFOR.IF_DROP.MAX}",
                 "name": "Interface {#SNMPVALUE}: high inbound discard rate on {HOST.NAME}",
                 "priority": "WARNING"
               },
               {
-                "uuid": "f3fa6f4af458556ab3b5791b52642254",
+                "uuid": "f3fa6f4af458456ab3b5791b52642254",
                 "expression": "last(/Sangfor NGAF by SNMP/sangfor.if.out.drop[{#SNMPINDEX}])>{$SANGFOR.IF_DROP.MAX}",
                 "name": "Interface {#SNMPVALUE}: high outbound discard rate on {HOST.NAME}",
                 "priority": "WARNING"
@@ -716,7 +914,7 @@
             ]
           },
           {
-            "uuid": "5aab9da0752252ef8fc0d17f44b78801",
+            "uuid": "5aab9da0752242ef8fc0d17f44b78801",
             "name": "Disk discovery",
             "type": "SNMP_AGENT",
             "snmp_oid": "discovery[{#SNMPVALUE},1.3.6.1.4.1.35047.1.5.1.2]",
@@ -735,7 +933,7 @@
             },
             "item_prototypes": [
               {
-                "uuid": "d5fc298225fb5296a6923904d656b2cf",
+                "uuid": "d5fc298225fb4296a6923904d656b2cf",
                 "name": "Disk {#SNMPVALUE}: Total space",
                 "type": "SNMP_AGENT",
                 "snmp_oid": "get[1.3.6.1.4.1.35047.1.5.1.7.{#SNMPINDEX}]",
@@ -761,7 +959,7 @@
                 ]
               },
               {
-                "uuid": "2ce59ec258f25b7eae1a94e0c4661952",
+                "uuid": "2ce59ec258f24b7eae1a94e0c4661952",
                 "name": "Disk {#SNMPVALUE}: Used space",
                 "type": "SNMP_AGENT",
                 "snmp_oid": "get[1.3.6.1.4.1.35047.1.5.1.8.{#SNMPINDEX}]",
@@ -787,7 +985,7 @@
                 ]
               },
               {
-                "uuid": "5422e0187e3653f18c916a090bdbc371",
+                "uuid": "5422e0187e3643f18c916a090bdbc371",
                 "name": "Disk {#SNMPVALUE}: Available space",
                 "type": "SNMP_AGENT",
                 "snmp_oid": "get[1.3.6.1.4.1.35047.1.5.1.9.{#SNMPINDEX}]",
@@ -813,7 +1011,7 @@
                 ]
               },
               {
-                "uuid": "fda084b9343e5efbb9f46af9ba6df269",
+                "uuid": "fda084b9343e4efbb9f46af9ba6df269",
                 "name": "Disk {#SNMPVALUE}: Space usage",
                 "type": "SNMP_AGENT",
                 "snmp_oid": "get[1.3.6.1.4.1.35047.1.5.1.6.{#SNMPINDEX}]",
@@ -839,7 +1037,7 @@
                 ]
               },
               {
-                "uuid": "a41dbfece3b7572db971a44f874cbb6d",
+                "uuid": "a41dbfece3b7472db971a44f874cbb6d",
                 "name": "Disk {#SNMPVALUE}: Temperature",
                 "type": "SNMP_AGENT",
                 "snmp_oid": "get[1.3.6.1.4.1.35047.1.5.1.10.{#SNMPINDEX}]",
@@ -859,13 +1057,13 @@
             ],
             "trigger_prototypes": [
               {
-                "uuid": "3948b4ae2d185868874c847064b02209",
+                "uuid": "3948b4ae2d184868874c847064b02209",
                 "expression": "last(/Sangfor NGAF by SNMP/sangfor.disk.pused[{#SNMPINDEX}])>{$SANGFOR.DISK.MAX}",
                 "name": "Disk {#SNMPVALUE}: space usage over {$SANGFOR.DISK.MAX}% on {HOST.NAME}",
                 "priority": "WARNING"
               },
               {
-                "uuid": "8b859983fa775e3eb834bfeb30bf46ad",
+                "uuid": "8b859983fa774e3eb834bfeb30bf46ad",
                 "expression": "last(/Sangfor NGAF by SNMP/sangfor.disk.temp[{#SNMPINDEX}])>{$SANGFOR.DISK_TEMP.MAX}",
                 "name": "Disk {#SNMPVALUE}: high temperature ({ITEM.LASTVALUE1}) on {HOST.NAME}",
                 "priority": "WARNING"
@@ -873,7 +1071,7 @@
             ]
           },
           {
-            "uuid": "ff3abe4198b45067aa3565a6e7ccb1a0",
+            "uuid": "ff3abe4198b44067aa3565a6e7ccb1a0",
             "name": "CPU core discovery",
             "type": "SNMP_AGENT",
             "snmp_oid": "discovery[{#SNMPVALUE},1.3.6.1.4.1.35047.1.20.1.1]",
@@ -885,7 +1083,7 @@
             },
             "item_prototypes": [
               {
-                "uuid": "7247e9cc021356748ee5dd80591715d0",
+                "uuid": "7247e9cc021346748ee5dd80591715d0",
                 "name": "CPU core {#SNMPVALUE}: User time",
                 "type": "SNMP_AGENT",
                 "snmp_oid": "get[1.3.6.1.4.1.35047.1.20.1.2.{#SNMPINDEX}]",
@@ -903,7 +1101,7 @@
                 ]
               },
               {
-                "uuid": "d8216c4c6e5055219ca1d629c714aa40",
+                "uuid": "d8216c4c6e5045219ca1d629c714aa40",
                 "name": "CPU core {#SNMPVALUE}: System time",
                 "type": "SNMP_AGENT",
                 "snmp_oid": "get[1.3.6.1.4.1.35047.1.20.1.3.{#SNMPINDEX}]",
@@ -921,7 +1119,7 @@
                 ]
               },
               {
-                "uuid": "cee6ded93219559ca4f505d61899e210",
+                "uuid": "cee6ded93219459ca4f505d61899e210",
                 "name": "CPU core {#SNMPVALUE}: CPU utilization",
                 "type": "SNMP_AGENT",
                 "snmp_oid": "get[1.3.6.1.4.1.35047.1.20.1.4.{#SNMPINDEX}]",
@@ -941,7 +1139,7 @@
             ],
             "trigger_prototypes": [
               {
-                "uuid": "c30c7f2c711b54d0bb6290d4e62b1cd2",
+                "uuid": "c30c7f2c711b44d0bb6290d4e62b1cd2",
                 "expression": "last(/Sangfor NGAF by SNMP/sangfor.cpu.util[{#SNMPINDEX}])>{$SANGFOR.CPU_CORE.MAX}",
                 "name": "CPU core {#SNMPVALUE}: utilization over {$SANGFOR.CPU_CORE.MAX}% on {HOST.NAME}",
                 "priority": "WARNING"
@@ -949,7 +1147,7 @@
             ]
           },
           {
-            "uuid": "672cdc352854588096422bda8fbf3995",
+            "uuid": "672cdc352854488096422bda8fbf3995",
             "name": "Fan discovery",
             "type": "SNMP_AGENT",
             "snmp_oid": "discovery[{#SNMPVALUE},1.3.6.1.4.1.35047.1.14.1.2]",
@@ -961,7 +1159,7 @@
             },
             "item_prototypes": [
               {
-                "uuid": "9badc3b40d845bb6825f47cdb93d3aa4",
+                "uuid": "9badc3b40d844bb6825f47cdb93d3aa4",
                 "name": "Fan {#SNMPVALUE}: Speed",
                 "type": "SNMP_AGENT",
                 "snmp_oid": "get[1.3.6.1.4.1.35047.1.14.1.3.{#SNMPINDEX}]",
@@ -979,7 +1177,7 @@
                 ]
               },
               {
-                "uuid": "373fa872d1bc59619b34e9b93430f4af",
+                "uuid": "373fa872d1bc49619b34e9b93430f4af",
                 "name": "Fan {#SNMPVALUE}: State",
                 "type": "SNMP_AGENT",
                 "snmp_oid": "get[1.3.6.1.4.1.35047.1.14.1.4.{#SNMPINDEX}]",
@@ -998,7 +1196,7 @@
             ],
             "trigger_prototypes": [
               {
-                "uuid": "a80fe09003bf54129929b3e0c953e797",
+                "uuid": "a80fe09003bf44129929b3e0c953e797",
                 "expression": "last(/Sangfor NGAF by SNMP/sangfor.fan.state[{#SNMPINDEX}])=0",
                 "name": "Sangfor: Fan {#SNMPVALUE} ABNORMAL on {HOST.NAME}",
                 "priority": "AVERAGE"
@@ -1006,7 +1204,7 @@
             ]
           },
           {
-            "uuid": "b09425711a225774814bbfe2ba5da063",
+            "uuid": "b09425711a224774814bbfe2ba5da063",
             "name": "Power supply discovery",
             "type": "SNMP_AGENT",
             "snmp_oid": "discovery[{#SNMPVALUE},1.3.6.1.4.1.35047.1.15.1.2]",
@@ -1018,7 +1216,7 @@
             },
             "item_prototypes": [
               {
-                "uuid": "da24f07e8cc05402a275011919f9f656",
+                "uuid": "da24f07e8cc04402a275011919f9f656",
                 "name": "PSU {#SNMPVALUE}: State",
                 "type": "SNMP_AGENT",
                 "snmp_oid": "get[1.3.6.1.4.1.35047.1.15.1.3.{#SNMPINDEX}]",
@@ -1037,7 +1235,7 @@
             ],
             "trigger_prototypes": [
               {
-                "uuid": "946632df711e5b4aad52279a6057916d",
+                "uuid": "946632df711e4b4aad52279a6057916d",
                 "expression": "last(/Sangfor NGAF by SNMP/sangfor.psu.state[{#SNMPINDEX}])=0",
                 "name": "Sangfor: Power supply {#SNMPVALUE} ABNORMAL on {HOST.NAME}",
                 "priority": "HIGH"
@@ -1045,7 +1243,7 @@
             ]
           },
           {
-            "uuid": "8f82e32b8e895161948639d9245f48c4",
+            "uuid": "8f82e32b8e894161948639d9245f48c4",
             "name": "Temperature sensor discovery",
             "type": "SNMP_AGENT",
             "snmp_oid": "discovery[{#SNMPVALUE},1.3.6.1.4.1.35047.1.59.1.2]",
@@ -1057,7 +1255,7 @@
             },
             "item_prototypes": [
               {
-                "uuid": "87e506e3a238597fbdbeb1f1d245fd5c",
+                "uuid": "87e506e3a238497fbdbeb1f1d245fd5c",
                 "name": "Sensor {#SNMPVALUE}: Temperature",
                 "type": "SNMP_AGENT",
                 "snmp_oid": "get[1.3.6.1.4.1.35047.1.59.1.3.{#SNMPINDEX}]",

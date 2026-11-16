@@ -17,8 +17,16 @@ TGROUP = "Templates/Network devices"
 _NS = uuid.uuid5(uuid.NAMESPACE_URL, "https://github.com/eddieau/Sangfor_Firewall_Zabbix_Template")
 _C = itertools.count(1)
 
+def _fakev4(seed):
+    """Deterministic UUID forced into UUIDv4 layout (Zabbix 8.0 import
+    validates the version nibble, so raw uuid5 hex is rejected)."""
+    b = bytearray(uuid.uuid5(_NS, seed).bytes)
+    b[6] = (b[6] & 0x0F) | 0x40          # version 4
+    b[8] = (b[8] & 0x3F) | 0x80          # variant 10
+    return uuid.UUID(bytes=bytes(b)).hex
+
 def U():
-    return uuid.uuid5(_NS, "sangfor-ngaf-%d" % next(_C)).hex
+    return _fakev4("sangfor-ngaf-%d" % next(_C))
 
 items = []
 drs = []
@@ -371,6 +379,67 @@ lld("Temperature sensor discovery", "sangfor.temp.discovery",
     ],
     desc="Temperature sensors from SANGFOR-MIB::sfTempSensorTable. Some NGAF "
          "models do not expose this table (verified empty on AF8.0.108 nsf-1050a-i).")
+
+# ================= SNMP trap items =================
+# Trap OIDs from SANGFOR-AF-MIB: sfFirewallTraps = .1.3.6.1.4.1.35047.200.200.N
+# Keys use trap NAMES only (safe characters for item keys); numeric-OID
+# fallback regex lives in the trigger expressions where "|" is allowed.
+def UN(name):
+    return _fakev4("sangfor-ngaf-" + name)
+
+trap_defs = [
+    ("sfFirewallTrapConfChange", "Configuration changed", "INFO",
+     "sfFirewallTrapConfChange (.1.3.6.1.4.1.35047.200.200.1) - NGAF configuration was updated."),
+    ("sfFirewallTrapDualSwitch", "HA dual-active switch event", "HIGH",
+     "sfFirewallTrapDualSwitch (.1.3.6.1.4.1.35047.200.200.2) - HA failover/dual switch occurred."),
+    ("sfFirewallRulebaseUpdate", "Security rulebase updated", "INFO",
+     "sfFirewallRulebaseUpdate (.1.3.6.1.4.1.35047.200.200.3) - firewall rules were updated."),
+    ("sfFirewallTrapIfNormal", "Interface link back to normal", "INFO",
+     "sfFirewallTrapIfNormal (.1.3.6.1.4.1.35047.200.200.4) - interface link working properly."),
+    ("sfFirewallTrapIfFail", "Interface link failure", "HIGH",
+     "sfFirewallTrapIfFail (.1.3.6.1.4.1.35047.200.200.5) - interface link went wrong."),
+    ("sfFirewallTrapFwAttack", "Firewall under attack", "HIGH",
+     "sfFirewallTrapFwAttack (.1.3.6.1.4.1.35047.200.200.6) - firewall itself under attack."),
+    ("sfFirewallTrapNetworkAttack", "Protected network under attack", "HIGH",
+     "sfFirewallTrapNetworkAttack (.1.3.6.1.4.1.35047.200.200.7) - protected network under attack."),
+]
+
+for hname, title, prio, desc in trap_defs:
+    key = "snmptrap[" + hname + "]"
+    items.append({
+        "uuid": UN("trap-" + hname),
+        "name": "SNMP trap: " + title,
+        "type": "SNMP_TRAP",
+        "key": key,
+        "delay": "0",
+        "history": "31d",
+        "value_type": "TEXT",
+        "description": desc,
+        "tags": [{"tag": "component", "value": "trap"}],
+        "triggers": [{
+            "uuid": UN("trap-trig-" + hname),
+            "expression": ("find(/%s/%s,#1,\"regexp\",\"%s\")=1"
+                           % (TPL, key, hname)),
+            "recovery_mode": "RECOVERY_EXPRESSION",
+            "recovery_expression": "nodata(/%s/%s,1d)=1" % (TPL, key),
+            "name": "Sangfor: " + title + " on {HOST.NAME}",
+            "priority": prio,
+        }],
+    })
+
+items.append({
+    "uuid": UN("trap-fallback"),
+    "name": "SNMP trap: catch-all (unmatched)",
+    "type": "SNMP_TRAP",
+    "key": "snmptrap.fallback",
+    "delay": "0",
+    "history": "31d",
+    "value_type": "TEXT",
+    "description": "Catches any Sangfor SNMP trap not matched by a named "
+                   "snmptrap[] item. Inspect values here to add new trap "
+                   "items; no trigger by design.",
+    "tags": [{"tag": "component", "value": "trap"}],
+})
 
 # ================= macros =================
 for m, v, d in [

@@ -9,7 +9,7 @@ from their vendor MIB. Built and **verified against a live NGAF**
 
 ## What it monitors
 
-**Scalar items (28):**
+**Scalar items (28) + SNMP trap items (8):**
 
 - Device info: description, name, software version, AF version, serial
   (serial ships DISABLED — `sfSnGW` is not implemented on AF 8.0.108)
@@ -21,6 +21,11 @@ from their vendor MIB. Built and **verified against a live NGAF**
 - Throughput: inbound / outbound system throughput (units not stated in MIB)
 - HA: enable, mode, current status, control/data link status (abnormal → HIGH
   trigger), sync state
+- SNMP traps (`SANGFOR-MIB-AF.txt`, OIDs under `1.3.6.1.4.1.35047.200.200`):
+  7 named `snmptrap[<name>]` items (config change INFO, HA dual-switch HIGH,
+  rulebase update INFO, interface normal INFO, interface fail HIGH, firewall
+  under attack HIGH, protected network under attack HIGH) plus a
+  `snmptrap.fallback` catch-all. Triggers auto-recover via `nodata(...,1d)`.
 
 **Low-level discovery (6 rules, 19 prototypes):**
 
@@ -83,6 +88,30 @@ Via the API, interfaces are embedded in `host.create` / `host.update`
 | `{$SANGFOR.DISK.MAX}` | `85` | Filesystem usage % warning |
 | `{$SANGFOR.DISK_TEMP.MAX}` | `70` | Disk temperature (°C) warning |
 | `{$SANGFOR.IF_DROP.MAX}` | `1000` | Interface discard rate (ps) warning |
+
+## SNMP trap receiving (optional)
+
+The template includes trap items, but receiving traps requires a trap chain
+in front of the Zabbix server (see Zabbix 8.0 manual, "SNMP trap" item type):
+
+1. `snmptrapd` (e.g. the official `zabbix/zabbix-snmptraps` container) listens
+   on UDP 162; its bundled `zabbix_trap_handler.sh` writes received traps to
+   `snmptraps.log` in a volume **shared with the zabbix-server container**
+   (`/var/lib/zabbix/snmptraps`).
+2. Zabbix server runs with `StartSNMPTrapper=1` and
+   `SNMPTrapperFile=/var/lib/zabbix/snmptraps/snmptraps.log`
+   (docker: env `ZBX_STARTSNMPTRAPPER=1`, `ZBX_SNMPTRAPPERFILE=...`).
+3. The server matches each trap's source address against the host's SNMP
+   interface IP, then routes it to the first `snmptrap[regexp]` item whose key
+   parameter matches the trap text; anything unmatched goes to
+   `snmptrap.fallback`.
+4. For readable trap names, mount `SANGFOR-MIB-AF.txt` (as
+   `SANGFOR-AF-MIB.txt`) into the snmptrapd MIBs dir — trap items here match
+   on the `sfFirewall*` MIB names, so keep the MIB loaded. If the MIB is
+   missing, traps still arrive in `snmptrap.fallback` as numeric OIDs.
+5. Configure the NGAF itself (web UI) to send traps to the Zabbix
+   collector's IP:162. The AF2 MIB traps use generic enterprise format; no
+   auth is applied by Zabbix itself (control access at snmptrapd / network).
 
 ## Verified against live hardware (2026-11-16, AF8.0.108.657 nsf-1050a-i)
 
