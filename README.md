@@ -1,22 +1,24 @@
 # Sangfor NGAF Zabbix Template
 
-Zabbix 8.0 SNMP template for **Sangfor NGAF** firewalls, converted from Sangfor's
-private `SANGFOR-MIB.txt` MIB (enterprise OID `.1.3.6.1.4.1.35047`).
+Zabbix **8.0** SNMP template for **Sangfor NGAF** firewalls, converted from
+Sangfor's private `SANGFOR-MIB.txt` MIB (enterprise OID `1.3.6.1.4.1.35047`).
 
-Sangfor ships no official Zabbix template; this covers the pollable objects from
-their vendor MIB.
+Sangfor ships no official Zabbix template; this covers the pollable objects
+from their vendor MIB. Built and **verified against a live NGAF**
+(AF8.0.108.657, nsf-1050a-i) over SNMPv3 authPriv.
 
 ## What it monitors
 
-**Scalar items (29):**
+**Scalar items (28):**
 
-- Device info: description, name, software version, AF version, serial number
+- Device info: description, name, software version, AF version, serial
+  (serial ships DISABLED — `sfSnGW` is not implemented on AF 8.0.108)
 - Health: `sfDeviceStatus` (0 = warning trigger)
 - CPU: utilization 30s / 1min / 5min (trigger > `{$SANGFOR.CPU.MAX}`), core count
-- Memory: total / free (kB → bytes), usage % (calculated, trigger > `{$SANGFOR.MEM.MAX}`), swap
+- Memory: total / free (kB → bytes), usage % from the device's own
+  `sfSysMemoryUsage` (matches the vendor UI; trigger > `{$SANGFOR.MEM.MAX}`), swap
 - Sessions: current / new / total / new-per-second, online users
-- Throughput: inbound / outbound system throughput
-- Disk: overall system disk usage % (trigger > `{$SANGFOR.DISK.MAX}`)
+- Throughput: inbound / outbound system throughput (units not stated in MIB)
 - HA: enable, mode, current status, control/data link status (abnormal → HIGH
   trigger), sync state
 
@@ -24,8 +26,8 @@ their vendor MIB.
 
 | Discovery | Source table | Items |
 | --- | --- | --- |
-| Interface | `sfIfTable` (general.34) | in/out bps, in/out pps, in/out discards, IPv4 address |
-| Disk | `sfDiskTable` (general.5) | size / used / avail / usage % / temperature |
+| Interface | `sfIfTable` (general.34) | in/out bit/s, in/out pps, in/out discards, IPv4 address |
+| Disk | `sfDiskTable` (general.5) | size / used / avail / device-reported usage % / temperature |
 | CPU core | `sfCpuCostRateTable` (general.20) | user / system / utilization % |
 | Fan | `sfSysFanTable` (general.14) | speed, state (abnormal → trigger) |
 | Power supply | `sfSysPowerTable` (general.15) | state (abnormal → HIGH trigger) |
@@ -33,86 +35,96 @@ their vendor MIB.
 
 ## Requirements
 
-- Zabbix **8.0** or newer (template format `8.0`, exported as XML)
-- **SNMP v2c or later** on the NGAF (Counter64 objects are used for interface traffic)
-- SNMP read community enabled on the firewall
+- Zabbix **8.0** or newer (JSON import format matches 8.0 exactly)
+- **SNMP v2c or later** on the NGAF (Counter64 objects are used). SNMPv3
+  authPriv (SHA1/AES128) verified working.
+- SNMP read access enabled on the firewall
 
 ## Installation
 
 1. In Zabbix: **Data collection → Templates → Import**, select
-   `template_sangfor_ngaf_snmp.xml`.
-2. Create (or edit) the NGAF host:
-   - Group: your network group (template is placed in `Templates/Network devices`)
-   - Interface: **SNMP**, port 161, SNMP version 2c (or 3), community set below
-3. Link the template.
-4. Set the community macro on the host: `{$SANGFOR.SNMP.COMMUNITY}`
-   (default in template is `public` — change it).
-5. Wait for the LLD rules (default hourly) or run them now.
+   `template_sangfor_ngaf_snmp.json` (works with JSON; the 8.0 XML flavour
+   changed several tags, so JSON is shipped).
+2. Create the host (**Firewalls** group or your own), then add an
+   **SNMP interface**:
+   - SNMP version: v3 (or v2c)
+   - For v3: Security name, Security level `authPriv`, Auth protocol SHA +
+     passphrase, Privacy protocol AES128 + passphrase, Context name empty
+   - Tick **Use combined requests** (bulk GETBULK — recommended; Sangfor
+     responds well to bulk walks)
+   - Note: in Zabbix 8.0 template items have **no community/security-name
+     field**; all SNMP credentials live on the host interface.
+3. Link the template (create the SNMP interface **before** linking, or Zabbix
+   refuses the item inheritance with "a host interface of type SNMP is
+   required").
+4. Wait for the first poll; LLD rules run on creation and then every
+   `{$SANGFOR.DISCOVERY.FREQ}`.
+
+Via the API, interfaces are embedded in `host.create` / `host.update`
+(`hostinterface.create` no longer exists in 8.0):
+
+```json
+"interfaces": [{"type":"2","main":"1","useip":"1","ip":"192.0.2.1",
+  "port":"161","details":{"version":"3","bulk":"1",
+    "securityname":"USER","securitylevel":"2",
+    "authprotocol":"1","authpassphrase":"...","privprotocol":"1",
+    "privpassphrase":"...","contextname":""}}]
+```
 
 ## Macros / thresholds
 
 | Macro | Default | Meaning |
 | --- | --- | --- |
-| `{$SANGFOR.SNMP.COMMUNITY}` | `public` | SNMP community for all items |
 | `{$SANGFOR.UPDATE.FREQ}` | `1m` | Item update interval |
 | `{$SANGFOR.DISCOVERY.FREQ}` | `1h` | LLD interval |
 | `{$SANGFOR.CPU.MAX}` | `90` | CPU % warning |
 | `{$SANGFOR.CPU_CORE.MAX}` | `95` | Per-core CPU % warning |
 | `{$SANGFOR.MEM.MAX}` | `90` | Memory usage % warning |
 | `{$SANGFOR.DISK.MAX}` | `85` | Filesystem usage % warning |
-| `{$SANGFOR.DISK_TEMP.MAX}` | `70` | Disk temperature warning |
+| `{$SANGFOR.DISK_TEMP.MAX}` | `70` | Disk temperature (°C) warning |
 | `{$SANGFOR.IF_DROP.MAX}` | `1000` | Interface discard rate (ps) warning |
 
-## Known caveats (please verify against your device)
+## Verified against live hardware (2026-11-16, AF8.0.108.657 nsf-1050a-i)
 
-- **`sfIfInRate` / `sfIfOutRate` are instantaneous rates**, despite being typed
-  `Counter64` in the MIB (verified with two-sample deltas on a live NGAF — see
-  *Verified against live hardware* below). Older draft of this template wrongly
-  applied *Change per second*; that has been removed.
-- `sfSysIn/OutThroughput` and swap objects do not state units in the MIB; they
-  are stored raw. Adjust `Units` on the item if your device reports bps or KB/s.
-- Memory counters are assumed **kB**, disk counters **MB** (per MIB DESCRIPTION);
-  converted to bytes via multipliers. Verify once after first poll.
-- The interface LLD filter excludes names matching `l.o`, `Loopback`, `lo` only;
-  tighten `{#SNMPVALUE}` filter if you have many virtual interfaces.
-- Sangfor also defines **traps** in `SANGFOR-MIB-AF.txt`
-  (config change, dual-active switch, interface failure, firewall-under-attack —
-  OIDs under `.1.3.6.1.4.1.35047.200.200`). Trap receiving needs snmptrapd +
-  Zabbix trap setup and is **not** included here.
+All 191 items (28 + 163 discovered) poll clean; only findings:
 
-## Verified against live hardware (2026-11-16)
-
-Tested over SNMPv3 authPriv (SHA1/AES128) against a Sangfor NGAF running
-**AF8.0.108.657 Build20260923** (nsf-1050a-i):
-
-- `sfIfInRate`/`sfIfOutRate` **are instantaneous byte/s gauges** — two samples
-  12 s apart went down on a busy interface (302 → 274). Template applies
-  `×8` only (bits/s), no *Change per second*.
-- `sfIfInPkts`/`sfIfOutPkts` **are cumulative counters** — template keeps
-  *Change per second* (pps). Discards (.15/.16) treated as counters too.
-- `sfSysMemoryUsage` (.13.5) returns a numeric string (`"56"`) that matches the
-  web UI; free/total ints (.13.3/.13.4, kB) would give a higher number because
-  cache/buffer counts as available. Template polls .13.5 with a regex
-  extraction step — this is the usage % that matches the vendor UI.
-- Disk table (.5) values are in **MB** as documented (e.g. size 3967,
-  used 2205, avail 1762) — converted to bytes.
-- `sfSysDiskUsage` (.52.1) returns **noSuchObject** on AF 8.0.108 — removed.
-- Fan (.14), PSU (.15), temperature-sensor (.59) tables return **noSuchObject**
-  on this platform — the LLD rules simply discover nothing; kept for models
-  that do expose them. Delete those discovery rules if you want a clean list.
-- Throughput (.48.1/.48.2) confirmed instantaneous (87→63, 96→49 in 8 s) but
-  **units are not stated in the MIB** — stored raw; check against your UI and
-  set Units on those two items if you identify them (likely Mbps).
-- Sessions (.27), CPU (.19/.20/.21), HA (.64.1–.64.8) all poll cleanly.
+- `sfIfInRate`/`sfIfOutRate` **are instantaneous byte/s gauges** despite being
+  typed Counter64 — two samples 12 s apart went *down* (302 → 274). Template
+  applies `×8` only (bits/s), **no** *Change per second*.
+- `sfIfInPkts`/`sfIfOutPkts`/discards **are cumulative counters** —
+  *Change per second* is correct there.
+- `sfSysMemoryUsage` (`.13.5`) returns a numeric string (`"56"`) matching the
+  vendor UI; free/total ints would show ~80% instead because cache/buffer
+  counts as available. Polled with a JAVASCRIPT numeric-extraction step.
+  (A `REGEX` preprocessing step with the optional second "output" parameter
+  misbehaved on this Zabbix build and returned the parameter itself — the
+  JAVASCRIPT step avoids the issue.)
+- Disk usage % is read from the device's own `sfDiskUsedPercent` column
+  (`.5.1.6`, string) instead of a calculated item, and `/dev/loop*` entries
+  are filtered out.
+- Memory ints are **kB**, disk ints **MB** as documented; converted to bytes.
+- `sfSysDiskUsage` (`.52.1`) and `sfSnGW` (`.40`) return **noSuchObject** —
+  the first is not included at all; the serial item ships disabled.
+- Fan (`.14`), PSU (`.15`), temperature-sensor (`.59`) tables return
+  **noSuchObject** on nsf-1050a-i; the LLD rules discover nothing and stay
+  quiet. Kept for models that do expose them — delete if unwanted.
+- Throughput (`.48.1/.48.2`) confirmed instantaneous (87→63, 96→49 in 8 s),
+  but **units are not stated in the MIB** — stored raw; set Units on those
+  two items once you identify them (likely Mbps).
+- Sangfor also defines **traps** in `SANGFOR-MIB-AF.txt` (config change,
+  dual-active switch, interface failure, firewall-under-attack — OIDs under
+  `1.3.6.1.4.1.35047.200.200`). Trap receiving needs snmptrapd + Zabbix trap
+  setup and is **not** included here.
 
 ## Files
 
-- `template_sangfor_ngaf_snmp.xml` — import this into Zabbix
-- `scripts/gen_template.py` — the generator used to produce the XML from the MIB
-  (kept for reference / modification)
+- `template_sangfor_ngaf_snmp.json` — import this into Zabbix 8.0
+- `scripts/gen_template.py` — the generator (deterministic uuid5 UUIDs so
+  re-import updates objects in place; keep generation order stable when
+  editing)
 
-Source MIB: Sangfor `SANGFOR-MIB.txt` / `SANGFOR-MIB-AF.txt` (enterprises 35047),
-downloaded from Sangfor support.
+Source MIB: Sangfor `SANGFOR-MIB.txt` / `SANGFOR-MIB-AF.txt`
+(enterprises 35047), downloaded from Sangfor support.
 
 ## License
 

@@ -1,408 +1,418 @@
 #!/usr/bin/env python3
-"""Generate Zabbix 8.0 template XML from Sangfor MIB (enterprises 35047)."""
-import uuid, datetime
-from xml.etree import ElementTree as ET
+"""Generate Zabbix 8.0 template (JSON import format) from Sangfor MIB (enterprises 35047).
 
-BASE = ".1.3.6.1.4.1.35047"      # sangfor ::= enterprises 35047
-GEN = BASE + ".1"                 # general ::= { sangfor 1 }
+Format verified against configuration.export output of an official 8.0 template.
+"""
+import uuid, json, itertools
+
+BASE = "1.3.6.1.4.1.35047"        # sangfor
+GEN = BASE + ".1"                  # general ::= { sangfor 1 }
 TPL = "Sangfor NGAF by SNMP"
-GNAME = "Templates/Network devices"
+TGROUP = "Templates/Network devices"
+
+# Deterministic UUIDs (uuid5 from a stable counter) so re-importing a
+# regenerated file updates objects in place instead of clashing on names.
+# Caveat: keep generation order stable; inserting/removing items shifts the
+# counter for later objects.
+_NS = uuid.uuid5(uuid.NAMESPACE_URL, "https://github.com/eddieau/Sangfor_Firewall_Zabbix_Template")
+_C = itertools.count(1)
 
 def U():
-    return uuid.uuid4().hex
+    return uuid.uuid5(_NS, "sangfor-ngaf-%d" % next(_C)).hex
 
-root = ET.Element("zabbix_export")
-ET.SubElement(root, "version").text = "8.0"
-ET.SubElement(root, "date").text = datetime.datetime.now(
-    datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+items = []
+drs = []
+macros = []
 
-groups = ET.SubElement(root, "groups")
-g = ET.SubElement(groups, "group")
-ET.SubElement(g, "uuid").text = U()
-ET.SubElement(g, "name").text = GNAME
+def snmp_item(name, key, oid, vtype="FLOAT", units="", desc="", pre=None,
+              trig=None, tags=(), history="7d"):
+    it = {"uuid": U(), "name": name, "type": "SNMP_AGENT", "snmp_oid": oid,
+          "key": key, "delay": "{$SANGFOR.UPDATE.FREQ}",
+          "history": history, "value_type": vtype, "description": desc}
+    if units:
+        it["units"] = units
+    if pre:
+        it["preprocessing"] = pre
+    if tags:
+        it["tags"] = [{"tag": a, "value": b} for a, b in tags]
+    if trig:
+        it["triggers"] = [trig]
+    items.append(it)
+    return it
 
-templates = ET.SubElement(root, "templates")
-t = ET.SubElement(templates, "template")
-ET.SubElement(t, "uuid").text = U()
-ET.SubElement(t, "template").text = TPL
-ET.SubElement(t, "name").text = TPL
-ET.SubElement(t, "description").text = (
-    "Sangfor NGAF monitoring via private SANGFOR-MIB (enterprises 35047), "
-    "converted from the vendor MIB file SANGFOR-MIB.txt. "
-    "Requires SNMP v2c or later (Counter64 objects). "
-    "Verified against a live NGAF running AF8.0.108.657: sfIfInRate/"
-    "sfIfOutRate are instantaneous byte/s gauges (x8 only); sfIfInPkts/"
-    "sfIfOutPkts and drops are cumulative counters (change per second); "
-    "memory counters are kB, disk counters MB.")
-tg = ET.SubElement(t, "groups")
-g2 = ET.SubElement(tg, "group")
-ET.SubElement(g2, "name").text = GNAME
-
-X8 = [("MULTIPLIER", "8")]          # instantaneous byte/s -> bit/s gauge
-CPS = [("CHANGE_PER_SECOND", None)]
-K2B = [("MULTIPLIER", "1024")]
-M2B = [("MULTIPLIER", "1048576")]
-
-def render_item(parent, it):
-    x = ET.SubElement(parent, "item")
-    ET.SubElement(x, "uuid").text = it.get("uuid", U())
-    ET.SubElement(x, "name").text = it["name"]
-    ET.SubElement(x, "key").text = it["key"]
-    if it.get("desc"):
-        ET.SubElement(x, "description").text = it["desc"]
-    if it.get("calc"):
-        ET.SubElement(x, "type").text = "CALCULATED"
-        ET.SubElement(x, "delay").text = "1m"
-        ET.SubElement(x, "params").text = it["calc"]
-    else:
-        ET.SubElement(x, "type").text = "SNMP_AGENT"
-        ET.SubElement(x, "snmp_oid").text = it["oid"]
-        ET.SubElement(x, "snmp_community").text = "{$SANGFOR.SNMP.COMMUNITY}"
-        ET.SubElement(x, "delay").text = "{$SANGFOR.UPDATE.FREQ}"
-    ET.SubElement(x, "history").text = it.get("history", "7d")
-    ET.SubElement(x, "value_type").text = it.get("vtype", "FLOAT")
-    if it.get("units"):
-        ET.SubElement(x, "units").text = it["units"]
-    if it.get("pre"):
-        pp = ET.SubElement(x, "preprocessing")
-        for i, typ in enumerate(it["pre"], start=1):
-            step = ET.SubElement(pp, "step")
-            ET.SubElement(step, "type").text = typ[0]
-            if typ[1] is not None:
-                ET.SubElement(step, "parameter").text = typ[1]
-            ET.SubElement(step, "statement").text = str(i)
-    if it.get("tags"):
-        tel = ET.SubElement(x, "tags")
-        for tgname, tgval in it["tags"]:
-            te = ET.SubElement(tel, "tag")
-            ET.SubElement(te, "tag").text = tgname
-            ET.SubElement(te, "value").text = tgval
-    if it.get("trig"):
-        trs = ET.SubElement(x, "triggers")
-        tr = ET.SubElement(trs, "trigger")
-        ET.SubElement(tr, "uuid").text = U()
-        ET.SubElement(tr, "expression").text = it["trig"]["expr"]
-        ET.SubElement(tr, "name").text = it["trig"]["name"]
-        ET.SubElement(tr, "priority").text = it["trig"]["prio"]
-    return x
-
-def render_trigger_prototype(parent, tr):
-    x = ET.SubElement(parent, "trigger")
-    ET.SubElement(x, "uuid").text = U()
-    ET.SubElement(x, "expression").text = tr["expr"]
-    ET.SubElement(x, "name").text = tr["name"]
-    ET.SubElement(x, "priority").text = tr["prio"]
-
-def render_lld(parent, d):
-    x = ET.SubElement(parent, "discovery_rule")
-    ET.SubElement(x, "uuid").text = U()
-    ET.SubElement(x, "name").text = d["name"]
-    ET.SubElement(x, "key").text = d["key"]
-    if d.get("desc"):
-        ET.SubElement(x, "description").text = d["desc"]
-    ET.SubElement(x, "type").text = "SNMP_AGENT"
-    ET.SubElement(x, "snmp_oid").text = d["oid"]
-    ET.SubElement(x, "snmp_community").text = "{$SANGFOR.SNMP.COMMUNITY}"
-    ET.SubElement(x, "delay").text = "{$SANGFOR.DISCOVERY.FREQ}"
-    ET.SubElement(x, "status").text = "ENABLED"
-    f = ET.SubElement(x, "filter")
-    ET.SubElement(f, "evaltype").text = "AND"
-    if d.get("filter"):
-        conds = ET.SubElement(f, "conditions")
-        for macro, value, op in d["filter"]:
-            c = ET.SubElement(conds, "condition")
-            ET.SubElement(c, "macro").text = macro
-            ET.SubElement(c, "value").text = value
-            ET.SubElement(c, "operator").text = op
-    ET.SubElement(x, "lifetime").text = "30d"
-    ip = ET.SubElement(x, "item_prototypes")
-    tp = None
-    for it in d["protos"]:
-        render_item(ip, it)
-        if it.get("trig") and tp is None:
-            tp = ET.SubElement(x, "trigger_prototypes")
-        if it.get("trig"):
-            render_trigger_prototype(tp, it["trig"])
-    return x
+def calc_item(name, key, formula, units="", desc="", vtype="FLOAT",
+              trig=None, tags=()):
+    it = {"uuid": U(), "name": name, "type": "CALCULATED", "key": key,
+          "delay": "1m", "params": formula, "history": "7d",
+          "value_type": vtype, "description": desc}
+    if units:
+        it["units"] = units
+    if tags:
+        it["tags"] = [{"tag": a, "value": b} for a, b in tags]
+    if trig:
+        it["triggers"] = [trig]
+    items.append(it)
 
 def TR(prio, expr, name):
-    return {"prio": prio, "expr": expr, "name": name}
+    return {"uuid": U(), "expression": expr, "name": name, "priority": prio}
 
-# =============== scalar items ===============
-items_el = ET.SubElement(t, "items")
+# preprocessing helpers
+def P(t, *params):
+    d = {"type": t}
+    if params:
+        d["parameters"] = list(params)
+    return d
 
-def I(**kw):
-    kw.setdefault("tags", [])
-    render_item(items_el, kw)
+X8 = [P("MULTIPLIER", "8")]                       # instant byte/s -> bit/s
+CPS = [P("CHANGE_PER_SECOND")]                    # cumulative -> rate
+K2B = [P("MULTIPLIER", "1024")]
+M2B = [P("MULTIPLIER", "1048576")]
+# NOTE: a REGEX step with a second "output type" parameter misbehaves on
+# this Zabbix build (echoed the constant). Numeric extraction from strings is
+# done with a JAVASCRIPT step instead (verified approach).
+JSNUM = [P("JAVASCRIPT", "return value.replace(/[^0-9.]/g, '');")]
 
-I(name="Device description", key="sangfor.device.descr", vtype="CHAR",
-  oid=GEN + ".1.0", desc="sfDeviceDescr")
-I(name="Device name", key="sangfor.device.name", vtype="CHAR",
-  oid=GEN + ".17.0", desc="sfSysDevName")
-I(name="Software version", key="sangfor.software.version", vtype="CHAR",
-  oid=GEN + ".18.0", desc="sfSysSoftVersion")
-I(name="AF version", key="sangfor.af.version", vtype="CHAR",
-  oid=GEN + ".24.0", desc="afSysSoftVersion")
-I(name="Serial number", key="sangfor.serial.number", vtype="CHAR",
-  oid=GEN + ".40.0", desc="sfSnGW (serial number of the appliance)")
+# ================= scalar items =================
+snmp_item("Sangfor: Device description", "sangfor.device.descr",
+          "get[" + GEN + ".1.0]", "CHAR",
+          desc="sfDeviceDescr.")
+snmp_item("Sangfor: Device name", "sangfor.device.name",
+          "get[" + GEN + ".17.0]", "CHAR",
+          desc="sfSysDevName.")
+snmp_item("Sangfor: Software version", "sangfor.software.version",
+          "get[" + GEN + ".18.0]", "CHAR",
+          desc="sfSysSoftVersion.")
+snmp_item("Sangfor: AF version", "sangfor.af.version",
+          "get[" + GEN + ".24.0]", "CHAR",
+          desc="afSysSoftVersion.")
+_serial = snmp_item("Sangfor: Serial number", "sangfor.serial.number",
+          "get[" + GEN + ".40.0]", "CHAR",
+          desc="sfSnGW - serial number of the appliance. Not implemented on "
+               "AF8.0.108 (nsf-1050a-i): item ships DISABLED to avoid "
+               "unsupported-noise; enable it if your model exposes sfSnGW.")
+_serial["status"] = "DISABLED"
 
-I(name="Device status", key="sangfor.device.status",
-  oid=GEN + ".12.0", desc="sfDeviceStatus: 0 - Warning, 1 - Normal",
-  tags=[("component", "health")],
-  trig=TR("WARNING", "last(/%s/sangfor.device.status)=0" % TPL,
-          "Device reports WARNING status on {HOST.NAME}"))
+snmp_item("Sangfor: Device status", "sangfor.device.status",
+          "get[" + GEN + ".12.0]",
+          desc="sfDeviceStatus: 0 - Warning, 1 - Normal.",
+          tags=[("component", "health")],
+          trig=TR("WARNING", "last(/%s/sangfor.device.status)=0" % TPL,
+                  "Sangfor: Device reports WARNING status on {HOST.NAME}"))
 
-I(name="CPU utilization (30s)", key="sangfor.cpu.util.30s", units="%",
-  oid=GEN + ".19.4.0", desc="sfCpuAllCostRateLast30Sec",
-  tags=[("component", "cpu")])
-I(name="CPU utilization (1 min)", key="sangfor.cpu.util.1m", units="%",
-  oid=GEN + ".19.5.0", desc="sfCpuAllCostRateLast1Min",
-  tags=[("component", "cpu")],
-  trig=TR("AVERAGE",
-          "last(/%s/sangfor.cpu.util.1m)>{$SANGFOR.CPU.MAX}" % TPL,
-          "High CPU utilization: over {$SANGFOR.CPU.MAX}% on {HOST.NAME}"))
-I(name="CPU utilization (5 min)", key="sangfor.cpu.util.5m", units="%",
-  oid=GEN + ".19.6.0", desc="sfCpuAllCostRateLast5Min",
-  tags=[("component", "cpu")])
-I(name="CPU core count", key="sangfor.cpu.num",
-  oid=GEN + ".21.0", desc="sfCpuNum", tags=[("component", "cpu")])
+snmp_item("Sangfor: CPU utilization (30s)", "sangfor.cpu.util.30s",
+          "get[" + GEN + ".19.4.0]", units="%",
+          desc="sfCpuAllCostRateLast30Sec.", tags=[("component", "cpu")])
+snmp_item("Sangfor: CPU utilization (1 min)", "sangfor.cpu.util.1m",
+          "get[" + GEN + ".19.5.0]", units="%",
+          desc="sfCpuAllCostRateLast1Min.", tags=[("component", "cpu")],
+          trig=TR("AVERAGE",
+                  "last(/%s/sangfor.cpu.util.1m)>{$SANGFOR.CPU.MAX}" % TPL,
+                  "Sangfor: High CPU utilization over {$SANGFOR.CPU.MAX}% on {HOST.NAME}"))
+snmp_item("Sangfor: CPU utilization (5 min)", "sangfor.cpu.util.5m",
+          "get[" + GEN + ".19.6.0]", units="%",
+          desc="sfCpuAllCostRateLast5Min.", tags=[("component", "cpu")])
+snmp_item("Sangfor: CPU core count", "sangfor.cpu.num",
+          "get[" + GEN + ".21.0]",
+          desc="sfCpuNum.", tags=[("component", "cpu")])
 
-I(name="Memory total", key="sangfor.mem.total", units="B",
-  oid=GEN + ".13.4.0", desc="sfIntSysTotalMemory (kB -> B)",
-  pre=K2B, tags=[("component", "memory")])
-I(name="Memory free", key="sangfor.mem.free", units="B",
-  oid=GEN + ".13.3.0", desc="sfIntSysFreeMemory (kB -> B)",
-  pre=K2B, tags=[("component", "memory")])
-I(name="Memory usage", key="sangfor.mem.util", units="%",
-  oid=GEN + ".13.5.0", vtype="CHAR" if False else "FLOAT",
-  desc="sfSysMemoryUsage - device-reported usage % (returns a numeric "
-       "string; regex-extracted). Free/total would give a different "
-       "number because the device counts cache/buffer as available.",
-  pre=[("REGEX_EXTRACT", "([0-9]+)")],
-  tags=[("component", "memory")],
-  trig=TR("AVERAGE", "last(/%s/sangfor.mem.util)>{$SANGFOR.MEM.MAX}" % TPL,
-          "High memory usage: over {$SANGFOR.MEM.MAX}% on {HOST.NAME}"))
-I(name="Swap total", key="sangfor.swap.total",
-  oid=GEN + ".38.1.0", desc="sfMemTotalSwap (units as reported by device)")
-I(name="Swap available", key="sangfor.swap.avail",
-  oid=GEN + ".38.2.0", desc="sfMemAvailSwap (units as reported by device)")
+snmp_item("Sangfor: Memory total", "sangfor.mem.total",
+          "get[" + GEN + ".13.4.0]", units="B", pre=K2B,
+          desc="sfIntSysTotalMemory (kB, converted to bytes).",
+          tags=[("component", "memory")])
+snmp_item("Sangfor: Memory free", "sangfor.mem.free",
+          "get[" + GEN + ".13.3.0]", units="B", pre=K2B,
+          desc="sfIntSysFreeMemory (kB, converted to bytes).",
+          tags=[("component", "memory")])
+snmp_item("Sangfor: Memory usage", "sangfor.mem.util",
+          "get[" + GEN + ".13.5.0]", units="%", pre=JSNUM,
+          desc="sfSysMemoryUsage - device-reported usage % (string, matches "
+               "vendor UI; free/total ints would over-count cache/buffer).",
+          tags=[("component", "memory")],
+          trig=TR("AVERAGE",
+                  "last(/%s/sangfor.mem.util)>{$SANGFOR.MEM.MAX}" % TPL,
+                  "Sangfor: High memory usage over {$SANGFOR.MEM.MAX}% on {HOST.NAME}"))
+snmp_item("Sangfor: Swap total", "sangfor.swap.total",
+          "get[" + GEN + ".38.1.0]",
+          desc="sfMemTotalSwap. Units as reported by device.")
+snmp_item("Sangfor: Swap available", "sangfor.swap.avail",
+          "get[" + GEN + ".38.2.0]",
+          desc="sfMemAvailSwap. Units as reported by device.")
 
-I(name="Current sessions", key="sangfor.sessions.current",
-  oid=GEN + ".27.3.0", desc="sfCurSession", tags=[("component", "sessions")])
-I(name="New sessions", key="sangfor.sessions.new",
-  oid=GEN + ".27.1.0", desc="sfNewSessions", tags=[("component", "sessions")])
-I(name="Total sessions", key="sangfor.sessions.total",
-  oid=GEN + ".27.2.0", desc="sfTotalSessions", tags=[("component", "sessions")])
-I(name="New sessions per second", key="sangfor.sessions.new.persec",
-  oid=GEN + ".27.4.0", desc="sfNewSessionPerSec",
-  tags=[("component", "sessions")])
-I(name="Online users", key="sangfor.users",
-  oid=GEN + ".23.0", desc="sfUsers", tags=[("component", "users")])
+snmp_item("Sangfor: Current sessions", "sangfor.sessions.current",
+          "get[" + GEN + ".27.3.0]", desc="sfCurSession.",
+          tags=[("component", "sessions")])
+snmp_item("Sangfor: New sessions", "sangfor.sessions.new",
+          "get[" + GEN + ".27.1.0]", desc="sfNewSessions.",
+          tags=[("component", "sessions")])
+snmp_item("Sangfor: Total sessions", "sangfor.sessions.total",
+          "get[" + GEN + ".27.2.0]", desc="sfTotalSessions.",
+          tags=[("component", "sessions")])
+snmp_item("Sangfor: New sessions per second", "sangfor.sessions.new.persec",
+          "get[" + GEN + ".27.4.0]", desc="sfNewSessionPerSec.",
+          tags=[("component", "sessions")])
+snmp_item("Sangfor: Online users", "sangfor.users",
+          "get[" + GEN + ".23.0]", desc="sfUsers.",
+          tags=[("component", "users")])
 
-I(name="Inbound throughput", key="sangfor.throughput.in",
-  oid=GEN + ".48.2.0", desc="sfSysInThroughput (units as reported by device)",
-  tags=[("component", "throughput")])
-I(name="Outbound throughput", key="sangfor.throughput.out",
-  oid=GEN + ".48.1.0", desc="sfSysOutThroughput (units as reported by device)",
-  tags=[("component", "throughput")])
+snmp_item("Sangfor: Inbound throughput", "sangfor.throughput.in",
+          "get[" + GEN + ".48.2.0]",
+          desc="sfSysInThroughput - instantaneous; units not stated in MIB "
+               "(verify against vendor UI).", tags=[("component", "throughput")])
+snmp_item("Sangfor: Outbound throughput", "sangfor.throughput.out",
+          "get[" + GEN + ".48.1.0]",
+          desc="sfSysOutThroughput - instantaneous; units not stated in MIB "
+               "(verify against vendor UI).", tags=[("component", "throughput")])
 
-I(name="HA enabled", key="sangfor.ha.enabled",
-  oid=GEN + ".64.1.0", desc="sfHAEnable: 0 - disabled, 1 - enabled",
-  tags=[("component", "ha")])
-I(name="HA mode", key="sangfor.ha.mode",
-  oid=GEN + ".64.2.0",
-  desc="sfHAMode: 0 - invalid, 1 - master-master, 2 - master-slave, 3 - mirror",
-  tags=[("component", "ha")])
-I(name="HA current status", key="sangfor.ha.status",
-  oid=GEN + ".64.3.0",
-  desc="sfHACurStatus: 0 - invalid, 1 - init, 4 - master, 5 - slave",
-  tags=[("component", "ha")])
-I(name="HA control link status", key="sangfor.ha.ctrllink",
-  oid=GEN + ".64.6.0",
-  desc="sfHACtrlLinkStatus: 0 - invalid, 1 - normal, 2 - abnormal",
-  tags=[("component", "ha")],
-  trig=TR("HIGH", "last(/%s/sangfor.ha.ctrllink)=2" % TPL,
-          "HA control link is ABNORMAL on {HOST.NAME}"))
-I(name="HA data link status", key="sangfor.ha.datalink",
-  oid=GEN + ".64.7.0",
-  desc="sfHADataLinkStatus: 0 - invalid, 1 - normal, 2 - abnormal",
-  tags=[("component", "ha")],
-  trig=TR("HIGH", "last(/%s/sangfor.ha.datalink)=2" % TPL,
-          "HA data link is ABNORMAL on {HOST.NAME}"))
-I(name="HA sync state", key="sangfor.ha.sync",
-  oid=GEN + ".64.8.0",
-  desc="sfHASyncState: 0 - invalid, 1 - sync running, 2 - sync end, 3 - unknown",
-  tags=[("component", "ha")])
+snmp_item("Sangfor: HA enabled", "sangfor.ha.enabled",
+          "get[" + GEN + ".64.1.0]",
+          desc="sfHAEnable: 0 - disabled, 1 - enabled.",
+          tags=[("component", "ha")], history="0")
+snmp_item("Sangfor: HA mode", "sangfor.ha.mode",
+          "get[" + GEN + ".64.2.0]",
+          desc="sfHAMode: 0 - invalid, 1 - master-master, 2 - master-slave, "
+               "3 - mirror.", tags=[("component", "ha")], history="0")
+snmp_item("Sangfor: HA current status", "sangfor.ha.status",
+          "get[" + GEN + ".64.3.0]",
+          desc="sfHACurStatus: 0 - invalid, 1 - init, 4 - master, 5 - slave.",
+          tags=[("component", "ha")])
+snmp_item("Sangfor: HA control link status", "sangfor.ha.ctrllink",
+          "get[" + GEN + ".64.6.0]",
+          desc="sfHACtrlLinkStatus: 0 - invalid, 1 - normal, 2 - abnormal.",
+          tags=[("component", "ha")],
+          trig=TR("HIGH", "last(/%s/sangfor.ha.ctrllink)=2" % TPL,
+                  "Sangfor: HA control link ABNORMAL on {HOST.NAME}"))
+snmp_item("Sangfor: HA data link status", "sangfor.ha.datalink",
+          "get[" + GEN + ".64.7.0]",
+          desc="sfHADataLinkStatus: 0 - invalid, 1 - normal, 2 - abnormal.",
+          tags=[("component", "ha")],
+          trig=TR("HIGH", "last(/%s/sangfor.ha.datalink)=2" % TPL,
+                  "Sangfor: HA data link ABNORMAL on {HOST.NAME}"))
+snmp_item("Sangfor: HA sync state", "sangfor.ha.sync",
+          "get[" + GEN + ".64.8.0]",
+          desc="sfHASyncState: 0 - invalid, 1 - sync running, 2 - sync end, "
+               "3 - unknown.", tags=[("component", "ha")])
 
-# =============== LLD ===============
-dr_el = ET.SubElement(t, "discovery_rules")
+# ================= LLD =================
+IF = GEN + ".34.1"    # sfIfTable
+DK = GEN + ".5.1"     # sfDiskTable
+CC = GEN + ".20.1"    # sfCpuCostRateTable
+FN = GEN + ".14.1"    # sfSysFanTable
+PW = GEN + ".15.1"    # sfSysPowerTable
+TS = GEN + ".59.1"    # sfTempSensorTable
 
-IF = GEN + ".34.1"   # sfIfTable
-DK = GEN + ".5.1"    # sfDiskTable
-CC = GEN + ".20.1"   # sfCpuCostRateTable
-FN = GEN + ".14.1"   # sfSysFanTable
-PW = GEN + ".15.1"   # sfSysPowerTable
-TS = GEN + ".59.1"   # sfTempSensorTable
+def proto(name, key, oid, units="", pre=None, vtype="FLOAT", desc="",
+          tags=(), trig=None):
+    it = {"uuid": U(), "name": name, "type": "SNMP_AGENT",
+          "snmp_oid": "get[" + oid + "]", "key": key,
+          "delay": "{$SANGFOR.UPDATE.FREQ}",
+          "history": "7d", "value_type": vtype, "description": desc}
+    if units:
+        it["units"] = units
+    if pre:
+        it["preprocessing"] = pre
+    if tags:
+        it["tags"] = [{"tag": a, "value": b} for a, b in tags]
+    if trig:
+        it["_trig"] = trig
+    return it
 
-def P(name, key, oid, units="", pre=None, vtype="FLOAT", desc="", trig=None,
-      tags=(), history="7d"):
-    return dict(uuid=None, name=name, key=key, oid=oid, units=units,
-                pre=pre, vtype=vtype, desc=desc, trig=trig, tags=list(tags),
-                history=history)
+def calc_proto(name, key, formula, units="", desc="", tags=(), trig=None):
+    it = {"uuid": U(), "name": name, "type": "CALCULATED", "key": key,
+          "delay": "1m", "params": formula, "history": "7d",
+          "value_type": "FLOAT", "description": desc}
+    if units:
+        it["units"] = units
+    if tags:
+        it["tags"] = [{"tag": a, "value": b} for a, b in tags]
+    if trig:
+        it["_trig"] = trig
+    return it
 
-render_lld(dr_el, dict(
-    name="Interface discovery", key="sangfor.if.discovery", oid=IF + ".2",
-    desc="Interfaces from SANGFOR-MIB::sfIfTable (column sfIfName).",
-    filter=[("{#SNMPVALUE}", "^(?!(l.o|Loopback|lo$))", "MATCHES_REGEX")],
-    protos=[
-        P("Interface {#SNMPVALUE}: Inbound traffic", "sangfor.if.in.bps[{#SNMPINDEX}]",
-          IF + ".8.{#SNMPINDEX}", "bps", X8, vtype="FLOAT",
-          desc="sfIfInRate - instantaneous byte/s (verified on AF 8.0.108), x8 -> bit/s",
-          tags=[("component", "network")]),
-        P("Interface {#SNMPVALUE}: Outbound traffic", "sangfor.if.out.bps[{#SNMPINDEX}]",
-          IF + ".9.{#SNMPINDEX}", "bps", X8, vtype="FLOAT",
-          desc="sfIfOutRate - instantaneous byte/s (verified on AF 8.0.108), x8 -> bit/s",
-          tags=[("component", "network")]),
-        P("Interface {#SNMPVALUE}: Inbound packets rate", "sangfor.if.in.pps[{#SNMPINDEX}]",
-          IF + ".13.{#SNMPINDEX}", "pps", CPS, vtype="UNSIGNED",
-          desc="sfIfInPkts (Counter64 -> packets/s)",
-          tags=[("component", "network")]),
-        P("Interface {#SNMPVALUE}: Outbound packets rate", "sangfor.if.out.pps[{#SNMPINDEX}]",
-          IF + ".14.{#SNMPINDEX}", "pps", CPS, vtype="UNSIGNED",
-          desc="sfIfOutPkts (Counter64 -> packets/s)",
-          tags=[("component", "network")]),
-        P("Interface {#SNMPVALUE}: Inbound discards", "sangfor.if.in.drop[{#SNMPINDEX}]",
-          IF + ".15.{#SNMPINDEX}", "ps", CPS, vtype="UNSIGNED",
-          desc="sfIfInDrop (Counter64 -> rate)",
-          tags=[("component", "network")],
-          trig=TR("WARNING",
-                  "last(/%s/sangfor.if.in.drop[{#SNMPINDEX}])>{$SANGFOR.IF_DROP.MAX}" % TPL,
-                  "Interface {#SNMPVALUE}: high inbound discard rate (>{ITEM.LASTVALUE1} ps)")),
-        P("Interface {#SNMPVALUE}: Outbound discards", "sangfor.if.out.drop[{#SNMPINDEX}]",
-          IF + ".16.{#SNMPINDEX}", "ps", CPS, vtype="UNSIGNED",
-          desc="sfIfOutDrop (Counter64 -> rate)",
-          tags=[("component", "network")],
-          trig=TR("WARNING",
-                  "last(/%s/sangfor.if.out.drop[{#SNMPINDEX}])>{$SANGFOR.IF_DROP.MAX}" % TPL,
-                  "Interface {#SNMPVALUE}: high outbound discard rate (>{ITEM.LASTVALUE1} ps)")),
-        P("Interface {#SNMPVALUE}: IPv4 address", "sangfor.if.ipv4[{#SNMPINDEX}]",
-          IF + ".4.{#SNMPINDEX}", vtype="CHAR", desc="sfIfAddr",
-          tags=[("component", "network")]),
-    ]))
+def lld(name, key, disc_oid, protos, desc="", filter=None):
+    dr = {"uuid": U(), "name": name, "type": "SNMP_AGENT",
+          "snmp_oid": disc_oid, "key": key,
+          "delay": "{$SANGFOR.DISCOVERY.FREQ}",
+          "description": desc,
+          "filter": {"evaltype": "AND"} if not filter else
+                    {"evaltype": "AND", "conditions": filter}}
+    ips, tps = [], []
+    for p in protos:
+        t = p.pop("_trig", None)
+        if t:
+            tps.append(t)
+        ips.append(p)
+    dr["item_prototypes"] = ips
+    if tps:
+        dr["trigger_prototypes"] = tps
+    drs.append(dr)
 
-def disk_usage_calc(it):
-    it["calc"] = ("(last(/%s/sangfor.disk.used[{#SNMPINDEX}])"
-                  "/last(/%s/sangfor.disk.size[{#SNMPINDEX}]))*100" % (TPL, TPL))
+lld("Interface discovery", "sangfor.if.discovery",
+    "discovery[{#SNMPVALUE}," + IF + ".2]",
+    [
+     proto("Interface {#SNMPVALUE}: Inbound traffic",
+           "sangfor.if.in.bps[{#SNMPINDEX}]", IF + ".8.{#SNMPINDEX}",
+           "bps", X8, desc="sfIfInRate - instantaneous byte/s (verified on "
+           "AF8.0.108), x8 to bit/s.", tags=[("component", "network")]),
+     proto("Interface {#SNMPVALUE}: Outbound traffic",
+           "sangfor.if.out.bps[{#SNMPINDEX}]", IF + ".9.{#SNMPINDEX}",
+           "bps", X8, desc="sfIfOutRate - instantaneous byte/s (verified on "
+           "AF8.0.108), x8 to bit/s.", tags=[("component", "network")]),
+     proto("Interface {#SNMPVALUE}: Inbound packets",
+           "sangfor.if.in.pps[{#SNMPINDEX}]", IF + ".13.{#SNMPINDEX}",
+           "pps", CPS, desc="sfIfInPkts (cumulative counter -> packets/s).",
+           tags=[("component", "network")]),
+     proto("Interface {#SNMPVALUE}: Outbound packets",
+           "sangfor.if.out.pps[{#SNMPINDEX}]", IF + ".14.{#SNMPINDEX}",
+           "pps", CPS, desc="sfIfOutPkts (cumulative counter -> packets/s).",
+           tags=[("component", "network")]),
+     proto("Interface {#SNMPVALUE}: Inbound discards",
+           "sangfor.if.in.drop[{#SNMPINDEX}]", IF + ".15.{#SNMPINDEX}",
+           "ps", CPS, desc="sfIfInDrop (cumulative counter -> rate).",
+           tags=[("component", "network")],
+           trig=TR("WARNING",
+                   "last(/%s/sangfor.if.in.drop[{#SNMPINDEX}])>{$SANGFOR.IF_DROP.MAX}" % TPL,
+                   "Interface {#SNMPVALUE}: high inbound discard rate on {HOST.NAME}")),
+     proto("Interface {#SNMPVALUE}: Outbound discards",
+           "sangfor.if.out.drop[{#SNMPINDEX}]", IF + ".16.{#SNMPINDEX}",
+           "ps", CPS, desc="sfIfOutDrop (cumulative counter -> rate).",
+           tags=[("component", "network")],
+           trig=TR("WARNING",
+                   "last(/%s/sangfor.if.out.drop[{#SNMPINDEX}])>{$SANGFOR.IF_DROP.MAX}" % TPL,
+                   "Interface {#SNMPVALUE}: high outbound discard rate on {HOST.NAME}")),
+     proto("Interface {#SNMPVALUE}: IPv4 address",
+           "sangfor.if.ipv4[{#SNMPINDEX}]", IF + ".4.{#SNMPINDEX}",
+           vtype="CHAR", desc="sfIfAddr.", tags=[("component", "network")]),
+    ],
+    desc="Interfaces from SANGFOR-MIB::sfIfTable (sfIfName column).")
 
-dp_size = P("Disk {#SNMPVALUE}: Total space", "sangfor.disk.size[{#SNMPINDEX}]",
-            DK + ".7.{#SNMPINDEX}", "B", M2B,
-            desc="sfIntDiskSize (MB -> B)", tags=[("component", "disk")])
-dp_used = P("Disk {#SNMPVALUE}: Used space", "sangfor.disk.used[{#SNMPINDEX}]",
-            DK + ".8.{#SNMPINDEX}", "B", M2B,
-            desc="sfIntDiskUsed (MB -> B)", tags=[("component", "disk")])
-dp_avail = P("Disk {#SNMPVALUE}: Available space", "sangfor.disk.avail[{#SNMPINDEX}]",
-             DK + ".9.{#SNMPINDEX}", "B", M2B,
-             desc="sfIntDiskAvail (MB -> B)", tags=[("component", "disk")])
-dp_temp = P("Disk {#SNMPVALUE}: Temperature", "sangfor.disk.temp[{#SNMPINDEX}]",
-            DK + ".10.{#SNMPINDEX}", "\u00b0C",
-            desc="sfDiskTemp", tags=[("component", "disk")],
-            trig=TR("WARNING",
-                    "last(/%s/sangfor.disk.temp[{#SNMPINDEX}])>{$SANGFOR.DISK_TEMP.MAX}" % TPL,
-                    "Disk {#SNMPVALUE}: high temperature ({ITEM.LASTVALUE1})"))
-dp_pct = P("Disk {#SNMPVALUE}: Space usage", "sangfor.disk.pused[{#SNMPINDEX}]",
-           None, "%", desc="Calculated used/total",
+lld("Disk discovery", "sangfor.disk.discovery",
+    "discovery[{#SNMPVALUE}," + DK + ".2]",
+    [
+     proto("Disk {#SNMPVALUE}: Total space", "sangfor.disk.size[{#SNMPINDEX}]",
+           DK + ".7.{#SNMPINDEX}", "B", M2B,
+           desc="sfIntDiskSize (MB -> bytes).", tags=[("component", "disk")]),
+     proto("Disk {#SNMPVALUE}: Used space", "sangfor.disk.used[{#SNMPINDEX}]",
+           DK + ".8.{#SNMPINDEX}", "B", M2B,
+           desc="sfIntDiskUsed (MB -> bytes).", tags=[("component", "disk")]),
+     proto("Disk {#SNMPVALUE}: Available space", "sangfor.disk.avail[{#SNMPINDEX}]",
+           DK + ".9.{#SNMPINDEX}", "B", M2B,
+           desc="sfIntDiskAvail (MB -> bytes).", tags=[("component", "disk")]),
+     proto("Disk {#SNMPVALUE}: Space usage", "sangfor.disk.pused[{#SNMPINDEX}]",
+           DK + ".6.{#SNMPINDEX}", "%", pre=JSNUM,
+           desc="sfDiskUsedPercent - device-reported usage (string).",
            tags=[("component", "disk")],
            trig=TR("WARNING",
                    "last(/%s/sangfor.disk.pused[{#SNMPINDEX}])>{$SANGFOR.DISK.MAX}" % TPL,
-                   "Disk {#SNMPVALUE}: space usage over {$SANGFOR.DISK.MAX}%"))
-dp_pct["calc"] = ("(last(/%s/sangfor.disk.used[{#SNMPINDEX}])"
-                  "/last(/%s/sangfor.disk.size[{#SNMPINDEX}]))*100" % (TPL, TPL))
+                   "Disk {#SNMPVALUE}: space usage over {$SANGFOR.DISK.MAX}% on {HOST.NAME}")),
+     proto("Disk {#SNMPVALUE}: Temperature", "sangfor.disk.temp[{#SNMPINDEX}]",
+           DK + ".10.{#SNMPINDEX}", "\u00b0C",
+           desc="sfDiskTemp.", tags=[("component", "disk")],
+           trig=TR("WARNING",
+                   "last(/%s/sangfor.disk.temp[{#SNMPINDEX}])>{$SANGFOR.DISK_TEMP.MAX}" % TPL,
+                   "Disk {#SNMPVALUE}: high temperature ({ITEM.LASTVALUE1}) on {HOST.NAME}")),
+    ],
+    desc="Filesystems from SANGFOR-MIB::sfDiskTable (sfFilesystemName column).",
+    filter=[{"macro": "{#SNMPVALUE}", "value": "/dev/loop",
+             "operator": "NOT_MATCHES_REGEX"}])
 
-render_lld(dr_el, dict(
-    name="Disk discovery", key="sangfor.disk.discovery", oid=DK + ".2",
-    desc="Filesystems from SANGFOR-MIB::sfDiskTable (column sfFilesystemName).",
-    protos=[dp_size, dp_used, dp_avail, dp_pct, dp_temp]))
+lld("CPU core discovery", "sangfor.cpu.discovery",
+    "discovery[{#SNMPVALUE}," + CC + ".1]",
+    [
+     proto("CPU core {#SNMPVALUE}: User time", "sangfor.cpu.user[{#SNMPINDEX}]",
+           CC + ".2.{#SNMPINDEX}", "%", desc="sfCpuUser per core.",
+           tags=[("component", "cpu")]),
+     proto("CPU core {#SNMPVALUE}: System time", "sangfor.cpu.sys[{#SNMPINDEX}]",
+           CC + ".3.{#SNMPINDEX}", "%", desc="sfCpuSys per core.",
+           tags=[("component", "cpu")]),
+     proto("CPU core {#SNMPVALUE}: CPU utilization", "sangfor.cpu.util[{#SNMPINDEX}]",
+           CC + ".4.{#SNMPINDEX}", "%", desc="sfCpuAll per core.",
+           tags=[("component", "cpu")],
+           trig=TR("WARNING",
+                   "last(/%s/sangfor.cpu.util[{#SNMPINDEX}])>{$SANGFOR.CPU_CORE.MAX}" % TPL,
+                   "CPU core {#SNMPVALUE}: utilization over {$SANGFOR.CPU_CORE.MAX}% on {HOST.NAME}")),
+    ],
+    desc="Per-core load from SANGFOR-MIB::sfCpuCostRateTable.")
 
-render_lld(dr_el, dict(
-    name="CPU core discovery", key="sangfor.cpu.discovery", oid=CC + ".4",
-    desc="Per-core load from SANGFOR-MIB::sfCpuCostRateTable (column sfCpuAll).",
-    protos=[
-        P("CPU core {#SNMPINDEX}: User time", "sangfor.cpu.user[{#SNMPINDEX}]",
-          CC + ".2.{#SNMPINDEX}", "%", desc="sfCpuUser per core",
-          tags=[("component", "cpu")]),
-        P("CPU core {#SNMPINDEX}: System time", "sangfor.cpu.sys[{#SNMPINDEX}]",
-          CC + ".3.{#SNMPINDEX}", "%", desc="sfCpuSys per core",
-          tags=[("component", "cpu")]),
-        P("CPU core {#SNMPINDEX}: CPU utilization", "sangfor.cpu.util[{#SNMPINDEX}]",
-          CC + ".4.{#SNMPINDEX}", "%", desc="sfCpuAll per core",
-          tags=[("component", "cpu")],
-          trig=TR("WARNING",
-                  "last(/%s/sangfor.cpu.util[{#SNMPINDEX}])>{$SANGFOR.CPU_CORE.MAX}" % TPL,
-                  "CPU core {#SNMPINDEX}: utilization over {$SANGFOR.CPU_CORE.MAX}%")),
-    ]))
+lld("Fan discovery", "sangfor.fan.discovery",
+    "discovery[{#SNMPVALUE}," + FN + ".2]",
+    [
+     proto("Fan {#SNMPVALUE}: Speed", "sangfor.fan.speed[{#SNMPINDEX}]",
+           FN + ".3.{#SNMPINDEX}", "rpm", desc="sfFanSpeed.",
+           tags=[("component", "hardware")]),
+     proto("Fan {#SNMPVALUE}: State", "sangfor.fan.state[{#SNMPINDEX}]",
+           FN + ".4.{#SNMPINDEX}", desc="sfFanState: 0 - abnormal, 1 - normal.",
+           tags=[("component", "hardware")],
+           trig=TR("AVERAGE",
+                   "last(/%s/sangfor.fan.state[{#SNMPINDEX}])=0" % TPL,
+                   "Sangfor: Fan {#SNMPVALUE} ABNORMAL on {HOST.NAME}")),
+    ],
+    desc="Fans from SANGFOR-MIB::sfSysFanTable. Some NGAF models do not "
+         "expose this table (verified empty on AF8.0.108 nsf-1050a-i).")
 
-render_lld(dr_el, dict(
-    name="Fan discovery", key="sangfor.fan.discovery", oid=FN + ".2",
-    desc="Fans from SANGFOR-MIB::sfSysFanTable (column sfFanName).",
-    protos=[
-        P("Fan {#SNMPVALUE}: Speed", "sangfor.fan.speed[{#SNMPINDEX}]",
-          FN + ".3.{#SNMPINDEX}", "rpm", desc="sfFanSpeed",
-          tags=[("component", "hardware")]),
-        P("Fan {#SNMPVALUE}: State", "sangfor.fan.state[{#SNMPINDEX}]",
-          FN + ".4.{#SNMPINDEX}", desc="sfFanState: 0 - abnormal, 1 - normal",
-          tags=[("component", "hardware")],
-          trig=TR("AVERAGE",
-                  "last(/%s/sangfor.fan.state[{#SNMPINDEX}])=0" % TPL,
-                  "Fan {#SNMPVALUE} is ABNORMAL on {HOST.NAME}")),
-    ]))
+lld("Power supply discovery", "sangfor.psu.discovery",
+    "discovery[{#SNMPVALUE}," + PW + ".2]",
+    [
+     proto("PSU {#SNMPVALUE}: State", "sangfor.psu.state[{#SNMPINDEX}]",
+           PW + ".3.{#SNMPINDEX}", desc="sfPowerState: 0 - abnormal, 1 - normal.",
+           tags=[("component", "hardware")],
+           trig=TR("HIGH",
+                   "last(/%s/sangfor.psu.state[{#SNMPINDEX}])=0" % TPL,
+                   "Sangfor: Power supply {#SNMPVALUE} ABNORMAL on {HOST.NAME}")),
+    ],
+    desc="PSUs from SANGFOR-MIB::sfSysPowerTable. Some NGAF models do not "
+         "expose this table (verified empty on AF8.0.108 nsf-1050a-i).")
 
-render_lld(dr_el, dict(
-    name="Power supply discovery", key="sangfor.psu.discovery", oid=PW + ".2",
-    desc="PSUs from SANGFOR-MIB::sfSysPowerTable (column sfPowerName).",
-    protos=[
-        P("PSU {#SNMPVALUE}: State", "sangfor.psu.state[{#SNMPINDEX}]",
-          PW + ".3.{#SNMPINDEX}", desc="sfPowerState: 0 - abnormal, 1 - normal",
-          tags=[("component", "hardware")],
-          trig=TR("HIGH",
-                  "last(/%s/sangfor.psu.state[{#SNMPINDEX}])=0" % TPL,
-                  "Power supply {#SNMPVALUE} is ABNORMAL on {HOST.NAME}")),
-    ]))
+lld("Temperature sensor discovery", "sangfor.temp.discovery",
+    "discovery[{#SNMPVALUE}," + TS + ".2]",
+    [
+     proto("Sensor {#SNMPVALUE}: Temperature", "sangfor.temp.value[{#SNMPINDEX}]",
+           TS + ".3.{#SNMPINDEX}", "\u00b0C", desc="sfTempSensorReading.",
+           tags=[("component", "hardware")]),
+    ],
+    desc="Temperature sensors from SANGFOR-MIB::sfTempSensorTable. Some NGAF "
+         "models do not expose this table (verified empty on AF8.0.108 nsf-1050a-i).")
 
-render_lld(dr_el, dict(
-    name="Temperature sensor discovery", key="sangfor.temp.discovery", oid=TS + ".2",
-    desc="Temperature sensors from SANGFOR-MIB::sfTempSensorTable (column sfTempSensorName).",
-    protos=[
-        P("Sensor {#SNMPVALUE}: Temperature", "sangfor.temp.value[{#SNMPINDEX}]",
-          TS + ".3.{#SNMPINDEX}", "\u00b0C", desc="sfTempSensorReading",
-          tags=[("component", "hardware")]),
-    ]))
-
-# =============== macros ===============
-macros_el = ET.SubElement(t, "macros")
+# ================= macros =================
 for m, v, d in [
-    ("{$SANGFOR.SNMP.COMMUNITY}", "public",
-     "SNMP community used by all Sangfor items. Override on host level."),
     ("{$SANGFOR.UPDATE.FREQ}", "1m", "Update interval for metrics."),
     ("{$SANGFOR.DISCOVERY.FREQ}", "1h", "Low-level discovery interval."),
     ("{$SANGFOR.CPU.MAX}", "90", "CPU utilization (%) warning threshold."),
     ("{$SANGFOR.CPU_CORE.MAX}", "95", "Per-core CPU utilization (%) threshold."),
     ("{$SANGFOR.MEM.MAX}", "90", "Memory usage (%) warning threshold."),
     ("{$SANGFOR.DISK.MAX}", "85", "Filesystem usage (%) warning threshold."),
-    ("{$SANGFOR.DISK_TEMP.MAX}", "70", "Disk temperature warning threshold."),
+    ("{$SANGFOR.DISK_TEMP.MAX}", "70", "Disk temperature (C) warning threshold."),
     ("{$SANGFOR.IF_DROP.MAX}", "1000",
-     "Interface discard rate (ps) warning threshold. Lower it if your policy drops are noisy."),
+     "Interface discard rate (ps) warning threshold."),
 ]:
-    mx = ET.SubElement(macros_el, "macro")
-    ET.SubElement(mx, "macro").text = m
-    ET.SubElement(mx, "value").text = v
-    ET.SubElement(mx, "description").text = d
+    macros.append({"macro": m, "value": v, "description": d})
 
-ET.indent(root, space="    ")
-tree = ET.ElementTree(root)
-out = "/home/eddie/.openclaw/agents/homelab/sangfor/template_sangfor_ngaf_snmp.xml"
-with open(out, "wb") as fh:
-    tree.write(fh, encoding="UTF-8", xml_declaration=True)
+# ================= assemble =================
+tpl = {"uuid": U(), "template": TPL, "name": TPL,
+       "description": "Sangfor NGAF monitoring via private SANGFOR-MIB "
+                      "(enterprises %s). Requires SNMP v2c or later; "
+                      "community/v3 credentials are configured on the host "
+                      "SNMP interface (8.0 items have no community field). "
+                      "Verified against a "
+                      "live NGAF running AF8.0.108.657 (nsf-1050a-i): "
+                      "sfIfInRate/sfIfOutRate are instantaneous byte/s gauges "
+                      "(x8 only, no Change per second); sfIfInPkts/sfIfOutPkts/"
+                      "drops are cumulative counters (Change per second); "
+                      "memory ints are kB; disk ints are MB; sfSysDiskUsage "
+                      "(.52.1) is not implemented on AF 8.0 and is NOT polled; "
+                      "fan/PSU/temp tables may be empty on some models."
+                      % BASE,
+       "groups": [{"name": TGROUP}],
+       "items": items,
+       "discovery_rules": drs,
+       "macros": macros}
+
+doc = {"zabbix_export": {
+    "version": "8.0",
+    "template_groups": [{"uuid": U(), "name": TGROUP}],
+    "templates": [tpl]}}
+
+out = "/home/eddie/.openclaw/agents/homelab/sangfor/template_sangfor_ngaf_snmp.json"
+with open(out, "w") as f:
+    json.dump(doc, f, indent=2, ensure_ascii=False)
 print("written", out)
-# re-parse sanity check
-ET.parse(out)
-print("XML well-formed OK")
+print("items:", len(items), "lld:", len(drs))

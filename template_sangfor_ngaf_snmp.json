@@ -1,0 +1,1125 @@
+{
+  "zabbix_export": {
+    "version": "8.0",
+    "template_groups": [
+      {
+        "uuid": "9e9136779aaa5d82a51af0a0201e5ee8",
+        "name": "Templates/Network devices"
+      }
+    ],
+    "templates": [
+      {
+        "uuid": "124dfd83b4f65697a3bdd8662960b6f0",
+        "template": "Sangfor NGAF by SNMP",
+        "name": "Sangfor NGAF by SNMP",
+        "description": "Sangfor NGAF monitoring via private SANGFOR-MIB (enterprises 1.3.6.1.4.1.35047). Requires SNMP v2c or later; community/v3 credentials are configured on the host SNMP interface (8.0 items have no community field). Verified against a live NGAF running AF8.0.108.657 (nsf-1050a-i): sfIfInRate/sfIfOutRate are instantaneous byte/s gauges (x8 only, no Change per second); sfIfInPkts/sfIfOutPkts/drops are cumulative counters (Change per second); memory ints are kB; disk ints are MB; sfSysDiskUsage (.52.1) is not implemented on AF 8.0 and is NOT polled; fan/PSU/temp tables may be empty on some models.",
+        "groups": [
+          {
+            "name": "Templates/Network devices"
+          }
+        ],
+        "items": [
+          {
+            "uuid": "8700675ac9e955b8ba272b4e1dd0173f",
+            "name": "Sangfor: Device description",
+            "type": "SNMP_AGENT",
+            "snmp_oid": "get[1.3.6.1.4.1.35047.1.1.0]",
+            "key": "sangfor.device.descr",
+            "delay": "{$SANGFOR.UPDATE.FREQ}",
+            "history": "7d",
+            "value_type": "CHAR",
+            "description": "sfDeviceDescr."
+          },
+          {
+            "uuid": "af825924d9b75b87b3b90e6e36664471",
+            "name": "Sangfor: Device name",
+            "type": "SNMP_AGENT",
+            "snmp_oid": "get[1.3.6.1.4.1.35047.1.17.0]",
+            "key": "sangfor.device.name",
+            "delay": "{$SANGFOR.UPDATE.FREQ}",
+            "history": "7d",
+            "value_type": "CHAR",
+            "description": "sfSysDevName."
+          },
+          {
+            "uuid": "46b5bcff813b556db3265f03b1814195",
+            "name": "Sangfor: Software version",
+            "type": "SNMP_AGENT",
+            "snmp_oid": "get[1.3.6.1.4.1.35047.1.18.0]",
+            "key": "sangfor.software.version",
+            "delay": "{$SANGFOR.UPDATE.FREQ}",
+            "history": "7d",
+            "value_type": "CHAR",
+            "description": "sfSysSoftVersion."
+          },
+          {
+            "uuid": "cf139a62b28a5dfd8549167a907896c1",
+            "name": "Sangfor: AF version",
+            "type": "SNMP_AGENT",
+            "snmp_oid": "get[1.3.6.1.4.1.35047.1.24.0]",
+            "key": "sangfor.af.version",
+            "delay": "{$SANGFOR.UPDATE.FREQ}",
+            "history": "7d",
+            "value_type": "CHAR",
+            "description": "afSysSoftVersion."
+          },
+          {
+            "uuid": "6009b3d59c0354ef847c4022f6ad2972",
+            "name": "Sangfor: Serial number",
+            "type": "SNMP_AGENT",
+            "snmp_oid": "get[1.3.6.1.4.1.35047.1.40.0]",
+            "key": "sangfor.serial.number",
+            "delay": "{$SANGFOR.UPDATE.FREQ}",
+            "history": "7d",
+            "value_type": "CHAR",
+            "description": "sfSnGW - serial number of the appliance. Not implemented on AF8.0.108 (nsf-1050a-i): item ships DISABLED to avoid unsupported-noise; enable it if your model exposes sfSnGW.",
+            "status": "DISABLED"
+          },
+          {
+            "uuid": "d0ecb02ead3457b3b3b47a39c1dec45d",
+            "name": "Sangfor: Device status",
+            "type": "SNMP_AGENT",
+            "snmp_oid": "get[1.3.6.1.4.1.35047.1.12.0]",
+            "key": "sangfor.device.status",
+            "delay": "{$SANGFOR.UPDATE.FREQ}",
+            "history": "7d",
+            "value_type": "FLOAT",
+            "description": "sfDeviceStatus: 0 - Warning, 1 - Normal.",
+            "tags": [
+              {
+                "tag": "component",
+                "value": "health"
+              }
+            ],
+            "triggers": [
+              {
+                "uuid": "ec45f85bc430564eabdf7b1ad902360d",
+                "expression": "last(/Sangfor NGAF by SNMP/sangfor.device.status)=0",
+                "name": "Sangfor: Device reports WARNING status on {HOST.NAME}",
+                "priority": "WARNING"
+              }
+            ]
+          },
+          {
+            "uuid": "9b0217407bac5c2c85d85193b9b0b15f",
+            "name": "Sangfor: CPU utilization (30s)",
+            "type": "SNMP_AGENT",
+            "snmp_oid": "get[1.3.6.1.4.1.35047.1.19.4.0]",
+            "key": "sangfor.cpu.util.30s",
+            "delay": "{$SANGFOR.UPDATE.FREQ}",
+            "history": "7d",
+            "value_type": "FLOAT",
+            "description": "sfCpuAllCostRateLast30Sec.",
+            "units": "%",
+            "tags": [
+              {
+                "tag": "component",
+                "value": "cpu"
+              }
+            ]
+          },
+          {
+            "uuid": "e6fd544b0b5b5b3293d20820144e45c7",
+            "name": "Sangfor: CPU utilization (1 min)",
+            "type": "SNMP_AGENT",
+            "snmp_oid": "get[1.3.6.1.4.1.35047.1.19.5.0]",
+            "key": "sangfor.cpu.util.1m",
+            "delay": "{$SANGFOR.UPDATE.FREQ}",
+            "history": "7d",
+            "value_type": "FLOAT",
+            "description": "sfCpuAllCostRateLast1Min.",
+            "units": "%",
+            "tags": [
+              {
+                "tag": "component",
+                "value": "cpu"
+              }
+            ],
+            "triggers": [
+              {
+                "uuid": "37199121c5305f5d8e9a49c97bf3567e",
+                "expression": "last(/Sangfor NGAF by SNMP/sangfor.cpu.util.1m)>{$SANGFOR.CPU.MAX}",
+                "name": "Sangfor: High CPU utilization over {$SANGFOR.CPU.MAX}% on {HOST.NAME}",
+                "priority": "AVERAGE"
+              }
+            ]
+          },
+          {
+            "uuid": "8874706702cf53969cf65334ad170a32",
+            "name": "Sangfor: CPU utilization (5 min)",
+            "type": "SNMP_AGENT",
+            "snmp_oid": "get[1.3.6.1.4.1.35047.1.19.6.0]",
+            "key": "sangfor.cpu.util.5m",
+            "delay": "{$SANGFOR.UPDATE.FREQ}",
+            "history": "7d",
+            "value_type": "FLOAT",
+            "description": "sfCpuAllCostRateLast5Min.",
+            "units": "%",
+            "tags": [
+              {
+                "tag": "component",
+                "value": "cpu"
+              }
+            ]
+          },
+          {
+            "uuid": "f1807542f21353d5844ee2cd5c58f422",
+            "name": "Sangfor: CPU core count",
+            "type": "SNMP_AGENT",
+            "snmp_oid": "get[1.3.6.1.4.1.35047.1.21.0]",
+            "key": "sangfor.cpu.num",
+            "delay": "{$SANGFOR.UPDATE.FREQ}",
+            "history": "7d",
+            "value_type": "FLOAT",
+            "description": "sfCpuNum.",
+            "tags": [
+              {
+                "tag": "component",
+                "value": "cpu"
+              }
+            ]
+          },
+          {
+            "uuid": "d9562dcbac2e5439aa3d7f4608bd12c5",
+            "name": "Sangfor: Memory total",
+            "type": "SNMP_AGENT",
+            "snmp_oid": "get[1.3.6.1.4.1.35047.1.13.4.0]",
+            "key": "sangfor.mem.total",
+            "delay": "{$SANGFOR.UPDATE.FREQ}",
+            "history": "7d",
+            "value_type": "FLOAT",
+            "description": "sfIntSysTotalMemory (kB, converted to bytes).",
+            "units": "B",
+            "preprocessing": [
+              {
+                "type": "MULTIPLIER",
+                "parameters": [
+                  "1024"
+                ]
+              }
+            ],
+            "tags": [
+              {
+                "tag": "component",
+                "value": "memory"
+              }
+            ]
+          },
+          {
+            "uuid": "a08dcf4f046e5a14a7a218afffe7c2d0",
+            "name": "Sangfor: Memory free",
+            "type": "SNMP_AGENT",
+            "snmp_oid": "get[1.3.6.1.4.1.35047.1.13.3.0]",
+            "key": "sangfor.mem.free",
+            "delay": "{$SANGFOR.UPDATE.FREQ}",
+            "history": "7d",
+            "value_type": "FLOAT",
+            "description": "sfIntSysFreeMemory (kB, converted to bytes).",
+            "units": "B",
+            "preprocessing": [
+              {
+                "type": "MULTIPLIER",
+                "parameters": [
+                  "1024"
+                ]
+              }
+            ],
+            "tags": [
+              {
+                "tag": "component",
+                "value": "memory"
+              }
+            ]
+          },
+          {
+            "uuid": "a07013f5d4f056eb9299dd85c5852ef6",
+            "name": "Sangfor: Memory usage",
+            "type": "SNMP_AGENT",
+            "snmp_oid": "get[1.3.6.1.4.1.35047.1.13.5.0]",
+            "key": "sangfor.mem.util",
+            "delay": "{$SANGFOR.UPDATE.FREQ}",
+            "history": "7d",
+            "value_type": "FLOAT",
+            "description": "sfSysMemoryUsage - device-reported usage % (string, matches vendor UI; free/total ints would over-count cache/buffer).",
+            "units": "%",
+            "preprocessing": [
+              {
+                "type": "JAVASCRIPT",
+                "parameters": [
+                  "return value.replace(/[^0-9.]/g, '');"
+                ]
+              }
+            ],
+            "tags": [
+              {
+                "tag": "component",
+                "value": "memory"
+              }
+            ],
+            "triggers": [
+              {
+                "uuid": "085a00db086755ae8ab8b3935dac1f82",
+                "expression": "last(/Sangfor NGAF by SNMP/sangfor.mem.util)>{$SANGFOR.MEM.MAX}",
+                "name": "Sangfor: High memory usage over {$SANGFOR.MEM.MAX}% on {HOST.NAME}",
+                "priority": "AVERAGE"
+              }
+            ]
+          },
+          {
+            "uuid": "975ca29d33d35d51ada7bcbaf4684662",
+            "name": "Sangfor: Swap total",
+            "type": "SNMP_AGENT",
+            "snmp_oid": "get[1.3.6.1.4.1.35047.1.38.1.0]",
+            "key": "sangfor.swap.total",
+            "delay": "{$SANGFOR.UPDATE.FREQ}",
+            "history": "7d",
+            "value_type": "FLOAT",
+            "description": "sfMemTotalSwap. Units as reported by device."
+          },
+          {
+            "uuid": "b76e278ffe185a00a8f6936cb1a6cdd4",
+            "name": "Sangfor: Swap available",
+            "type": "SNMP_AGENT",
+            "snmp_oid": "get[1.3.6.1.4.1.35047.1.38.2.0]",
+            "key": "sangfor.swap.avail",
+            "delay": "{$SANGFOR.UPDATE.FREQ}",
+            "history": "7d",
+            "value_type": "FLOAT",
+            "description": "sfMemAvailSwap. Units as reported by device."
+          },
+          {
+            "uuid": "dbc2dc9cd1b15c1b8701711d4a6e1418",
+            "name": "Sangfor: Current sessions",
+            "type": "SNMP_AGENT",
+            "snmp_oid": "get[1.3.6.1.4.1.35047.1.27.3.0]",
+            "key": "sangfor.sessions.current",
+            "delay": "{$SANGFOR.UPDATE.FREQ}",
+            "history": "7d",
+            "value_type": "FLOAT",
+            "description": "sfCurSession.",
+            "tags": [
+              {
+                "tag": "component",
+                "value": "sessions"
+              }
+            ]
+          },
+          {
+            "uuid": "7865a483a7be58c8b9f953ee53cd9983",
+            "name": "Sangfor: New sessions",
+            "type": "SNMP_AGENT",
+            "snmp_oid": "get[1.3.6.1.4.1.35047.1.27.1.0]",
+            "key": "sangfor.sessions.new",
+            "delay": "{$SANGFOR.UPDATE.FREQ}",
+            "history": "7d",
+            "value_type": "FLOAT",
+            "description": "sfNewSessions.",
+            "tags": [
+              {
+                "tag": "component",
+                "value": "sessions"
+              }
+            ]
+          },
+          {
+            "uuid": "bdc1988924865c7387f24b900f8d0f12",
+            "name": "Sangfor: Total sessions",
+            "type": "SNMP_AGENT",
+            "snmp_oid": "get[1.3.6.1.4.1.35047.1.27.2.0]",
+            "key": "sangfor.sessions.total",
+            "delay": "{$SANGFOR.UPDATE.FREQ}",
+            "history": "7d",
+            "value_type": "FLOAT",
+            "description": "sfTotalSessions.",
+            "tags": [
+              {
+                "tag": "component",
+                "value": "sessions"
+              }
+            ]
+          },
+          {
+            "uuid": "6491d1d8deb75648b20f58396b4c5be1",
+            "name": "Sangfor: New sessions per second",
+            "type": "SNMP_AGENT",
+            "snmp_oid": "get[1.3.6.1.4.1.35047.1.27.4.0]",
+            "key": "sangfor.sessions.new.persec",
+            "delay": "{$SANGFOR.UPDATE.FREQ}",
+            "history": "7d",
+            "value_type": "FLOAT",
+            "description": "sfNewSessionPerSec.",
+            "tags": [
+              {
+                "tag": "component",
+                "value": "sessions"
+              }
+            ]
+          },
+          {
+            "uuid": "94fad9c89cc45c4e9d0dc5c59da208e7",
+            "name": "Sangfor: Online users",
+            "type": "SNMP_AGENT",
+            "snmp_oid": "get[1.3.6.1.4.1.35047.1.23.0]",
+            "key": "sangfor.users",
+            "delay": "{$SANGFOR.UPDATE.FREQ}",
+            "history": "7d",
+            "value_type": "FLOAT",
+            "description": "sfUsers.",
+            "tags": [
+              {
+                "tag": "component",
+                "value": "users"
+              }
+            ]
+          },
+          {
+            "uuid": "741fdfb6aa1855daa17965df90a68264",
+            "name": "Sangfor: Inbound throughput",
+            "type": "SNMP_AGENT",
+            "snmp_oid": "get[1.3.6.1.4.1.35047.1.48.2.0]",
+            "key": "sangfor.throughput.in",
+            "delay": "{$SANGFOR.UPDATE.FREQ}",
+            "history": "7d",
+            "value_type": "FLOAT",
+            "description": "sfSysInThroughput - instantaneous; units not stated in MIB (verify against vendor UI).",
+            "tags": [
+              {
+                "tag": "component",
+                "value": "throughput"
+              }
+            ]
+          },
+          {
+            "uuid": "38d6f9cf0fa55f61a444cb211cb28cdd",
+            "name": "Sangfor: Outbound throughput",
+            "type": "SNMP_AGENT",
+            "snmp_oid": "get[1.3.6.1.4.1.35047.1.48.1.0]",
+            "key": "sangfor.throughput.out",
+            "delay": "{$SANGFOR.UPDATE.FREQ}",
+            "history": "7d",
+            "value_type": "FLOAT",
+            "description": "sfSysOutThroughput - instantaneous; units not stated in MIB (verify against vendor UI).",
+            "tags": [
+              {
+                "tag": "component",
+                "value": "throughput"
+              }
+            ]
+          },
+          {
+            "uuid": "352bb52e7f08582fa6da0db54275c56b",
+            "name": "Sangfor: HA enabled",
+            "type": "SNMP_AGENT",
+            "snmp_oid": "get[1.3.6.1.4.1.35047.1.64.1.0]",
+            "key": "sangfor.ha.enabled",
+            "delay": "{$SANGFOR.UPDATE.FREQ}",
+            "history": "0",
+            "value_type": "FLOAT",
+            "description": "sfHAEnable: 0 - disabled, 1 - enabled.",
+            "tags": [
+              {
+                "tag": "component",
+                "value": "ha"
+              }
+            ]
+          },
+          {
+            "uuid": "be585ade5ca85adcb199ae636070ca3b",
+            "name": "Sangfor: HA mode",
+            "type": "SNMP_AGENT",
+            "snmp_oid": "get[1.3.6.1.4.1.35047.1.64.2.0]",
+            "key": "sangfor.ha.mode",
+            "delay": "{$SANGFOR.UPDATE.FREQ}",
+            "history": "0",
+            "value_type": "FLOAT",
+            "description": "sfHAMode: 0 - invalid, 1 - master-master, 2 - master-slave, 3 - mirror.",
+            "tags": [
+              {
+                "tag": "component",
+                "value": "ha"
+              }
+            ]
+          },
+          {
+            "uuid": "7df648b7893057ee8c02600f2aa12062",
+            "name": "Sangfor: HA current status",
+            "type": "SNMP_AGENT",
+            "snmp_oid": "get[1.3.6.1.4.1.35047.1.64.3.0]",
+            "key": "sangfor.ha.status",
+            "delay": "{$SANGFOR.UPDATE.FREQ}",
+            "history": "7d",
+            "value_type": "FLOAT",
+            "description": "sfHACurStatus: 0 - invalid, 1 - init, 4 - master, 5 - slave.",
+            "tags": [
+              {
+                "tag": "component",
+                "value": "ha"
+              }
+            ]
+          },
+          {
+            "uuid": "b55397a095f85d5e800dc9c48109062f",
+            "name": "Sangfor: HA control link status",
+            "type": "SNMP_AGENT",
+            "snmp_oid": "get[1.3.6.1.4.1.35047.1.64.6.0]",
+            "key": "sangfor.ha.ctrllink",
+            "delay": "{$SANGFOR.UPDATE.FREQ}",
+            "history": "7d",
+            "value_type": "FLOAT",
+            "description": "sfHACtrlLinkStatus: 0 - invalid, 1 - normal, 2 - abnormal.",
+            "tags": [
+              {
+                "tag": "component",
+                "value": "ha"
+              }
+            ],
+            "triggers": [
+              {
+                "uuid": "9ed2fa2c1a1b5d748f4c26538b6b9ac0",
+                "expression": "last(/Sangfor NGAF by SNMP/sangfor.ha.ctrllink)=2",
+                "name": "Sangfor: HA control link ABNORMAL on {HOST.NAME}",
+                "priority": "HIGH"
+              }
+            ]
+          },
+          {
+            "uuid": "2eacd0dd863c5b548bef1be947680d0f",
+            "name": "Sangfor: HA data link status",
+            "type": "SNMP_AGENT",
+            "snmp_oid": "get[1.3.6.1.4.1.35047.1.64.7.0]",
+            "key": "sangfor.ha.datalink",
+            "delay": "{$SANGFOR.UPDATE.FREQ}",
+            "history": "7d",
+            "value_type": "FLOAT",
+            "description": "sfHADataLinkStatus: 0 - invalid, 1 - normal, 2 - abnormal.",
+            "tags": [
+              {
+                "tag": "component",
+                "value": "ha"
+              }
+            ],
+            "triggers": [
+              {
+                "uuid": "07b260fd6b715a639b197d44e45b9320",
+                "expression": "last(/Sangfor NGAF by SNMP/sangfor.ha.datalink)=2",
+                "name": "Sangfor: HA data link ABNORMAL on {HOST.NAME}",
+                "priority": "HIGH"
+              }
+            ]
+          },
+          {
+            "uuid": "889740f336675d9e9f84d3c75e1c99e9",
+            "name": "Sangfor: HA sync state",
+            "type": "SNMP_AGENT",
+            "snmp_oid": "get[1.3.6.1.4.1.35047.1.64.8.0]",
+            "key": "sangfor.ha.sync",
+            "delay": "{$SANGFOR.UPDATE.FREQ}",
+            "history": "7d",
+            "value_type": "FLOAT",
+            "description": "sfHASyncState: 0 - invalid, 1 - sync running, 2 - sync end, 3 - unknown.",
+            "tags": [
+              {
+                "tag": "component",
+                "value": "ha"
+              }
+            ]
+          }
+        ],
+        "discovery_rules": [
+          {
+            "uuid": "6927835705725b4d9911aae2024b14ff",
+            "name": "Interface discovery",
+            "type": "SNMP_AGENT",
+            "snmp_oid": "discovery[{#SNMPVALUE},1.3.6.1.4.1.35047.1.34.1.2]",
+            "key": "sangfor.if.discovery",
+            "delay": "{$SANGFOR.DISCOVERY.FREQ}",
+            "description": "Interfaces from SANGFOR-MIB::sfIfTable (sfIfName column).",
+            "filter": {
+              "evaltype": "AND"
+            },
+            "item_prototypes": [
+              {
+                "uuid": "2d3a2b337c065a46a17c6b28f1e0c919",
+                "name": "Interface {#SNMPVALUE}: Inbound traffic",
+                "type": "SNMP_AGENT",
+                "snmp_oid": "get[1.3.6.1.4.1.35047.1.34.1.8.{#SNMPINDEX}]",
+                "key": "sangfor.if.in.bps[{#SNMPINDEX}]",
+                "delay": "{$SANGFOR.UPDATE.FREQ}",
+                "history": "7d",
+                "value_type": "FLOAT",
+                "description": "sfIfInRate - instantaneous byte/s (verified on AF8.0.108), x8 to bit/s.",
+                "units": "bps",
+                "preprocessing": [
+                  {
+                    "type": "MULTIPLIER",
+                    "parameters": [
+                      "8"
+                    ]
+                  }
+                ],
+                "tags": [
+                  {
+                    "tag": "component",
+                    "value": "network"
+                  }
+                ]
+              },
+              {
+                "uuid": "f5f6f95c7474542993c87c176889667a",
+                "name": "Interface {#SNMPVALUE}: Outbound traffic",
+                "type": "SNMP_AGENT",
+                "snmp_oid": "get[1.3.6.1.4.1.35047.1.34.1.9.{#SNMPINDEX}]",
+                "key": "sangfor.if.out.bps[{#SNMPINDEX}]",
+                "delay": "{$SANGFOR.UPDATE.FREQ}",
+                "history": "7d",
+                "value_type": "FLOAT",
+                "description": "sfIfOutRate - instantaneous byte/s (verified on AF8.0.108), x8 to bit/s.",
+                "units": "bps",
+                "preprocessing": [
+                  {
+                    "type": "MULTIPLIER",
+                    "parameters": [
+                      "8"
+                    ]
+                  }
+                ],
+                "tags": [
+                  {
+                    "tag": "component",
+                    "value": "network"
+                  }
+                ]
+              },
+              {
+                "uuid": "bcb0b582947b53c3b2df2a0ed238c8c2",
+                "name": "Interface {#SNMPVALUE}: Inbound packets",
+                "type": "SNMP_AGENT",
+                "snmp_oid": "get[1.3.6.1.4.1.35047.1.34.1.13.{#SNMPINDEX}]",
+                "key": "sangfor.if.in.pps[{#SNMPINDEX}]",
+                "delay": "{$SANGFOR.UPDATE.FREQ}",
+                "history": "7d",
+                "value_type": "FLOAT",
+                "description": "sfIfInPkts (cumulative counter -> packets/s).",
+                "units": "pps",
+                "preprocessing": [
+                  {
+                    "type": "CHANGE_PER_SECOND"
+                  }
+                ],
+                "tags": [
+                  {
+                    "tag": "component",
+                    "value": "network"
+                  }
+                ]
+              },
+              {
+                "uuid": "732bdabffcb25b43a6154d13a73442e6",
+                "name": "Interface {#SNMPVALUE}: Outbound packets",
+                "type": "SNMP_AGENT",
+                "snmp_oid": "get[1.3.6.1.4.1.35047.1.34.1.14.{#SNMPINDEX}]",
+                "key": "sangfor.if.out.pps[{#SNMPINDEX}]",
+                "delay": "{$SANGFOR.UPDATE.FREQ}",
+                "history": "7d",
+                "value_type": "FLOAT",
+                "description": "sfIfOutPkts (cumulative counter -> packets/s).",
+                "units": "pps",
+                "preprocessing": [
+                  {
+                    "type": "CHANGE_PER_SECOND"
+                  }
+                ],
+                "tags": [
+                  {
+                    "tag": "component",
+                    "value": "network"
+                  }
+                ]
+              },
+              {
+                "uuid": "6c2fc58e0d6e535c8f16239495f22c72",
+                "name": "Interface {#SNMPVALUE}: Inbound discards",
+                "type": "SNMP_AGENT",
+                "snmp_oid": "get[1.3.6.1.4.1.35047.1.34.1.15.{#SNMPINDEX}]",
+                "key": "sangfor.if.in.drop[{#SNMPINDEX}]",
+                "delay": "{$SANGFOR.UPDATE.FREQ}",
+                "history": "7d",
+                "value_type": "FLOAT",
+                "description": "sfIfInDrop (cumulative counter -> rate).",
+                "units": "ps",
+                "preprocessing": [
+                  {
+                    "type": "CHANGE_PER_SECOND"
+                  }
+                ],
+                "tags": [
+                  {
+                    "tag": "component",
+                    "value": "network"
+                  }
+                ]
+              },
+              {
+                "uuid": "bd4571d672d855bbafb04fcd99f49de9",
+                "name": "Interface {#SNMPVALUE}: Outbound discards",
+                "type": "SNMP_AGENT",
+                "snmp_oid": "get[1.3.6.1.4.1.35047.1.34.1.16.{#SNMPINDEX}]",
+                "key": "sangfor.if.out.drop[{#SNMPINDEX}]",
+                "delay": "{$SANGFOR.UPDATE.FREQ}",
+                "history": "7d",
+                "value_type": "FLOAT",
+                "description": "sfIfOutDrop (cumulative counter -> rate).",
+                "units": "ps",
+                "preprocessing": [
+                  {
+                    "type": "CHANGE_PER_SECOND"
+                  }
+                ],
+                "tags": [
+                  {
+                    "tag": "component",
+                    "value": "network"
+                  }
+                ]
+              },
+              {
+                "uuid": "a891c7e8f64152d3bdafee3d424eff35",
+                "name": "Interface {#SNMPVALUE}: IPv4 address",
+                "type": "SNMP_AGENT",
+                "snmp_oid": "get[1.3.6.1.4.1.35047.1.34.1.4.{#SNMPINDEX}]",
+                "key": "sangfor.if.ipv4[{#SNMPINDEX}]",
+                "delay": "{$SANGFOR.UPDATE.FREQ}",
+                "history": "7d",
+                "value_type": "CHAR",
+                "description": "sfIfAddr.",
+                "tags": [
+                  {
+                    "tag": "component",
+                    "value": "network"
+                  }
+                ]
+              }
+            ],
+            "trigger_prototypes": [
+              {
+                "uuid": "b0809f21135f5478bfb04b9e314c7631",
+                "expression": "last(/Sangfor NGAF by SNMP/sangfor.if.in.drop[{#SNMPINDEX}])>{$SANGFOR.IF_DROP.MAX}",
+                "name": "Interface {#SNMPVALUE}: high inbound discard rate on {HOST.NAME}",
+                "priority": "WARNING"
+              },
+              {
+                "uuid": "f3fa6f4af458556ab3b5791b52642254",
+                "expression": "last(/Sangfor NGAF by SNMP/sangfor.if.out.drop[{#SNMPINDEX}])>{$SANGFOR.IF_DROP.MAX}",
+                "name": "Interface {#SNMPVALUE}: high outbound discard rate on {HOST.NAME}",
+                "priority": "WARNING"
+              }
+            ]
+          },
+          {
+            "uuid": "5aab9da0752252ef8fc0d17f44b78801",
+            "name": "Disk discovery",
+            "type": "SNMP_AGENT",
+            "snmp_oid": "discovery[{#SNMPVALUE},1.3.6.1.4.1.35047.1.5.1.2]",
+            "key": "sangfor.disk.discovery",
+            "delay": "{$SANGFOR.DISCOVERY.FREQ}",
+            "description": "Filesystems from SANGFOR-MIB::sfDiskTable (sfFilesystemName column).",
+            "filter": {
+              "evaltype": "AND",
+              "conditions": [
+                {
+                  "macro": "{#SNMPVALUE}",
+                  "value": "/dev/loop",
+                  "operator": "NOT_MATCHES_REGEX"
+                }
+              ]
+            },
+            "item_prototypes": [
+              {
+                "uuid": "d5fc298225fb5296a6923904d656b2cf",
+                "name": "Disk {#SNMPVALUE}: Total space",
+                "type": "SNMP_AGENT",
+                "snmp_oid": "get[1.3.6.1.4.1.35047.1.5.1.7.{#SNMPINDEX}]",
+                "key": "sangfor.disk.size[{#SNMPINDEX}]",
+                "delay": "{$SANGFOR.UPDATE.FREQ}",
+                "history": "7d",
+                "value_type": "FLOAT",
+                "description": "sfIntDiskSize (MB -> bytes).",
+                "units": "B",
+                "preprocessing": [
+                  {
+                    "type": "MULTIPLIER",
+                    "parameters": [
+                      "1048576"
+                    ]
+                  }
+                ],
+                "tags": [
+                  {
+                    "tag": "component",
+                    "value": "disk"
+                  }
+                ]
+              },
+              {
+                "uuid": "2ce59ec258f25b7eae1a94e0c4661952",
+                "name": "Disk {#SNMPVALUE}: Used space",
+                "type": "SNMP_AGENT",
+                "snmp_oid": "get[1.3.6.1.4.1.35047.1.5.1.8.{#SNMPINDEX}]",
+                "key": "sangfor.disk.used[{#SNMPINDEX}]",
+                "delay": "{$SANGFOR.UPDATE.FREQ}",
+                "history": "7d",
+                "value_type": "FLOAT",
+                "description": "sfIntDiskUsed (MB -> bytes).",
+                "units": "B",
+                "preprocessing": [
+                  {
+                    "type": "MULTIPLIER",
+                    "parameters": [
+                      "1048576"
+                    ]
+                  }
+                ],
+                "tags": [
+                  {
+                    "tag": "component",
+                    "value": "disk"
+                  }
+                ]
+              },
+              {
+                "uuid": "5422e0187e3653f18c916a090bdbc371",
+                "name": "Disk {#SNMPVALUE}: Available space",
+                "type": "SNMP_AGENT",
+                "snmp_oid": "get[1.3.6.1.4.1.35047.1.5.1.9.{#SNMPINDEX}]",
+                "key": "sangfor.disk.avail[{#SNMPINDEX}]",
+                "delay": "{$SANGFOR.UPDATE.FREQ}",
+                "history": "7d",
+                "value_type": "FLOAT",
+                "description": "sfIntDiskAvail (MB -> bytes).",
+                "units": "B",
+                "preprocessing": [
+                  {
+                    "type": "MULTIPLIER",
+                    "parameters": [
+                      "1048576"
+                    ]
+                  }
+                ],
+                "tags": [
+                  {
+                    "tag": "component",
+                    "value": "disk"
+                  }
+                ]
+              },
+              {
+                "uuid": "fda084b9343e5efbb9f46af9ba6df269",
+                "name": "Disk {#SNMPVALUE}: Space usage",
+                "type": "SNMP_AGENT",
+                "snmp_oid": "get[1.3.6.1.4.1.35047.1.5.1.6.{#SNMPINDEX}]",
+                "key": "sangfor.disk.pused[{#SNMPINDEX}]",
+                "delay": "{$SANGFOR.UPDATE.FREQ}",
+                "history": "7d",
+                "value_type": "FLOAT",
+                "description": "sfDiskUsedPercent - device-reported usage (string).",
+                "units": "%",
+                "preprocessing": [
+                  {
+                    "type": "JAVASCRIPT",
+                    "parameters": [
+                      "return value.replace(/[^0-9.]/g, '');"
+                    ]
+                  }
+                ],
+                "tags": [
+                  {
+                    "tag": "component",
+                    "value": "disk"
+                  }
+                ]
+              },
+              {
+                "uuid": "a41dbfece3b7572db971a44f874cbb6d",
+                "name": "Disk {#SNMPVALUE}: Temperature",
+                "type": "SNMP_AGENT",
+                "snmp_oid": "get[1.3.6.1.4.1.35047.1.5.1.10.{#SNMPINDEX}]",
+                "key": "sangfor.disk.temp[{#SNMPINDEX}]",
+                "delay": "{$SANGFOR.UPDATE.FREQ}",
+                "history": "7d",
+                "value_type": "FLOAT",
+                "description": "sfDiskTemp.",
+                "units": "°C",
+                "tags": [
+                  {
+                    "tag": "component",
+                    "value": "disk"
+                  }
+                ]
+              }
+            ],
+            "trigger_prototypes": [
+              {
+                "uuid": "3948b4ae2d185868874c847064b02209",
+                "expression": "last(/Sangfor NGAF by SNMP/sangfor.disk.pused[{#SNMPINDEX}])>{$SANGFOR.DISK.MAX}",
+                "name": "Disk {#SNMPVALUE}: space usage over {$SANGFOR.DISK.MAX}% on {HOST.NAME}",
+                "priority": "WARNING"
+              },
+              {
+                "uuid": "8b859983fa775e3eb834bfeb30bf46ad",
+                "expression": "last(/Sangfor NGAF by SNMP/sangfor.disk.temp[{#SNMPINDEX}])>{$SANGFOR.DISK_TEMP.MAX}",
+                "name": "Disk {#SNMPVALUE}: high temperature ({ITEM.LASTVALUE1}) on {HOST.NAME}",
+                "priority": "WARNING"
+              }
+            ]
+          },
+          {
+            "uuid": "ff3abe4198b45067aa3565a6e7ccb1a0",
+            "name": "CPU core discovery",
+            "type": "SNMP_AGENT",
+            "snmp_oid": "discovery[{#SNMPVALUE},1.3.6.1.4.1.35047.1.20.1.1]",
+            "key": "sangfor.cpu.discovery",
+            "delay": "{$SANGFOR.DISCOVERY.FREQ}",
+            "description": "Per-core load from SANGFOR-MIB::sfCpuCostRateTable.",
+            "filter": {
+              "evaltype": "AND"
+            },
+            "item_prototypes": [
+              {
+                "uuid": "7247e9cc021356748ee5dd80591715d0",
+                "name": "CPU core {#SNMPVALUE}: User time",
+                "type": "SNMP_AGENT",
+                "snmp_oid": "get[1.3.6.1.4.1.35047.1.20.1.2.{#SNMPINDEX}]",
+                "key": "sangfor.cpu.user[{#SNMPINDEX}]",
+                "delay": "{$SANGFOR.UPDATE.FREQ}",
+                "history": "7d",
+                "value_type": "FLOAT",
+                "description": "sfCpuUser per core.",
+                "units": "%",
+                "tags": [
+                  {
+                    "tag": "component",
+                    "value": "cpu"
+                  }
+                ]
+              },
+              {
+                "uuid": "d8216c4c6e5055219ca1d629c714aa40",
+                "name": "CPU core {#SNMPVALUE}: System time",
+                "type": "SNMP_AGENT",
+                "snmp_oid": "get[1.3.6.1.4.1.35047.1.20.1.3.{#SNMPINDEX}]",
+                "key": "sangfor.cpu.sys[{#SNMPINDEX}]",
+                "delay": "{$SANGFOR.UPDATE.FREQ}",
+                "history": "7d",
+                "value_type": "FLOAT",
+                "description": "sfCpuSys per core.",
+                "units": "%",
+                "tags": [
+                  {
+                    "tag": "component",
+                    "value": "cpu"
+                  }
+                ]
+              },
+              {
+                "uuid": "cee6ded93219559ca4f505d61899e210",
+                "name": "CPU core {#SNMPVALUE}: CPU utilization",
+                "type": "SNMP_AGENT",
+                "snmp_oid": "get[1.3.6.1.4.1.35047.1.20.1.4.{#SNMPINDEX}]",
+                "key": "sangfor.cpu.util[{#SNMPINDEX}]",
+                "delay": "{$SANGFOR.UPDATE.FREQ}",
+                "history": "7d",
+                "value_type": "FLOAT",
+                "description": "sfCpuAll per core.",
+                "units": "%",
+                "tags": [
+                  {
+                    "tag": "component",
+                    "value": "cpu"
+                  }
+                ]
+              }
+            ],
+            "trigger_prototypes": [
+              {
+                "uuid": "c30c7f2c711b54d0bb6290d4e62b1cd2",
+                "expression": "last(/Sangfor NGAF by SNMP/sangfor.cpu.util[{#SNMPINDEX}])>{$SANGFOR.CPU_CORE.MAX}",
+                "name": "CPU core {#SNMPVALUE}: utilization over {$SANGFOR.CPU_CORE.MAX}% on {HOST.NAME}",
+                "priority": "WARNING"
+              }
+            ]
+          },
+          {
+            "uuid": "672cdc352854588096422bda8fbf3995",
+            "name": "Fan discovery",
+            "type": "SNMP_AGENT",
+            "snmp_oid": "discovery[{#SNMPVALUE},1.3.6.1.4.1.35047.1.14.1.2]",
+            "key": "sangfor.fan.discovery",
+            "delay": "{$SANGFOR.DISCOVERY.FREQ}",
+            "description": "Fans from SANGFOR-MIB::sfSysFanTable. Some NGAF models do not expose this table (verified empty on AF8.0.108 nsf-1050a-i).",
+            "filter": {
+              "evaltype": "AND"
+            },
+            "item_prototypes": [
+              {
+                "uuid": "9badc3b40d845bb6825f47cdb93d3aa4",
+                "name": "Fan {#SNMPVALUE}: Speed",
+                "type": "SNMP_AGENT",
+                "snmp_oid": "get[1.3.6.1.4.1.35047.1.14.1.3.{#SNMPINDEX}]",
+                "key": "sangfor.fan.speed[{#SNMPINDEX}]",
+                "delay": "{$SANGFOR.UPDATE.FREQ}",
+                "history": "7d",
+                "value_type": "FLOAT",
+                "description": "sfFanSpeed.",
+                "units": "rpm",
+                "tags": [
+                  {
+                    "tag": "component",
+                    "value": "hardware"
+                  }
+                ]
+              },
+              {
+                "uuid": "373fa872d1bc59619b34e9b93430f4af",
+                "name": "Fan {#SNMPVALUE}: State",
+                "type": "SNMP_AGENT",
+                "snmp_oid": "get[1.3.6.1.4.1.35047.1.14.1.4.{#SNMPINDEX}]",
+                "key": "sangfor.fan.state[{#SNMPINDEX}]",
+                "delay": "{$SANGFOR.UPDATE.FREQ}",
+                "history": "7d",
+                "value_type": "FLOAT",
+                "description": "sfFanState: 0 - abnormal, 1 - normal.",
+                "tags": [
+                  {
+                    "tag": "component",
+                    "value": "hardware"
+                  }
+                ]
+              }
+            ],
+            "trigger_prototypes": [
+              {
+                "uuid": "a80fe09003bf54129929b3e0c953e797",
+                "expression": "last(/Sangfor NGAF by SNMP/sangfor.fan.state[{#SNMPINDEX}])=0",
+                "name": "Sangfor: Fan {#SNMPVALUE} ABNORMAL on {HOST.NAME}",
+                "priority": "AVERAGE"
+              }
+            ]
+          },
+          {
+            "uuid": "b09425711a225774814bbfe2ba5da063",
+            "name": "Power supply discovery",
+            "type": "SNMP_AGENT",
+            "snmp_oid": "discovery[{#SNMPVALUE},1.3.6.1.4.1.35047.1.15.1.2]",
+            "key": "sangfor.psu.discovery",
+            "delay": "{$SANGFOR.DISCOVERY.FREQ}",
+            "description": "PSUs from SANGFOR-MIB::sfSysPowerTable. Some NGAF models do not expose this table (verified empty on AF8.0.108 nsf-1050a-i).",
+            "filter": {
+              "evaltype": "AND"
+            },
+            "item_prototypes": [
+              {
+                "uuid": "da24f07e8cc05402a275011919f9f656",
+                "name": "PSU {#SNMPVALUE}: State",
+                "type": "SNMP_AGENT",
+                "snmp_oid": "get[1.3.6.1.4.1.35047.1.15.1.3.{#SNMPINDEX}]",
+                "key": "sangfor.psu.state[{#SNMPINDEX}]",
+                "delay": "{$SANGFOR.UPDATE.FREQ}",
+                "history": "7d",
+                "value_type": "FLOAT",
+                "description": "sfPowerState: 0 - abnormal, 1 - normal.",
+                "tags": [
+                  {
+                    "tag": "component",
+                    "value": "hardware"
+                  }
+                ]
+              }
+            ],
+            "trigger_prototypes": [
+              {
+                "uuid": "946632df711e5b4aad52279a6057916d",
+                "expression": "last(/Sangfor NGAF by SNMP/sangfor.psu.state[{#SNMPINDEX}])=0",
+                "name": "Sangfor: Power supply {#SNMPVALUE} ABNORMAL on {HOST.NAME}",
+                "priority": "HIGH"
+              }
+            ]
+          },
+          {
+            "uuid": "8f82e32b8e895161948639d9245f48c4",
+            "name": "Temperature sensor discovery",
+            "type": "SNMP_AGENT",
+            "snmp_oid": "discovery[{#SNMPVALUE},1.3.6.1.4.1.35047.1.59.1.2]",
+            "key": "sangfor.temp.discovery",
+            "delay": "{$SANGFOR.DISCOVERY.FREQ}",
+            "description": "Temperature sensors from SANGFOR-MIB::sfTempSensorTable. Some NGAF models do not expose this table (verified empty on AF8.0.108 nsf-1050a-i).",
+            "filter": {
+              "evaltype": "AND"
+            },
+            "item_prototypes": [
+              {
+                "uuid": "87e506e3a238597fbdbeb1f1d245fd5c",
+                "name": "Sensor {#SNMPVALUE}: Temperature",
+                "type": "SNMP_AGENT",
+                "snmp_oid": "get[1.3.6.1.4.1.35047.1.59.1.3.{#SNMPINDEX}]",
+                "key": "sangfor.temp.value[{#SNMPINDEX}]",
+                "delay": "{$SANGFOR.UPDATE.FREQ}",
+                "history": "7d",
+                "value_type": "FLOAT",
+                "description": "sfTempSensorReading.",
+                "units": "°C",
+                "tags": [
+                  {
+                    "tag": "component",
+                    "value": "hardware"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "macros": [
+          {
+            "macro": "{$SANGFOR.UPDATE.FREQ}",
+            "value": "1m",
+            "description": "Update interval for metrics."
+          },
+          {
+            "macro": "{$SANGFOR.DISCOVERY.FREQ}",
+            "value": "1h",
+            "description": "Low-level discovery interval."
+          },
+          {
+            "macro": "{$SANGFOR.CPU.MAX}",
+            "value": "90",
+            "description": "CPU utilization (%) warning threshold."
+          },
+          {
+            "macro": "{$SANGFOR.CPU_CORE.MAX}",
+            "value": "95",
+            "description": "Per-core CPU utilization (%) threshold."
+          },
+          {
+            "macro": "{$SANGFOR.MEM.MAX}",
+            "value": "90",
+            "description": "Memory usage (%) warning threshold."
+          },
+          {
+            "macro": "{$SANGFOR.DISK.MAX}",
+            "value": "85",
+            "description": "Filesystem usage (%) warning threshold."
+          },
+          {
+            "macro": "{$SANGFOR.DISK_TEMP.MAX}",
+            "value": "70",
+            "description": "Disk temperature (C) warning threshold."
+          },
+          {
+            "macro": "{$SANGFOR.IF_DROP.MAX}",
+            "value": "1000",
+            "description": "Interface discard rate (ps) warning threshold."
+          }
+        ]
+      }
+    ]
+  }
+}
