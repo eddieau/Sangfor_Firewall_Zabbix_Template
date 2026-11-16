@@ -3,13 +3,13 @@
     "version": "8.0",
     "template_groups": [
       {
-        "uuid": "9e9136779aaa4d82a51af0a0201e5ee8",
+        "uuid": "34054426664841e0b9eb5c5e4b45a949",
         "name": "Templates/Network devices"
       }
     ],
     "templates": [
       {
-        "uuid": "124dfd83b4f64697a3bdd8662960b6f0",
+        "uuid": "cdd3d964e93f44f686ae57dafec44698",
         "template": "Sangfor NGAF by SNMP",
         "name": "Sangfor NGAF by SNMP",
         "description": "Sangfor NGAF monitoring via private SANGFOR-MIB (enterprises 1.3.6.1.4.1.35047). Requires SNMP v2c or later; community/v3 credentials are configured on the host SNMP interface (8.0 items have no community field). Verified against a live NGAF running AF8.0.108.657 (nsf-1050a-i): sfIfInRate/sfIfOutRate are instantaneous byte/s gauges (x8 only, no Change per second); sfIfInPkts/sfIfOutPkts/drops are cumulative counters (Change per second); memory ints are kB; disk ints are MB; sfSysDiskUsage (.52.1) is not implemented on AF 8.0 and is NOT polled; fan/PSU/temp tables may be empty on some models.",
@@ -705,6 +705,284 @@
                 "priority": "HIGH"
               }
             ]
+          },
+          {
+            "uuid": "15e82b4d926d46c6b85d475827bb5dd1",
+            "name": "ICMP ping",
+            "type": "SIMPLE",
+            "key": "icmpping",
+            "delay": "{$SANGFOR.UPDATE.FREQ}",
+            "history": "7d",
+            "value_type": "UNSIGNED",
+            "description": "Available if ping replies {$ICMP_COUNT} times, not available if it fails {$ICMP_LOSS_MIN_OCCURRENCES} times (Simple check from the generic SNMP template).",
+            "tags": [
+              {
+                "tag": "component",
+                "value": "icmp"
+              }
+            ],
+            "triggers": [
+              {
+                "uuid": "124dfd83b4f64697a3bdd8662960b6f0",
+                "expression": "max(/Sangfor NGAF by SNMP/icmpping,#3)=0",
+                "name": "Device unavailable by ICMP ping on {HOST.NAME}",
+                "priority": "HIGH"
+              }
+            ]
+          },
+          {
+            "uuid": "d7f346836c1b48f4832cab68473e5b7a",
+            "name": "ICMP loss",
+            "type": "SIMPLE",
+            "key": "icmppingloss",
+            "delay": "{$SANGFOR.UPDATE.FREQ}",
+            "history": "7d",
+            "value_type": "FLOAT",
+            "description": "Packet loss (%) over {$ICMP_LOSS_SAMPLES} packets, port {$ICMP_PING_PORT}, timeout {$ICMP_TIMEOUT}s, count {$ICMP_COUNT} (ported from generic SNMP template).",
+            "units": "%",
+            "tags": [
+              {
+                "tag": "component",
+                "value": "icmp"
+              }
+            ],
+            "triggers": [
+              {
+                "uuid": "9e9136779aaa4d82a51af0a0201e5ee8",
+                "expression": "min(/Sangfor NGAF by SNMP/icmppingloss,{$ICMP_LOSS_MIN_OCCURRENCES})>{$ICMP_LOSS_WARN} and max(/Sangfor NGAF by SNMP/icmppingloss,#3)<100",
+                "name": "High ICMP ping loss on {HOST.NAME}",
+                "priority": "WARNING"
+              }
+            ]
+          },
+          {
+            "uuid": "c390494db23f4bcca66745f9c1e732f7",
+            "name": "ICMP response time",
+            "type": "SIMPLE",
+            "key": "icmppingsec",
+            "delay": "{$SANGFOR.UPDATE.FREQ}",
+            "history": "7d",
+            "value_type": "FLOAT",
+            "description": "Average ICMP response time in seconds (ported).",
+            "units": "s",
+            "tags": [
+              {
+                "tag": "component",
+                "value": "icmp"
+              }
+            ],
+            "triggers": [
+              {
+                "uuid": "8b0453b9ac204c4ebdf88b66943884d4",
+                "expression": "avg(/Sangfor NGAF by SNMP/icmppingsec,15m)>{$ICMP_RESPONSE_TIME_WARN}",
+                "name": "High ICMP ping response time on {HOST.NAME}",
+                "priority": "WARNING"
+              }
+            ]
+          },
+          {
+            "uuid": "08fe68957c9a40769dc4c50bc2fd0095",
+            "name": "SNMP agent availability",
+            "type": "INTERNAL",
+            "key": "zabbix[host,snmp,available]",
+            "delay": "{$SANGFOR.UPDATE.FREQ}",
+            "history": "7d",
+            "value_type": "UNSIGNED",
+            "description": "Status of SNMP agent availability. 1 - available, 0 - not available (ported from generic SNMP template).",
+            "tags": [
+              {
+                "tag": "component",
+                "value": "snmp"
+              }
+            ],
+            "triggers": [
+              {
+                "uuid": "dccd7875f46e4c56aca3e99dbc90f427",
+                "expression": "last(/Sangfor NGAF by SNMP/zabbix[host,snmp,available])=0",
+                "name": "No SNMP data collection from {HOST.NAME}",
+                "priority": "WARNING",
+                "dependencies": [
+                  {
+                    "name": "Device unavailable by ICMP ping on {HOST.NAME}",
+                    "expression": "max(/Sangfor NGAF by SNMP/icmpping,#3)=0"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "uuid": "4d92ab461766441a851a2b609f72d31a",
+            "name": "System contact details",
+            "type": "SNMP_AGENT",
+            "key": "system.contact[sysContact.0]",
+            "delay": "{$SANGFOR.INFO.FREQ}",
+            "history": "7d",
+            "value_type": "CHAR",
+            "description": "The contact person responsible for this device (RFC1213-MIB::sysContact). Ported from generic SNMP template.",
+            "tags": [
+              {
+                "tag": "component",
+                "value": "system"
+              }
+            ],
+            "snmp_oid": "get[1.3.6.1.2.1.1.4.0]"
+          },
+          {
+            "uuid": "d7a9e5e820cf414982faca1b41d0122a",
+            "name": "System description",
+            "type": "SNMP_AGENT",
+            "key": "system.descr[sysDescr.0]",
+            "delay": "{$SANGFOR.INFO.FREQ}",
+            "history": "7d",
+            "value_type": "CHAR",
+            "description": "Full description of the device (RFC1213-MIB::sysDescr). Ported from generic SNMP template.",
+            "tags": [
+              {
+                "tag": "component",
+                "value": "system"
+              }
+            ],
+            "snmp_oid": "get[1.3.6.1.2.1.1.1.0]"
+          },
+          {
+            "uuid": "bd80376e2dd043a6b64870bc61dc65a7",
+            "name": "System location",
+            "type": "SNMP_AGENT",
+            "key": "system.location[sysLocation.0]",
+            "delay": "{$SANGFOR.INFO.FREQ}",
+            "history": "7d",
+            "value_type": "CHAR",
+            "description": "Physical location (RFC1213-MIB::sysLocation). Ported from generic SNMP template.",
+            "tags": [
+              {
+                "tag": "component",
+                "value": "system"
+              }
+            ],
+            "snmp_oid": "get[1.3.6.1.2.1.1.6.0]"
+          },
+          {
+            "uuid": "156bda1543ef498d952554a82218df7e",
+            "name": "System name",
+            "type": "SNMP_AGENT",
+            "key": "system.name",
+            "delay": "{$SANGFOR.INFO.FREQ}",
+            "history": "7d",
+            "value_type": "CHAR",
+            "description": "Name of this device, as set on the device itself (RFC1213-MIB::sysName). Ported from generic SNMP template.",
+            "tags": [
+              {
+                "tag": "component",
+                "value": "system"
+              }
+            ],
+            "snmp_oid": "get[1.3.6.1.2.1.1.5.0]",
+            "triggers": [
+              {
+                "uuid": "b35bdcc1b83c4ac0be5c17eadaeb0d14",
+                "expression": "change(/Sangfor NGAF by SNMP/system.name)<>0 and length(last(/Sangfor NGAF by SNMP/system.name))>0",
+                "recovery_mode": "RECOVERY_EXPRESSION",
+                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/system.name,1d)=1",
+                "name": "System name has changed (new name: {ITEM.LASTVALUE1})",
+                "priority": "INFO"
+              }
+            ]
+          },
+          {
+            "uuid": "8f321c7819af498490d53ec9c359ecef",
+            "name": "System object ID",
+            "type": "SNMP_AGENT",
+            "key": "system.objectid[sysObjectID.0]",
+            "delay": "{$SANGFOR.INFO.FREQ}",
+            "history": "7d",
+            "value_type": "CHAR",
+            "description": "Vendor's identification of this device (RFC1213-MIB::sysObjectID). Ported from generic SNMP template.",
+            "tags": [
+              {
+                "tag": "component",
+                "value": "system"
+              }
+            ],
+            "snmp_oid": "get[1.3.6.1.2.1.1.2.0]"
+          },
+          {
+            "uuid": "05a64cdbc2264221b3f575c65924a969",
+            "name": "Uptime (network)",
+            "type": "SNMP_AGENT",
+            "key": "system.net.uptime[sysUpTime.0]",
+            "delay": "30s",
+            "history": "7d",
+            "value_type": "FLOAT",
+            "description": "Time since the network management portion of the system was last re-initialized (RFC1213-MIB::sysUpTime, timeticks -> s). Ported.",
+            "units": "uptime",
+            "preprocessing": [
+              {
+                "type": "MULTIPLIER",
+                "parameters": [
+                  "0.01"
+                ]
+              }
+            ],
+            "tags": [
+              {
+                "tag": "component",
+                "value": "system"
+              }
+            ],
+            "snmp_oid": "get[1.3.6.1.2.1.1.3.0]",
+            "triggers": [
+              {
+                "uuid": "5f0569d8d33046a6885e3e0e53143e3f",
+                "expression": "change(/Sangfor NGAF by SNMP/system.net.uptime[sysUpTime.0])<0 and change(/Sangfor NGAF by SNMP/system.hw.uptime[hrSystemUptime.0])<0",
+                "recovery_mode": "RECOVERY_EXPRESSION",
+                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/system.net.uptime[sysUpTime.0],10m)=0",
+                "name": "{HOST.NAME} has been restarted",
+                "event_name": "{HOST.NAME} has been restarted",
+                "priority": "WARNING"
+              }
+            ]
+          },
+          {
+            "uuid": "15271d20f89749fb980f6065c8c0c458",
+            "name": "Uptime (hardware)",
+            "type": "SNMP_AGENT",
+            "key": "system.hw.uptime[hrSystemUptime.0]",
+            "delay": "30s",
+            "history": "7d",
+            "value_type": "FLOAT",
+            "description": "Time since the whole system was last re-initialized (HOST-RESOURCES-MIB::hrSystemUptime, timeticks -> s). Ported.",
+            "units": "uptime",
+            "preprocessing": [
+              {
+                "type": "MULTIPLIER",
+                "parameters": [
+                  "0.01"
+                ]
+              }
+            ],
+            "tags": [
+              {
+                "tag": "component",
+                "value": "system"
+              }
+            ],
+            "snmp_oid": "get[1.3.6.1.2.1.25.1.1.0]"
+          },
+          {
+            "uuid": "52169d6058574f2e99c029d03e298587",
+            "name": "SNMP trap: catch-all (unmatched)",
+            "type": "SNMP_TRAP",
+            "key": "snmptrap.fallback",
+            "delay": "0",
+            "history": "31d",
+            "value_type": "TEXT",
+            "description": "Catches any SNMP trap not matched by a named snmptrap[] item. Ported from Network Generic Device by SNMP; this template is standalone, do NOT link it together with that template (duplicate fallback key).",
+            "tags": [
+              {
+                "tag": "component",
+                "value": "trap"
+              }
+            ]
           }
         ],
         "discovery_rules": [
@@ -1299,6 +1577,41 @@
             "macro": "{$SANGFOR.IF_DROP.MAX}",
             "value": "1000",
             "description": "Interface discard rate (ps) warning threshold."
+          },
+          {
+            "macro": "{$SANGFOR.INFO.FREQ}",
+            "value": "15m",
+            "description": "Update interval for system info items (ported from generic template)."
+          },
+          {
+            "macro": "{$ICMP_LOSS_WARN}",
+            "value": "20",
+            "description": "Packet loss (%) that triggers a warning."
+          },
+          {
+            "macro": "{$ICMP_LOSS_SAMPLES}",
+            "value": "",
+            "description": "The number of ECHO requests to send. Default: 3."
+          },
+          {
+            "macro": "{$ICMP_LOSS_MIN_OCCURRENCES}",
+            "value": "3",
+            "description": "How many times in a row the loss must be above the warning threshold to trigger."
+          },
+          {
+            "macro": "{$ICMP_RESPONSE_TIME_WARN}",
+            "value": "0.15",
+            "description": "Average response time (s) that triggers a warning."
+          },
+          {
+            "macro": "{$ICMP_TIMEOUT}",
+            "value": "3",
+            "description": "ICMP ping timeout, in seconds."
+          },
+          {
+            "macro": "{$ICMP_COUNT}",
+            "value": "3",
+            "description": "ICMP ping count (number of ECHO requests per check)."
           }
         ]
       }

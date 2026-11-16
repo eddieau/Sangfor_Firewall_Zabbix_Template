@@ -3,13 +3,17 @@
 Zabbix **8.0** SNMP template for **Sangfor NGAF** firewalls, converted from
 Sangfor's private `SANGFOR-MIB.txt` MIB (enterprise OID `1.3.6.1.4.1.35047`).
 
-Sangfor ships no official Zabbix template; this covers the pollable objects
-from their vendor MIB. Built and **verified against a live NGAF**
-(AF8.0.108.657, nsf-1050a-i) over SNMPv3 authPriv.
+Sangfor ships no official Zabbix template. This one is **standalone**: it also
+includes the useful checks from the standard "Network Generic Device by SNMP"
+template (ICMP availability, RFC1213 system info, uptimes, SNMP availability,
+trap fallback), so you do NOT need to link that template as well.
+
+Built and **verified against a live NGAF** (AF8.0.108.657, nsf-1050a-i) over
+SNMPv3 authPriv, monitored through a Zabbix proxy.
 
 ## What it monitors
 
-**Scalar items (28) + SNMP trap items (7):**
+**Scalar items (28) + SNMP trap items (8) + ported generic checks (11):**
 
 - Device info: description, name, software version, AF version, serial
   (serial ships DISABLED — `sfSnGW` is not implemented on AF 8.0.108)
@@ -24,11 +28,21 @@ from their vendor MIB. Built and **verified against a live NGAF**
 - SNMP traps (`SANGFOR-MIB-AF.txt`, OIDs under `1.3.6.1.4.1.35047.200.200`):
   7 named `snmptrap[<name>]` items (config change INFO, HA dual-switch HIGH,
   rulebase update INFO, interface normal INFO, interface fail HIGH, firewall
-  under attack HIGH, protected network under attack HIGH). Triggers auto-
-  recover via `nodata(...,1d)`. There is deliberately **no**
-  `snmptrap.fallback` here — the standard "Network Generic Device by SNMP"
-  template ships one, and Zabbix refuses to link two templates that both
-  define the same trap key. Unmatched traps land in the generic fallback.
+  under attack HIGH, protected network under attack HIGH) plus
+  `snmptrap.fallback` for anything unmatched. Triggers auto-recover via
+  `nodata(...,1d)`. Because the fallback lives here, **do not link "Network
+  Generic Device by SNMP" on the same host** — Zabbix refuses the duplicate
+  `snmptrap.fallback` key.
+
+**Ported generic checks (11)** — why the generic template is no longer needed:
+
+- ICMP ping / loss / response time (Simple checks, official-style triggers)
+- System contact / description / location / name / object ID (RFC1213-MIB;
+  name-change trigger included)
+- Uptime network + hardware (timeticks → seconds; restart trigger requires
+  BOTH counters to drop, suppressing false SNMP-stack-only resets)
+- `zabbix[host,snmp,available]` + "No SNMP data collection" trigger, which
+  depends on the ICMP-unavailable trigger to avoid double alerts
 
 **Low-level discovery (6 rules, 19 prototypes):**
 
@@ -91,6 +105,10 @@ Via the API, interfaces are embedded in `host.create` / `host.update`
 | `{$SANGFOR.DISK.MAX}` | `85` | Filesystem usage % warning |
 | `{$SANGFOR.DISK_TEMP.MAX}` | `70` | Disk temperature (°C) warning |
 | `{$SANGFOR.IF_DROP.MAX}` | `1000` | Interface discard rate (ps) warning |
+| `{$SANGFOR.INFO.FREQ}` | `15m` | System-info item interval |
+| `{$ICMP_LOSS_WARN}` | `20` | ICMP loss (%) warning |
+| `{$ICMP_LOSS_MIN_OCCURRENCES}` | `3` | Consecutive polls above loss warn |
+| `{$ICMP_RESPONSE_TIME_WARN}` | `0.15` | Avg response time (s) warning |
 
 ## SNMP trap receiving (optional)
 
@@ -118,19 +136,25 @@ trapper runs on the proxy:
    (server or proxy) IP:162. No auth is applied by Zabbix itself; control
    access at snmptrapd / network level.
 
-## Coexistence with "Network Generic Device by SNMP"
+## Relationship to "Network Generic Device by SNMP"
 
-This template is designed to link **alongside** the generic one (verified):
+This template **replaces** it: all 11 generic pollable items + triggers are
+ported in, plus 47 template-level objects of Sangfor-specific value. Link only
+this template (both templates on one host fails on the duplicate
+`snmptrap.fallback` key). Overlap with the old generic checks is only
+informational: `system.descr` (sysDescr) ≈ `sfDeviceDescr`.
 
-- Generic gives: ICMP availability (3 items), standard system info,
-  `hrSystemUptime`, `snmptrap[$1]` + `snmptrap.fallback`.
-- Sangfor template adds the private-MIB metrics (sessions, HA, per-core CPU,
-  interface rates as the vendor reports them, named SF trap items).
-- Slight overlap only: `system.descr` ≈ `sfDeviceDescr`; no trigger clashes.
+**First import into a brand-new Zabbix**: the "No SNMP data collection"
+trigger dependency can abort the import with
+`"...depends on trigger ..., which does not exist"` — just run the same
+import a second time; the referenced triggers now exist and it resolves.
+(Verified on 8.0.0.)
 
 ## Verified against live hardware (2026-11-16, AF8.0.108.657 nsf-1050a-i)
 
-All 191 items (28 + 163 discovered) poll clean; only findings:
+All 209 enabled items (47 template + 162 discovered) poll clean **through
+Zabbix proxy 8.0** — ICMP Simple checks and `zabbix[host,snmp,available]`
+both work proxy-side; 0 unsupported. Findings:
 
 - `sfIfInRate`/`sfIfOutRate` **are instantaneous byte/s gauges** despite being
   typed Counter64 — two samples 12 s apart went *down* (302 → 274). Template
@@ -155,10 +179,9 @@ All 191 items (28 + 163 discovered) poll clean; only findings:
 - Throughput (`.48.1/.48.2`) confirmed instantaneous (87→63, 96→49 in 8 s),
   but **units are not stated in the MIB** — stored raw; set Units on those
   two items once you identify them (likely Mbps).
-- Sangfor also defines **traps** in `SANGFOR-MIB-AF.txt` (config change,
-  dual-active switch, interface failure, firewall-under-attack — OIDs under
-  `1.3.6.1.4.1.35047.200.200`). Trap receiving needs snmptrapd + Zabbix trap
-  setup and is **not** included here.
+- Trap receiving (snmptrapd + trapper) must run on the node that monitors
+  the trap host — the **proxy** for proxy-monitored hosts; see "SNMP trap
+  receiving" above.
 
 ## Files
 

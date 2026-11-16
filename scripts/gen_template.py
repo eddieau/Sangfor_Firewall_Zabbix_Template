@@ -427,10 +427,142 @@ for hname, title, prio, desc in trap_defs:
         }],
     })
 
-# NOTE: no snmptrap.fallback here on purpose - the standard
-# "Network Generic Device by SNMP" template already ships one, and Zabbix
-# rejects linking two templates that both define the same trap key.
-# Unmatched traps land in the generic template's fallback item.
+# NOTE: no snmptrap.fallback was previously omitted because the standard
+# "Network Generic Device by SNMP" template ships one. Per Eddie's request this
+# template now REPLACES it, so the fallback (and the useful generic items:
+# ICMP, system info, uptimes, snmp availability) are ported below.
+
+# ---- ported from "Network Generic Device by SNMP" (template 10226) ----
+def plain_item(name, key, itype, vtype="FLOAT", units="", desc="", delay=None,
+               pre=None, trig=None, tags=()):
+    it = {"uuid": UN("item-" + key), "name": name, "type": itype, "key": key,
+          "delay": delay or "{$SANGFOR.UPDATE.FREQ}", "history": "7d",
+          "value_type": vtype, "description": desc}
+    if units:
+        it["units"] = units
+    if pre:
+        it["preprocessing"] = pre
+    if tags:
+        it["tags"] = [{"tag": a, "value": b} for a, b in tags]
+    if trig:
+        it["triggers"] = [trig]
+    items.append(it)
+    return it
+
+ICMP_TAGS = [("component", "icmp")]
+
+plain_item("ICMP ping", "icmpping", "SIMPLE", "UNSIGNED",
+           desc="Available if ping replies {$ICMP_COUNT} times, not available "
+                "if it fails {$ICMP_LOSS_MIN_OCCURRENCES} times (Simple check "
+                "from the generic SNMP template).",
+           tags=ICMP_TAGS,
+           trig=TR("HIGH", "max(/%s/icmpping,#3)=0" % TPL,
+                   "Device unavailable by ICMP ping on {HOST.NAME}"))
+plain_item("ICMP loss", "icmppingloss", "SIMPLE", "FLOAT", "%",
+           desc="Packet loss (%) over {$ICMP_LOSS_SAMPLES} packets, port "
+                "{$ICMP_PING_PORT}, timeout {$ICMP_TIMEOUT}s, count "
+                "{$ICMP_COUNT} (ported from generic SNMP template).",
+           tags=ICMP_TAGS,
+           trig=TR("WARNING",
+                   "min(/%s/icmppingloss,{$ICMP_LOSS_MIN_OCCURRENCES})>{$ICMP_LOSS_WARN}"
+                   " and max(/%s/icmppingloss,#3)<100" % (TPL, TPL),
+                   "High ICMP ping loss on {HOST.NAME}"))
+plain_item("ICMP response time", "icmppingsec", "SIMPLE", "FLOAT", "s",
+           desc="Average ICMP response time in seconds (ported).",
+           tags=ICMP_TAGS,
+           trig=TR("WARNING",
+                   "avg(/%s/icmppingsec,15m)>{$ICMP_RESPONSE_TIME_WARN}" % TPL,
+                   "High ICMP ping response time on {HOST.NAME}"))
+
+plain_item("SNMP agent availability", "zabbix[host,snmp,available]",
+           "INTERNAL", "UNSIGNED",
+           desc="Status of SNMP agent availability. 1 - available, 0 - not "
+                "available (ported from generic SNMP template).",
+           tags=[("component", "snmp")],
+           trig=TR("WARNING", "last(/%s/zabbix[host,snmp,available])=0" % TPL,
+                   "No SNMP data collection from {HOST.NAME}"))
+
+SYS15M = ["{$SANGFOR.INFO.FREQ}"]
+for nm, ky, oid, ds in [
+    ("System contact details", "system.contact[sysContact.0]",
+     "1.3.6.1.2.1.1.4.0", "The contact person responsible for this device (RFC1213-MIB::sysContact)."),
+    ("System description", "system.descr[sysDescr.0]",
+     "1.3.6.1.2.1.1.1.0", "Full description of the device (RFC1213-MIB::sysDescr)."),
+    ("System location", "system.location[sysLocation.0]",
+     "1.3.6.1.2.1.1.6.0", "Physical location (RFC1213-MIB::sysLocation)."),
+    ("System name", "system.name",
+     "1.3.6.1.2.1.1.5.0", "Name of this device, as set on the device itself (RFC1213-MIB::sysName)."),
+    ("System object ID", "system.objectid[sysObjectID.0]",
+     "1.3.6.1.2.1.1.2.0", "Vendor's identification of this device (RFC1213-MIB::sysObjectID)."),
+]:
+    plain_item(nm, ky, "SNMP_AGENT", "CHAR", desc=ds + " Ported from generic "
+               "SNMP template.", delay=SYS15M[0], tags=[("component", "system")],
+               trig=None)
+    items[-1]["snmp_oid"] = "get[" + oid + "]"
+
+plain_item("Uptime (network)", "system.net.uptime[sysUpTime.0]", "SNMP_AGENT",
+           "FLOAT", "uptime",
+           desc="Time since the network management portion of the system was "
+                "last re-initialized (RFC1213-MIB::sysUpTime, timeticks -> s). "
+                "Ported.", delay="30s", pre=[P("MULTIPLIER", "0.01")],
+           tags=[("component", "system")])
+items[-1]["snmp_oid"] = "get[1.3.6.1.2.1.1.3.0]"
+plain_item("Uptime (hardware)", "system.hw.uptime[hrSystemUptime.0]",
+           "SNMP_AGENT", "FLOAT", "uptime",
+           desc="Time since the whole system was last re-initialized "
+                "(HOST-RESOURCES-MIB::hrSystemUptime, timeticks -> s). Ported.",
+           delay="30s", pre=[P("MULTIPLIER", "0.01")],
+           tags=[("component", "system")])
+items[-1]["snmp_oid"] = "get[1.3.6.1.2.1.25.1.1.0]"
+
+# restart + rename triggers (attached to uptime/name items)
+for it in items:
+    if it["key"] == "system.net.uptime[sysUpTime.0]":
+        it["triggers"] = [{
+            "uuid": UN("trig-restart"),
+            "expression": ("change(/%s/system.net.uptime[sysUpTime.0])<0 and "
+                           "change(/%s/system.hw.uptime[hrSystemUptime.0])<0"
+                           % (TPL, TPL)),
+            "recovery_mode": "RECOVERY_EXPRESSION",
+            "recovery_expression": "nodata(/%s/system.net.uptime[sysUpTime.0],10m)=0" % TPL,
+            "name": "{HOST.NAME} has been restarted",
+            "event_name": "{HOST.NAME} has been restarted",
+            "priority": "WARNING",
+        }]
+    if it["key"] == "system.name":
+        it["triggers"] = [{
+            "uuid": UN("trig-namechg"),
+            "expression": ("change(/%s/system.name)<>0 and "
+                           "length(last(/%s/system.name))>0" % (TPL, TPL)),
+            "recovery_mode": "RECOVERY_EXPRESSION",
+            "recovery_expression": "nodata(/%s/system.name,1d)=1" % TPL,
+            "name": "System name has changed (new name: {ITEM.LASTVALUE1})",
+            "priority": "INFO",
+        }]
+    if it["key"] == "zabbix[host,snmp,available]":
+        # 8.0 JSON import: dependency "name" must be the BARE trigger name
+        # (no template prefix). On the very first import into an empty DB the
+        # referenced trigger may not exist yet and the import aborts with
+        # "...which does not exist" — simply run the same import a second
+        # time and it resolves. (Verified 2026-11-16.)
+        it["triggers"][0]["dependencies"] = [{
+            "name": "Device unavailable by ICMP ping on {HOST.NAME}",
+            "expression": "max(/%s/icmpping,#3)=0" % TPL}]
+
+items.append({
+    "uuid": UN("trap-fallback"),
+    "name": "SNMP trap: catch-all (unmatched)",
+    "type": "SNMP_TRAP",
+    "key": "snmptrap.fallback",
+    "delay": "0",
+    "history": "31d",
+    "value_type": "TEXT",
+    "description": "Catches any SNMP trap not matched by a named snmptrap[] "
+                   "item. Ported from Network Generic Device by SNMP; this "
+                   "template is standalone, do NOT link it together with that "
+                   "template (duplicate fallback key).",
+    "tags": [{"tag": "component", "value": "trap"}],
+})
 
 # ================= macros =================
 for m, v, d in [
@@ -443,6 +575,21 @@ for m, v, d in [
     ("{$SANGFOR.DISK_TEMP.MAX}", "70", "Disk temperature (C) warning threshold."),
     ("{$SANGFOR.IF_DROP.MAX}", "1000",
      "Interface discard rate (ps) warning threshold."),
+    ("{$SANGFOR.INFO.FREQ}", "15m",
+     "Update interval for system info items (ported from generic template)."),
+    ("{$ICMP_LOSS_WARN}", "20",
+     "Packet loss (%) that triggers a warning."),
+    ("{$ICMP_LOSS_SAMPLES}", "",
+     "The number of ECHO requests to send. Default: 3."),
+    ("{$ICMP_LOSS_MIN_OCCURRENCES}", "3",
+     "How many times in a row the loss must be above the warning threshold to "
+     "trigger."),
+    ("{$ICMP_RESPONSE_TIME_WARN}", "0.15",
+     "Average response time (s) that triggers a warning."),
+    ("{$ICMP_TIMEOUT}", "3",
+     "ICMP ping timeout, in seconds."),
+    ("{$ICMP_COUNT}", "3",
+     "ICMP ping count (number of ECHO requests per check)."),
 ]:
     macros.append({"macro": m, "value": v, "description": d})
 
