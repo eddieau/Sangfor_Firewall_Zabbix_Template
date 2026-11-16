@@ -13,7 +13,7 @@ SNMPv3 authPriv, monitored through a Zabbix proxy.
 
 ## What it monitors
 
-**Scalar items (28) + SNMP trap items (8) + ported generic checks (11):**
+**Scalar items (28) + SNMP trap items (23) + ported generic checks (11):**
 
 - Device info: description, name, software version, AF version, serial
   (serial ships DISABLED — `sfSnGW` is not implemented on AF 8.0.108)
@@ -25,14 +25,33 @@ SNMPv3 authPriv, monitored through a Zabbix proxy.
 - Throughput: inbound / outbound system throughput (units not stated in MIB)
 - HA: enable, mode, current status, control/data link status (abnormal → HIGH
   trigger), sync state
-- SNMP traps (`SANGFOR-MIB-AF.txt`, OIDs under `1.3.6.1.4.1.35047.200.200`):
-  7 named `snmptrap[<name>]` items (config change INFO, HA dual-switch HIGH,
-  rulebase update INFO, interface normal INFO, interface fail HIGH, firewall
-  under attack HIGH, protected network under attack HIGH) plus
-  `snmptrap.fallback` for anything unmatched. Triggers auto-recover via
-  `nodata(...,1d)`. Because the fallback lives here, **do not link "Network
-  Generic Device by SNMP" on the same host** — Zabbix refuses the duplicate
-  `snmptrap.fallback` key.
+- SNMP traps — 22 named `snmptrap[<name>]` items covering the trap list the
+  NGAF web UI actually offers, plus `snmptrap.fallback`:
+
+  | UI alert | OID | MIB notification | priority |
+  | --- | --- | --- | --- |
+  | Temperature Alert | 35047.110.1 | sfTemperatureWarnTrap | HIGH |
+  | CPU Alert | 35047.110.2 | sfCPUWarnTrap | WARNING |
+  | Memory Alert | 35047.110.3 | sfMemoryWarnTrap | WARNING |
+  | Hard Disk Alert | 35047.110.4 | sfDiskWarnTrap | HIGH |
+  | Power Alert | 35047.110.5 | sfPowerWarnTrap | HIGH |
+  | Interface Alert | 35047.110.6 | sfInterfaceDownTrap | HIGH |
+  | Fan Alert | 35047.110.7 | sfFanWarnTrap | HIGH |
+  | HA Status Alert | 35047.110.8 | sfHAStatusTrap | HIGH |
+  | Database Update Alert | 35047.110.17 | sfRuleBaseUpgradeTrap | INFO |
+  | Passthrough Status Alert | 35047.110.19 | sfBypassChangeTrap | WARNING |
+  | Link Recovery Alert | 35047.110.23 | sfLinkUpTrap | INFO |
+  | Link Failure Alert | 35047.110.24 | sfLinkDownTrap | HIGH |
+  | Insufficient Port Resources | 35047.110.25 | sfPortResourceWarnTrap | WARNING |
+  | SLA-based Link Failover | 35047.110.27 | sfSLATrap | WARNING |
+  | Firewall Attacked Alert | 35047.200.200.6 | sfFirewallTrapFwAttack | HIGH |
+  | Protected Network Attacked | 35047.200.200.7 | sfFirewallTrapNetworkAttack | HIGH |
+  | Warm Start Alert | 1.3.6.1.6.3.1.1.5.2 | warmStart (SNMPv2-MIB) | INFO |
+  | (extras not in the UI list) | 35047.200.200.1–.5 | sfFirewallTrapConfChange / DualSwitch / RulebaseUpdate / IfNormal / IfFail | mixed |
+
+  Triggers auto-recover via `nodata(...,1d)`. Because `snmptrap.fallback`
+  lives here, **do not link "Network Generic Device by SNMP" on the same
+  host** — Zabbix refuses the duplicate `snmptrap.fallback` key.
 
 **Ported generic checks (11)** — why the generic template is no longer needed:
 
@@ -133,13 +152,27 @@ trapper runs on the proxy:
    on the `sfFirewall*` MIB names, so keep the MIB loaded. If the MIB is
    missing, traps still arrive in `snmptrap.fallback` as numeric OIDs.
 5. Configure the NGAF itself (web UI) to send traps to the collector
-   (server or proxy) IP:162. No auth is applied by Zabbix itself; control
-   access at snmptrapd / network level.
+   (server or proxy) IP:162 with its trap community (e.g. v2c). The
+   `zabbix-snmptraps` image runs `snmptrapd` with `disableAuthorization yes`,
+   so any community is accepted — restrict at snmptrapd / network level if
+   that matters to you.
+6. **Mount the vendor MIB files** into the receiver's
+   `/var/lib/zabbix/mibs` (`SANGFOR-MIB-COMPATIBLE.txt` — it declares the
+   same `SANGFOR-MIB` module and contains the `sfGeneralTrap` 110.x
+   notification names — plus `SANGFOR-MIB-AF.txt` for the 200.200.x names).
+   Without them the OIDs print numerically and all 22 named trap items sit
+   idle while everything lands in `snmptrap.fallback` (still visible, just
+   unrouted).
+7. **Source-IP caveat:** traps sent from the proxy host itself (or through
+   Docker's userland proxy on a published port) show a bridge-gateway source
+   like `172.17.0.1` and match no host. Real LAN traps keep the device IP and
+   route correctly. To test locally, send the trap with the receiver on
+   `--network host`, or temporarily accept it via `snmptrap.fallback`.
 
 ## Relationship to "Network Generic Device by SNMP"
 
 This template **replaces** it: all 11 generic pollable items + triggers are
-ported in, plus 47 template-level objects of Sangfor-specific value. Link only
+ported in, plus 62 template-level objects of Sangfor-specific value. Link only
 this template (both templates on one host fails on the duplicate
 `snmptrap.fallback` key). Overlap with the old generic checks is only
 informational: `system.descr` (sysDescr) ≈ `sfDeviceDescr`.
@@ -152,7 +185,7 @@ import a second time; the referenced triggers now exist and it resolves.
 
 ## Verified against live hardware (2026-11-16, AF8.0.108.657 nsf-1050a-i)
 
-All 209 enabled items (47 template + 162 discovered) poll clean **through
+All 223 enabled items (62 template + 162 discovered) poll clean **through
 Zabbix proxy 8.0** — ICMP Simple checks and `zabbix[host,snmp,available]`
 both work proxy-side; 0 unsupported. Findings:
 
@@ -176,12 +209,15 @@ both work proxy-side; 0 unsupported. Findings:
 - Fan (`.14`), PSU (`.15`), temperature-sensor (`.59`) tables return
   **noSuchObject** on nsf-1050a-i; the LLD rules discover nothing and stay
   quiet. Kept for models that do expose them — delete if unwanted.
-- Throughput (`.48.1/.48.2`) confirmed instantaneous (87→63, 96→49 in 8 s),
-  but **units are not stated in the MIB** — stored raw; set Units on those
-  two items once you identify them (likely Mbps).
-- Trap receiving (snmptrapd + trapper) must run on the node that monitors
-  the trap host — the **proxy** for proxy-monitored hosts; see "SNMP trap
-  receiving" above.
+- Throughput (`.48.1/.48.2`) confirmed instantaneous (87→63, 96→49 in 8 s);
+  **units = kbps (operator-confirmed 2026-11-16)** — template applies
+  MULTIPLIER 1000 and stores as bps, so graphs render "x kbps" correctly.
+- Trap receive chain verified end-to-end on a proxy host with the official
+  `zabbix/zabbix-snmptraps` container + shared volume + `StartSNMPTrapper=1`:
+  a synthetic `35047.110.1` trap arrived in `snmptraps.log` as
+  `SNMPv2-MIB::snmpTrapOID.0 = SANGFOR-MIB::sfTemperatureWarnTrap` and the
+  proxy's snmp trapper read the shared file. See caveats in "SNMP trap
+  receiving".
 
 ## Files
 

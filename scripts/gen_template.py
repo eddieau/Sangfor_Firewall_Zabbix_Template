@@ -163,13 +163,17 @@ snmp_item("Sangfor: Online users", "sangfor.users",
           tags=[("component", "users")])
 
 snmp_item("Sangfor: Inbound throughput", "sangfor.throughput.in",
-          "get[" + GEN + ".48.2.0]",
-          desc="sfSysInThroughput - instantaneous; units not stated in MIB "
-               "(verify against vendor UI).", tags=[("component", "throughput")])
+          "get[" + GEN + ".48.2.0]", "FLOAT", "bps",
+          desc="sfSysInThroughput - instantaneous kbps (confirmed by operator "
+               "2026-11-16); multiplied by 1000 for bps display.",
+          pre=[P("MULTIPLIER", "1000")],
+          tags=[("component", "throughput")])
 snmp_item("Sangfor: Outbound throughput", "sangfor.throughput.out",
-          "get[" + GEN + ".48.1.0]",
-          desc="sfSysOutThroughput - instantaneous; units not stated in MIB "
-               "(verify against vendor UI).", tags=[("component", "throughput")])
+          "get[" + GEN + ".48.1.0]", "FLOAT", "bps",
+          desc="sfSysOutThroughput - instantaneous kbps (confirmed by operator "
+               "2026-11-16); multiplied by 1000 for bps display.",
+          pre=[P("MULTIPLIER", "1000")],
+          tags=[("component", "throughput")])
 
 snmp_item("Sangfor: HA enabled", "sangfor.ha.enabled",
           "get[" + GEN + ".64.1.0]",
@@ -402,6 +406,38 @@ trap_defs = [
      "sfFirewallTrapFwAttack (.1.3.6.1.4.1.35047.200.200.6) - firewall itself under attack."),
     ("sfFirewallTrapNetworkAttack", "Protected network under attack", "HIGH",
      "sfFirewallTrapNetworkAttack (.1.3.6.1.4.1.35047.200.200.7) - protected network under attack."),
+    # ---- sfGeneralTrap family (35047.110.x), names from ----
+    # ---- SANGFOR-MIB-COMPATIBLE.txt; matches the NGAF trap UI list ----
+    ("sfTemperatureWarnTrap", "Temperature alert", "HIGH",
+     "sfTemperatureWarnTrap (.1.3.6.1.4.1.35047.110.1) - Temperature Alert."),
+    ("sfCPUWarnTrap", "CPU alert", "WARNING",
+     "sfCPUWarnTrap (.1.3.6.1.4.1.35047.110.2) - CPU Alert."),
+    ("sfMemoryWarnTrap", "Memory alert", "WARNING",
+     "sfMemoryWarnTrap (.1.3.6.1.4.1.35047.110.3) - Memory Alert."),
+    ("sfDiskWarnTrap", "Hard disk alert", "HIGH",
+     "sfDiskWarnTrap (.1.3.6.1.4.1.35047.110.4) - Hard Disk Alert."),
+    ("sfPowerWarnTrap", "Power alert", "HIGH",
+     "sfPowerWarnTrap (.1.3.6.1.4.1.35047.110.5) - Power Alert."),
+    ("sfInterfaceDownTrap", "Interface alert", "HIGH",
+     "sfInterfaceDownTrap (.1.3.6.1.4.1.35047.110.6) - Interface Alert."),
+    ("sfFanWarnTrap", "Fan alert", "HIGH",
+     "sfFanWarnTrap (.1.3.6.1.4.1.35047.110.7) - Fan Alert."),
+    ("sfHAStatusTrap", "HA status alert", "HIGH",
+     "sfHAStatusTrap (.1.3.6.1.4.1.35047.110.8) - HA Status Alert."),
+    ("sfRuleBaseUpgradeTrap", "Database update alert", "INFO",
+     "sfRuleBaseUpgradeTrap (.1.3.6.1.4.1.35047.110.17) - Database Update Alert."),
+    ("sfBypassChangeTrap", "Passthrough status alert", "WARNING",
+     "sfBypassChangeTrap (.1.3.6.1.4.1.35047.110.19) - Passthrough Status Alert (bypass mode change)."),
+    ("sfLinkUpTrap", "Link recovery alert", "INFO",
+     "sfLinkUpTrap (.1.3.6.1.4.1.35047.110.23) - Link Recovery Alert."),
+    ("sfLinkDownTrap", "Link failure alert", "HIGH",
+     "sfLinkDownTrap (.1.3.6.1.4.1.35047.110.24) - Link Failure Alert."),
+    ("sfPortResourceWarnTrap", "Insufficient port resources", "WARNING",
+     "sfPortResourceWarnTrap (.1.3.6.1.4.1.35047.110.25) - Insufficient Port Resources."),
+    ("sfSLATrap", "SLA-based link failover", "WARNING",
+     "sfSLATrap (.1.3.6.1.4.1.35047.110.27) - SLA-based Link Failover."),
+    ("warmStart", "Device warm start", "INFO",
+     "SNMPv2-MIB::warmStart (.1.3.6.1.6.3.1.1.5.2) - Warm Start Alert."),
 ]
 
 for hname, title, prio, desc in trap_defs:

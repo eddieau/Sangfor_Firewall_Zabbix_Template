@@ -381,7 +381,16 @@
             "delay": "{$SANGFOR.UPDATE.FREQ}",
             "history": "7d",
             "value_type": "FLOAT",
-            "description": "sfSysInThroughput - instantaneous; units not stated in MIB (verify against vendor UI).",
+            "description": "sfSysInThroughput - instantaneous kbps (confirmed by operator 2026-11-16); multiplied by 1000 for bps display.",
+            "units": "bps",
+            "preprocessing": [
+              {
+                "type": "MULTIPLIER",
+                "parameters": [
+                  "1000"
+                ]
+              }
+            ],
             "tags": [
               {
                 "tag": "component",
@@ -398,7 +407,16 @@
             "delay": "{$SANGFOR.UPDATE.FREQ}",
             "history": "7d",
             "value_type": "FLOAT",
-            "description": "sfSysOutThroughput - instantaneous; units not stated in MIB (verify against vendor UI).",
+            "description": "sfSysOutThroughput - instantaneous kbps (confirmed by operator 2026-11-16); multiplied by 1000 for bps display.",
+            "units": "bps",
+            "preprocessing": [
+              {
+                "type": "MULTIPLIER",
+                "parameters": [
+                  "1000"
+                ]
+              }
+            ],
             "tags": [
               {
                 "tag": "component",
@@ -703,6 +721,396 @@
                 "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfFirewallTrapNetworkAttack],1d)=1",
                 "name": "Sangfor: Protected network under attack on {HOST.NAME}",
                 "priority": "HIGH"
+              }
+            ]
+          },
+          {
+            "uuid": "1af091cc46494e90819ac1c19e349eb8",
+            "name": "SNMP trap: Temperature alert",
+            "type": "SNMP_TRAP",
+            "key": "snmptrap[sfTemperatureWarnTrap]",
+            "delay": "0",
+            "history": "31d",
+            "value_type": "TEXT",
+            "description": "sfTemperatureWarnTrap (.1.3.6.1.4.1.35047.110.1) - Temperature Alert.",
+            "tags": [
+              {
+                "tag": "component",
+                "value": "trap"
+              }
+            ],
+            "triggers": [
+              {
+                "uuid": "0d3b0be2f08246cbaeb076545402aef3",
+                "expression": "find(/Sangfor NGAF by SNMP/snmptrap[sfTemperatureWarnTrap],#1,\"regexp\",\"sfTemperatureWarnTrap\")=1",
+                "recovery_mode": "RECOVERY_EXPRESSION",
+                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfTemperatureWarnTrap],1d)=1",
+                "name": "Sangfor: Temperature alert on {HOST.NAME}",
+                "priority": "HIGH"
+              }
+            ]
+          },
+          {
+            "uuid": "a6202ee5959642118e81cfbbe6845f4c",
+            "name": "SNMP trap: CPU alert",
+            "type": "SNMP_TRAP",
+            "key": "snmptrap[sfCPUWarnTrap]",
+            "delay": "0",
+            "history": "31d",
+            "value_type": "TEXT",
+            "description": "sfCPUWarnTrap (.1.3.6.1.4.1.35047.110.2) - CPU Alert.",
+            "tags": [
+              {
+                "tag": "component",
+                "value": "trap"
+              }
+            ],
+            "triggers": [
+              {
+                "uuid": "d0f6ace7077b49ac92698f78c718683f",
+                "expression": "find(/Sangfor NGAF by SNMP/snmptrap[sfCPUWarnTrap],#1,\"regexp\",\"sfCPUWarnTrap\")=1",
+                "recovery_mode": "RECOVERY_EXPRESSION",
+                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfCPUWarnTrap],1d)=1",
+                "name": "Sangfor: CPU alert on {HOST.NAME}",
+                "priority": "WARNING"
+              }
+            ]
+          },
+          {
+            "uuid": "568d50f1bdbe4e56919f4fcfbc83330a",
+            "name": "SNMP trap: Memory alert",
+            "type": "SNMP_TRAP",
+            "key": "snmptrap[sfMemoryWarnTrap]",
+            "delay": "0",
+            "history": "31d",
+            "value_type": "TEXT",
+            "description": "sfMemoryWarnTrap (.1.3.6.1.4.1.35047.110.3) - Memory Alert.",
+            "tags": [
+              {
+                "tag": "component",
+                "value": "trap"
+              }
+            ],
+            "triggers": [
+              {
+                "uuid": "2a1ae6bcb942429e81385577e37d5e37",
+                "expression": "find(/Sangfor NGAF by SNMP/snmptrap[sfMemoryWarnTrap],#1,\"regexp\",\"sfMemoryWarnTrap\")=1",
+                "recovery_mode": "RECOVERY_EXPRESSION",
+                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfMemoryWarnTrap],1d)=1",
+                "name": "Sangfor: Memory alert on {HOST.NAME}",
+                "priority": "WARNING"
+              }
+            ]
+          },
+          {
+            "uuid": "4c16da5d819144d180c1a7cca1bddd1f",
+            "name": "SNMP trap: Hard disk alert",
+            "type": "SNMP_TRAP",
+            "key": "snmptrap[sfDiskWarnTrap]",
+            "delay": "0",
+            "history": "31d",
+            "value_type": "TEXT",
+            "description": "sfDiskWarnTrap (.1.3.6.1.4.1.35047.110.4) - Hard Disk Alert.",
+            "tags": [
+              {
+                "tag": "component",
+                "value": "trap"
+              }
+            ],
+            "triggers": [
+              {
+                "uuid": "2ef925e1b1394afc863c53cc6e4fc448",
+                "expression": "find(/Sangfor NGAF by SNMP/snmptrap[sfDiskWarnTrap],#1,\"regexp\",\"sfDiskWarnTrap\")=1",
+                "recovery_mode": "RECOVERY_EXPRESSION",
+                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfDiskWarnTrap],1d)=1",
+                "name": "Sangfor: Hard disk alert on {HOST.NAME}",
+                "priority": "HIGH"
+              }
+            ]
+          },
+          {
+            "uuid": "46eec196def14dab8fc522838c8ea462",
+            "name": "SNMP trap: Power alert",
+            "type": "SNMP_TRAP",
+            "key": "snmptrap[sfPowerWarnTrap]",
+            "delay": "0",
+            "history": "31d",
+            "value_type": "TEXT",
+            "description": "sfPowerWarnTrap (.1.3.6.1.4.1.35047.110.5) - Power Alert.",
+            "tags": [
+              {
+                "tag": "component",
+                "value": "trap"
+              }
+            ],
+            "triggers": [
+              {
+                "uuid": "fd4f41f77633400ea3368b96c31ffe82",
+                "expression": "find(/Sangfor NGAF by SNMP/snmptrap[sfPowerWarnTrap],#1,\"regexp\",\"sfPowerWarnTrap\")=1",
+                "recovery_mode": "RECOVERY_EXPRESSION",
+                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfPowerWarnTrap],1d)=1",
+                "name": "Sangfor: Power alert on {HOST.NAME}",
+                "priority": "HIGH"
+              }
+            ]
+          },
+          {
+            "uuid": "f62f545a5adb4745aa9bff16867ee530",
+            "name": "SNMP trap: Interface alert",
+            "type": "SNMP_TRAP",
+            "key": "snmptrap[sfInterfaceDownTrap]",
+            "delay": "0",
+            "history": "31d",
+            "value_type": "TEXT",
+            "description": "sfInterfaceDownTrap (.1.3.6.1.4.1.35047.110.6) - Interface Alert.",
+            "tags": [
+              {
+                "tag": "component",
+                "value": "trap"
+              }
+            ],
+            "triggers": [
+              {
+                "uuid": "086475b310f44fa1bf8cd8e9aa8c50fa",
+                "expression": "find(/Sangfor NGAF by SNMP/snmptrap[sfInterfaceDownTrap],#1,\"regexp\",\"sfInterfaceDownTrap\")=1",
+                "recovery_mode": "RECOVERY_EXPRESSION",
+                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfInterfaceDownTrap],1d)=1",
+                "name": "Sangfor: Interface alert on {HOST.NAME}",
+                "priority": "HIGH"
+              }
+            ]
+          },
+          {
+            "uuid": "cee1225cc3e7445f923c0f7939af4d5c",
+            "name": "SNMP trap: Fan alert",
+            "type": "SNMP_TRAP",
+            "key": "snmptrap[sfFanWarnTrap]",
+            "delay": "0",
+            "history": "31d",
+            "value_type": "TEXT",
+            "description": "sfFanWarnTrap (.1.3.6.1.4.1.35047.110.7) - Fan Alert.",
+            "tags": [
+              {
+                "tag": "component",
+                "value": "trap"
+              }
+            ],
+            "triggers": [
+              {
+                "uuid": "2e3c1fb2f7a44f00a5529e075750dc33",
+                "expression": "find(/Sangfor NGAF by SNMP/snmptrap[sfFanWarnTrap],#1,\"regexp\",\"sfFanWarnTrap\")=1",
+                "recovery_mode": "RECOVERY_EXPRESSION",
+                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfFanWarnTrap],1d)=1",
+                "name": "Sangfor: Fan alert on {HOST.NAME}",
+                "priority": "HIGH"
+              }
+            ]
+          },
+          {
+            "uuid": "922327ee1bf04a129de6f76c4f16111e",
+            "name": "SNMP trap: HA status alert",
+            "type": "SNMP_TRAP",
+            "key": "snmptrap[sfHAStatusTrap]",
+            "delay": "0",
+            "history": "31d",
+            "value_type": "TEXT",
+            "description": "sfHAStatusTrap (.1.3.6.1.4.1.35047.110.8) - HA Status Alert.",
+            "tags": [
+              {
+                "tag": "component",
+                "value": "trap"
+              }
+            ],
+            "triggers": [
+              {
+                "uuid": "aad06642c7384fde8e44dbcb72e6a422",
+                "expression": "find(/Sangfor NGAF by SNMP/snmptrap[sfHAStatusTrap],#1,\"regexp\",\"sfHAStatusTrap\")=1",
+                "recovery_mode": "RECOVERY_EXPRESSION",
+                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfHAStatusTrap],1d)=1",
+                "name": "Sangfor: HA status alert on {HOST.NAME}",
+                "priority": "HIGH"
+              }
+            ]
+          },
+          {
+            "uuid": "5a08efe2fcd84451bb48ac2ccb76cef9",
+            "name": "SNMP trap: Database update alert",
+            "type": "SNMP_TRAP",
+            "key": "snmptrap[sfRuleBaseUpgradeTrap]",
+            "delay": "0",
+            "history": "31d",
+            "value_type": "TEXT",
+            "description": "sfRuleBaseUpgradeTrap (.1.3.6.1.4.1.35047.110.17) - Database Update Alert.",
+            "tags": [
+              {
+                "tag": "component",
+                "value": "trap"
+              }
+            ],
+            "triggers": [
+              {
+                "uuid": "cfe29a9652904ff7b196fbd6f4259f56",
+                "expression": "find(/Sangfor NGAF by SNMP/snmptrap[sfRuleBaseUpgradeTrap],#1,\"regexp\",\"sfRuleBaseUpgradeTrap\")=1",
+                "recovery_mode": "RECOVERY_EXPRESSION",
+                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfRuleBaseUpgradeTrap],1d)=1",
+                "name": "Sangfor: Database update alert on {HOST.NAME}",
+                "priority": "INFO"
+              }
+            ]
+          },
+          {
+            "uuid": "1866b6b976ed4e02a32502aece3f18ec",
+            "name": "SNMP trap: Passthrough status alert",
+            "type": "SNMP_TRAP",
+            "key": "snmptrap[sfBypassChangeTrap]",
+            "delay": "0",
+            "history": "31d",
+            "value_type": "TEXT",
+            "description": "sfBypassChangeTrap (.1.3.6.1.4.1.35047.110.19) - Passthrough Status Alert (bypass mode change).",
+            "tags": [
+              {
+                "tag": "component",
+                "value": "trap"
+              }
+            ],
+            "triggers": [
+              {
+                "uuid": "0821bb70a0914faba3ca13c9cd1592fc",
+                "expression": "find(/Sangfor NGAF by SNMP/snmptrap[sfBypassChangeTrap],#1,\"regexp\",\"sfBypassChangeTrap\")=1",
+                "recovery_mode": "RECOVERY_EXPRESSION",
+                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfBypassChangeTrap],1d)=1",
+                "name": "Sangfor: Passthrough status alert on {HOST.NAME}",
+                "priority": "WARNING"
+              }
+            ]
+          },
+          {
+            "uuid": "f8b6e59892da441dbdd75eae30883220",
+            "name": "SNMP trap: Link recovery alert",
+            "type": "SNMP_TRAP",
+            "key": "snmptrap[sfLinkUpTrap]",
+            "delay": "0",
+            "history": "31d",
+            "value_type": "TEXT",
+            "description": "sfLinkUpTrap (.1.3.6.1.4.1.35047.110.23) - Link Recovery Alert.",
+            "tags": [
+              {
+                "tag": "component",
+                "value": "trap"
+              }
+            ],
+            "triggers": [
+              {
+                "uuid": "ad4bd91626d44f56afd98333c4a89751",
+                "expression": "find(/Sangfor NGAF by SNMP/snmptrap[sfLinkUpTrap],#1,\"regexp\",\"sfLinkUpTrap\")=1",
+                "recovery_mode": "RECOVERY_EXPRESSION",
+                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfLinkUpTrap],1d)=1",
+                "name": "Sangfor: Link recovery alert on {HOST.NAME}",
+                "priority": "INFO"
+              }
+            ]
+          },
+          {
+            "uuid": "8cc09773c2684c369e5254aef4aacf86",
+            "name": "SNMP trap: Link failure alert",
+            "type": "SNMP_TRAP",
+            "key": "snmptrap[sfLinkDownTrap]",
+            "delay": "0",
+            "history": "31d",
+            "value_type": "TEXT",
+            "description": "sfLinkDownTrap (.1.3.6.1.4.1.35047.110.24) - Link Failure Alert.",
+            "tags": [
+              {
+                "tag": "component",
+                "value": "trap"
+              }
+            ],
+            "triggers": [
+              {
+                "uuid": "07b2f3974ada48ed8a5ec521e3e0dbf0",
+                "expression": "find(/Sangfor NGAF by SNMP/snmptrap[sfLinkDownTrap],#1,\"regexp\",\"sfLinkDownTrap\")=1",
+                "recovery_mode": "RECOVERY_EXPRESSION",
+                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfLinkDownTrap],1d)=1",
+                "name": "Sangfor: Link failure alert on {HOST.NAME}",
+                "priority": "HIGH"
+              }
+            ]
+          },
+          {
+            "uuid": "07e0683ab5e542b1a5ef480570fcd4fe",
+            "name": "SNMP trap: Insufficient port resources",
+            "type": "SNMP_TRAP",
+            "key": "snmptrap[sfPortResourceWarnTrap]",
+            "delay": "0",
+            "history": "31d",
+            "value_type": "TEXT",
+            "description": "sfPortResourceWarnTrap (.1.3.6.1.4.1.35047.110.25) - Insufficient Port Resources.",
+            "tags": [
+              {
+                "tag": "component",
+                "value": "trap"
+              }
+            ],
+            "triggers": [
+              {
+                "uuid": "c2f5d12a3100468e993b857a66ed3705",
+                "expression": "find(/Sangfor NGAF by SNMP/snmptrap[sfPortResourceWarnTrap],#1,\"regexp\",\"sfPortResourceWarnTrap\")=1",
+                "recovery_mode": "RECOVERY_EXPRESSION",
+                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfPortResourceWarnTrap],1d)=1",
+                "name": "Sangfor: Insufficient port resources on {HOST.NAME}",
+                "priority": "WARNING"
+              }
+            ]
+          },
+          {
+            "uuid": "209e9725b8b84a98bbaaec902ecb7670",
+            "name": "SNMP trap: SLA-based link failover",
+            "type": "SNMP_TRAP",
+            "key": "snmptrap[sfSLATrap]",
+            "delay": "0",
+            "history": "31d",
+            "value_type": "TEXT",
+            "description": "sfSLATrap (.1.3.6.1.4.1.35047.110.27) - SLA-based Link Failover.",
+            "tags": [
+              {
+                "tag": "component",
+                "value": "trap"
+              }
+            ],
+            "triggers": [
+              {
+                "uuid": "a83f3fe39bed4d64926af8b0a4e8e603",
+                "expression": "find(/Sangfor NGAF by SNMP/snmptrap[sfSLATrap],#1,\"regexp\",\"sfSLATrap\")=1",
+                "recovery_mode": "RECOVERY_EXPRESSION",
+                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfSLATrap],1d)=1",
+                "name": "Sangfor: SLA-based link failover on {HOST.NAME}",
+                "priority": "WARNING"
+              }
+            ]
+          },
+          {
+            "uuid": "aa1df03e144c44c99a1e13c9753a3bc5",
+            "name": "SNMP trap: Device warm start",
+            "type": "SNMP_TRAP",
+            "key": "snmptrap[warmStart]",
+            "delay": "0",
+            "history": "31d",
+            "value_type": "TEXT",
+            "description": "SNMPv2-MIB::warmStart (.1.3.6.1.6.3.1.1.5.2) - Warm Start Alert.",
+            "tags": [
+              {
+                "tag": "component",
+                "value": "trap"
+              }
+            ],
+            "triggers": [
+              {
+                "uuid": "fcdf9d7753ca40aebaf257422b02f502",
+                "expression": "find(/Sangfor NGAF by SNMP/snmptrap[warmStart],#1,\"regexp\",\"warmStart\")=1",
+                "recovery_mode": "RECOVERY_EXPRESSION",
+                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[warmStart],1d)=1",
+                "name": "Sangfor: Device warm start on {HOST.NAME}",
+                "priority": "INFO"
               }
             ]
           },
