@@ -13,7 +13,7 @@ SNMPv3 authPriv, monitored through a Zabbix proxy.
 
 ## What it monitors
 
-**Scalar items (28) + SNMP trap items (23) + ported generic checks (11):**
+**Scalar items (28) + SNMP trap items (21) + ported generic checks (11):**
 
 - Device info: description, name, software version, AF version, serial
   (serial ships DISABLED — `sfSnGW` is not implemented on AF 8.0.108)
@@ -22,10 +22,11 @@ SNMPv3 authPriv, monitored through a Zabbix proxy.
 - Memory: total / free (kB → bytes), usage % from the device's own
   `sfSysMemoryUsage` (matches the vendor UI; trigger > `{$SANGFOR.MEM.MAX}`), swap
 - Sessions: current / new / total / new-per-second, online users
-- Throughput: inbound / outbound system throughput (units not stated in MIB)
+- Throughput: inbound / outbound system throughput (device reports kbps;
+  stored as bps via `×1000`)
 - HA: enable, mode, current status, control/data link status (abnormal → HIGH
   trigger), sync state
-- SNMP traps — 22 named `snmptrap[<name>]` items covering the trap list the
+- SNMP traps — 20 named `snmptrap[<name>]` items covering the trap list the
   NGAF web UI actually offers, plus `snmptrap.fallback`:
 
   | UI alert | OID | MIB notification | priority |
@@ -47,11 +48,27 @@ SNMPv3 authPriv, monitored through a Zabbix proxy.
   | Firewall Attacked Alert | 35047.200.200.6 | sfFirewallTrapFwAttack | HIGH |
   | Protected Network Attacked | 35047.200.200.7 | sfFirewallTrapNetworkAttack | HIGH |
   | Warm Start Alert | 1.3.6.1.6.3.1.1.5.2 | warmStart (SNMPv2-MIB) | INFO |
-  | (extras not in the UI list) | 35047.200.200.1–.5 | sfFirewallTrapConfChange / DualSwitch / RulebaseUpdate / IfNormal / IfFail | mixed |
+  | (extras not in the UI list) | 35047.200.200.1–.5 | ConfChange / RulebaseUpdate / DualSwitch / If-Fail-Normal pair | mixed |
 
-  Triggers auto-recover via `nodata(...,1d)`. Because `snmptrap.fallback`
-  lives here, **do not link "Network Generic Device by SNMP" on the same
-  host** — Zabbix refuses the duplicate `snmptrap.fallback` key.
+**Trap trigger design (v0.2.0):**
+
+- **Fail/Normal pairs share ONE item** (`snmptrap[sfFirewallTrapIf]`,
+  `snmptrap[sfLink]`): the trigger is PROBLEM while the *last* trap received
+  is the failure and recovers the moment the matching normal/recovery trap
+  arrives. Caveat: pairing is per trap-pair, not per interface index —
+  trigger expressions cannot compare varbinds, so a recovery trap for one
+  interface clears the problem for the pair.
+- **Unpaired problem traps** (attacks, dual switch, temperature/CPU/memory/
+  disk/power/interface/fan/HA/bypass/port/SLA) recover automatically after
+  `{$SANGFOR.TRAP_PROBLEM_HOURS}` (default 4 h) without a repeat — Sangfor
+  re-sends active alerts (verified: attack traps every ~10 s), so a
+  persistent problem means the condition is still firing.
+- **Pure informational events** (config changed, rulebase updated, database
+  update, warm start) have **no trigger** — the trap is stored as the item
+  value (event-log style); view it in Latest data or add your own trigger.
+- Because `snmptrap.fallback` lives here, **do not link "Network Generic
+  Device by SNMP" on the same host** — Zabbix refuses the duplicate
+  `snmptrap.fallback` key.
 
 **Ported generic checks (11)** — why the generic template is no longer needed:
 
@@ -123,8 +140,9 @@ Via the API, interfaces are embedded in `host.create` / `host.update`
 | `{$SANGFOR.MEM.MAX}` | `90` | Memory usage % warning |
 | `{$SANGFOR.DISK.MAX}` | `85` | Filesystem usage % warning |
 | `{$SANGFOR.DISK_TEMP.MAX}` | `70` | Disk temperature (°C) warning |
-| `{$SANGFOR.IF_DROP.MAX}` | `1000` | Interface discard rate (ps) warning |
+| `{$SANGFOR.IF_DROP.MAX}` | `1000` | Interface discard rate (drops/s) warning |
 | `{$SANGFOR.INFO.FREQ}` | `15m` | System-info item interval |
+| `{$SANGFOR.TRAP_PROBLEM_HOURS}` | `4h` | Auto-recovery window for unpaired trap problems |
 | `{$ICMP_LOSS_WARN}` | `20` | ICMP loss (%) warning |
 | `{$ICMP_LOSS_MIN_OCCURRENCES}` | `3` | Consecutive polls above loss warn |
 | `{$ICMP_RESPONSE_TIME_WARN}` | `0.15` | Avg response time (s) warning |
@@ -172,7 +190,7 @@ trapper runs on the proxy:
 ## Relationship to "Network Generic Device by SNMP"
 
 This template **replaces** it: all 11 generic pollable items + triggers are
-ported in, plus 62 template-level objects of Sangfor-specific value. Link only
+ported in, plus 60 template-level items of Sangfor-specific value. Link only
 this template (both templates on one host fails on the duplicate
 `snmptrap.fallback` key). Overlap with the old generic checks is only
 informational: `system.descr` (sysDescr) ≈ `sfDeviceDescr`.
@@ -185,9 +203,11 @@ import a second time; the referenced triggers now exist and it resolves.
 
 ## Verified against live hardware (2026-11-16, AF8.0.108.657 nsf-1050a-i)
 
-All 223 enabled items (62 template + 162 discovered) poll clean **through
+All enabled items (60 template + ~163 discovered) poll clean **through
 Zabbix proxy 8.0** — ICMP Simple checks and `zabbix[host,snmp,available]`
-both work proxy-side; 0 unsupported. Findings:
+both work proxy-side; 0 unsupported. Real Sangfor traps from the device
+arrive, resolve to MIB names and route into the named trap items end-to-end
+through the proxy chain. Findings:
 
 - `sfIfInRate`/`sfIfOutRate` **are instantaneous byte/s gauges** despite being
   typed Counter64 — two samples 12 s apart went *down* (302 → 274). Template
@@ -222,12 +242,27 @@ both work proxy-side; 0 unsupported. Findings:
 ## Files
 
 - `template_sangfor_ngaf_snmp.json` — import this into Zabbix 8.0
-- `scripts/gen_template.py` — the generator (deterministic uuid5 UUIDs so
-  re-import updates objects in place; keep generation order stable when
-  editing)
+- `scripts/gen_template.py` — the generator (deterministic **content-seeded**
+  UUIDs: each object's uuid derives from its own key/name, so re-import
+  updates objects in place and adding/removing items never renumbers the
+  rest)
+- `docs/compatibility.md`, `docs/troubleshooting.md` — field notes
+- `CHANGELOG.md` — version history
 
-Source MIB: Sangfor `SANGFOR-MIB.txt` / `SANGFOR-MIB-AF.txt`
-(enterprises 35047), downloaded from Sangfor support.
+## MIB files and licensing
+
+The Sangfor MIB files are **not included** in this repository. Users must
+obtain `SANGFOR-MIB.txt`, `SANGFOR-MIB-COMPATIBLE.txt` and
+`SANGFOR-MIB-AF.txt` directly from Sangfor support / the vendor download
+portal and comply with the vendor's licensing and redistribution terms.
+The MIT license in this repository applies to the original template JSON,
+generator script and documentation only.
+
+## Disclaimer
+
+This project is **unofficial** and is not affiliated with, endorsed by, or
+supported by Sangfor Technologies. Zabbix and Sangfor are trademarks of
+their respective owners.
 
 ## License
 

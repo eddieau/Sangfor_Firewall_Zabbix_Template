@@ -3,19 +3,20 @@
 
 Format verified against configuration.export output of an official 8.0 template.
 """
-import uuid, json, itertools
+import uuid, json
+from pathlib import Path
 
 BASE = "1.3.6.1.4.1.35047"        # sangfor
 GEN = BASE + ".1"                  # general ::= { sangfor 1 }
 TPL = "Sangfor NGAF by SNMP"
 TGROUP = "Templates/Network devices"
 
-# Deterministic UUIDs (uuid5 from a stable counter) so re-importing a
-# regenerated file updates objects in place instead of clashing on names.
-# Caveat: keep generation order stable; inserting/removing items shifts the
-# counter for later objects.
+# Deterministic content-seeded UUIDs so re-importing a regenerated file
+# updates objects in place. Each object's uuid is seeded from its OWN
+# stable identifier (key/name), so inserting or removing objects never
+# shifts the identity of unrelated ones (Zabbix 8.0 import requires the
+# UUIDv4 layout).
 _NS = uuid.uuid5(uuid.NAMESPACE_URL, "https://github.com/eddieau/Sangfor_Firewall_Zabbix_Template")
-_C = itertools.count(1)
 
 def _fakev4(seed):
     """Deterministic UUID forced into UUIDv4 layout (Zabbix 8.0 import
@@ -25,8 +26,8 @@ def _fakev4(seed):
     b[8] = (b[8] & 0x3F) | 0x80          # variant 10
     return uuid.UUID(bytes=bytes(b)).hex
 
-def U():
-    return _fakev4("sangfor-ngaf-%d" % next(_C))
+def U(name):
+    return _fakev4("sangfor-ngaf-" + name)
 
 items = []
 drs = []
@@ -34,7 +35,7 @@ macros = []
 
 def snmp_item(name, key, oid, vtype="FLOAT", units="", desc="", pre=None,
               trig=None, tags=(), history="7d"):
-    it = {"uuid": U(), "name": name, "type": "SNMP_AGENT", "snmp_oid": oid,
+    it = {"uuid": U("item-" + key), "name": name, "type": "SNMP_AGENT", "snmp_oid": oid,
           "key": key, "delay": "{$SANGFOR.UPDATE.FREQ}",
           "history": history, "value_type": vtype, "description": desc}
     if units:
@@ -50,7 +51,7 @@ def snmp_item(name, key, oid, vtype="FLOAT", units="", desc="", pre=None,
 
 def calc_item(name, key, formula, units="", desc="", vtype="FLOAT",
               trig=None, tags=()):
-    it = {"uuid": U(), "name": name, "type": "CALCULATED", "key": key,
+    it = {"uuid": U("item-" + key), "name": name, "type": "CALCULATED", "key": key,
           "delay": "1m", "params": formula, "history": "7d",
           "value_type": vtype, "description": desc}
     if units:
@@ -62,7 +63,8 @@ def calc_item(name, key, formula, units="", desc="", vtype="FLOAT",
     items.append(it)
 
 def TR(prio, expr, name):
-    return {"uuid": U(), "expression": expr, "name": name, "priority": prio}
+    return {"uuid": U("trig-" + name), "expression": expr, "name": name,
+            "priority": prio}
 
 # preprocessing helpers
 def P(t, *params):
@@ -214,7 +216,7 @@ TS = GEN + ".59.1"    # sfTempSensorTable
 
 def proto(name, key, oid, units="", pre=None, vtype="FLOAT", desc="",
           tags=(), trig=None):
-    it = {"uuid": U(), "name": name, "type": "SNMP_AGENT",
+    it = {"uuid": U("proto-" + key), "name": name, "type": "SNMP_AGENT",
           "snmp_oid": "get[" + oid + "]", "key": key,
           "delay": "{$SANGFOR.UPDATE.FREQ}",
           "history": "7d", "value_type": vtype, "description": desc}
@@ -229,7 +231,7 @@ def proto(name, key, oid, units="", pre=None, vtype="FLOAT", desc="",
     return it
 
 def calc_proto(name, key, formula, units="", desc="", tags=(), trig=None):
-    it = {"uuid": U(), "name": name, "type": "CALCULATED", "key": key,
+    it = {"uuid": U("item-" + key), "name": name, "type": "CALCULATED", "key": key,
           "delay": "1m", "params": formula, "history": "7d",
           "value_type": "FLOAT", "description": desc}
     if units:
@@ -241,7 +243,7 @@ def calc_proto(name, key, formula, units="", desc="", tags=(), trig=None):
     return it
 
 def lld(name, key, disc_oid, protos, desc="", filter=None):
-    dr = {"uuid": U(), "name": name, "type": "SNMP_AGENT",
+    dr = {"uuid": U("lld-" + key), "name": name, "type": "SNMP_AGENT",
           "snmp_oid": disc_oid, "key": key,
           "delay": "{$SANGFOR.DISCOVERY.FREQ}",
           "description": desc,
@@ -279,14 +281,14 @@ lld("Interface discovery", "sangfor.if.discovery",
            tags=[("component", "network")]),
      proto("Interface {#SNMPVALUE}: Inbound discards",
            "sangfor.if.in.drop[{#SNMPINDEX}]", IF + ".15.{#SNMPINDEX}",
-           "ps", CPS, desc="sfIfInDrop (cumulative counter -> rate).",
+           "pps", CPS, desc="sfIfInDrop (cumulative counter -> drops/s).",
            tags=[("component", "network")],
            trig=TR("WARNING",
                    "last(/%s/sangfor.if.in.drop[{#SNMPINDEX}])>{$SANGFOR.IF_DROP.MAX}" % TPL,
                    "Interface {#SNMPVALUE}: high inbound discard rate on {HOST.NAME}")),
      proto("Interface {#SNMPVALUE}: Outbound discards",
            "sangfor.if.out.drop[{#SNMPINDEX}]", IF + ".16.{#SNMPINDEX}",
-           "ps", CPS, desc="sfIfOutDrop (cumulative counter -> rate).",
+           "pps", CPS, desc="sfIfOutDrop (cumulative counter -> drops/s).",
            tags=[("component", "network")],
            trig=TR("WARNING",
                    "last(/%s/sangfor.if.out.drop[{#SNMPINDEX}])>{$SANGFOR.IF_DROP.MAX}" % TPL,
@@ -385,29 +387,71 @@ lld("Temperature sensor discovery", "sangfor.temp.discovery",
          "models do not expose this table (verified empty on AF8.0.108 nsf-1050a-i).")
 
 # ================= SNMP trap items =================
-# Trap OIDs from SANGFOR-AF-MIB: sfFirewallTraps = .1.3.6.1.4.1.35047.200.200.N
-# Keys use trap NAMES only (safe characters for item keys); numeric-OID
-# fallback regex lives in the trigger expressions where "|" is allowed.
-def UN(name):
-    return _fakev4("sangfor-ngaf-" + name)
+# Trap families the NGAF actually emits (confirmed from the device trap UI):
+# sfGeneralTrap .1.3.6.1.4.1.35047.110.x (SANGFOR-MIB-COMPATIBLE.txt),
+# sfFirewallTraps .1.3.6.1.4.1.35047.200.200.x (SANGFOR-MIB-AF.txt) and
+# SNMPv2-MIB::warmStart (.1.3.6.1.6.3.1.1.5.2). Trap items route by the
+# name regex in the key; the trap text becomes the item value.
+#
+# Recovery design (v0.2.0):
+#  * Paired fail/normal traps share ONE item (common prefix regex). The
+#    trigger is PROBLEM while the LAST received trap of the pair is the
+#    failure and recovers as soon as the normal/recovery trap arrives.
+#    Caveat: pairing is per trap-pair, not per interface index (trigger
+#    expressions cannot compare varbinds).
+#  * Unpaired problem traps recover after {$SANGFOR.TRAP_PROBLEM_HOURS} of
+#    silence (most Sangfor alerts repeat while the condition holds -
+#    verified live: attack traps re-sent every ~10 s).
+#  * Pure informational events (config/rulebase/db updates, warm start)
+#    carry NO trigger: the trap is stored as the item value (event-log
+#    style); use Latest data or build custom triggers on top.
 
-trap_defs = [
-    ("sfFirewallTrapConfChange", "Configuration changed", "INFO",
-     "sfFirewallTrapConfChange (.1.3.6.1.4.1.35047.200.200.1) - NGAF configuration was updated."),
-    ("sfFirewallTrapDualSwitch", "HA dual-active switch event", "HIGH",
-     "sfFirewallTrapDualSwitch (.1.3.6.1.4.1.35047.200.200.2) - HA failover/dual switch occurred."),
-    ("sfFirewallRulebaseUpdate", "Security rulebase updated", "INFO",
-     "sfFirewallRulebaseUpdate (.1.3.6.1.4.1.35047.200.200.3) - firewall rules were updated."),
-    ("sfFirewallTrapIfNormal", "Interface link back to normal", "INFO",
-     "sfFirewallTrapIfNormal (.1.3.6.1.4.1.35047.200.200.4) - interface link working properly."),
-    ("sfFirewallTrapIfFail", "Interface link failure", "HIGH",
-     "sfFirewallTrapIfFail (.1.3.6.1.4.1.35047.200.200.5) - interface link went wrong."),
+def trap_item(keyname, title, desc, trig=None):
+    it = {
+        "uuid": U("trap-" + keyname),
+        "name": "SNMP trap: " + title,
+        "type": "SNMP_TRAP",
+        "key": "snmptrap[" + keyname + "]",
+        "delay": "0",
+        "history": "31d",
+        "value_type": "TEXT",
+        "description": desc,
+        "tags": [{"tag": "component", "value": "trap"}],
+    }
+    if trig:
+        it["triggers"] = [trig]
+    items.append(it)
+
+def _find(keyname, what):
+    return 'find(/%s/snmptrap[%s],#1,"regexp","%s")=1' % (TPL, keyname, what)
+
+for keyname, failn, normaln, title, desc in [
+    ("sfFirewallTrapIf", "sfFirewallTrapIfFail", "sfFirewallTrapIfNormal",
+     "Interface link failure",
+     "Catches sfFirewallTrapIfFail (.35047.200.200.5) and "
+     "sfFirewallTrapIfNormal (.200.200.4). PROBLEM while the last trap was "
+     "the failure; recovers when the normal trap arrives."),
+    ("sfLink", "sfLinkDownTrap", "sfLinkUpTrap", "Link failure alert",
+     "Catches sfLinkDownTrap (.35047.110.24) and sfLinkUpTrap (.110.23). "
+     "PROBLEM while the last trap was the failure; recovers when the link "
+     "recovery trap arrives."),
+]:
+    trap_item(keyname, title, desc, trig={
+        "uuid": U("trig-" + keyname),
+        "expression": _find(keyname, failn),
+        "recovery_mode": "RECOVERY_EXPRESSION",
+        "recovery_expression": _find(keyname, normaln),
+        "name": "Sangfor: " + title + " on {HOST.NAME}",
+        "priority": "HIGH",
+    })
+
+for keyname, title, prio, desc in [
     ("sfFirewallTrapFwAttack", "Firewall under attack", "HIGH",
      "sfFirewallTrapFwAttack (.1.3.6.1.4.1.35047.200.200.6) - firewall itself under attack."),
     ("sfFirewallTrapNetworkAttack", "Protected network under attack", "HIGH",
      "sfFirewallTrapNetworkAttack (.1.3.6.1.4.1.35047.200.200.7) - protected network under attack."),
-    # ---- sfGeneralTrap family (35047.110.x), names from ----
-    # ---- SANGFOR-MIB-COMPATIBLE.txt; matches the NGAF trap UI list ----
+    ("sfFirewallTrapDualSwitch", "HA dual-active switch event", "HIGH",
+     "sfFirewallTrapDualSwitch (.1.3.6.1.4.1.35047.200.200.2) - HA failover/dual switch occurred."),
     ("sfTemperatureWarnTrap", "Temperature alert", "HIGH",
      "sfTemperatureWarnTrap (.1.3.6.1.4.1.35047.110.1) - Temperature Alert."),
     ("sfCPUWarnTrap", "CPU alert", "WARNING",
@@ -424,44 +468,36 @@ trap_defs = [
      "sfFanWarnTrap (.1.3.6.1.4.1.35047.110.7) - Fan Alert."),
     ("sfHAStatusTrap", "HA status alert", "HIGH",
      "sfHAStatusTrap (.1.3.6.1.4.1.35047.110.8) - HA Status Alert."),
-    ("sfRuleBaseUpgradeTrap", "Database update alert", "INFO",
-     "sfRuleBaseUpgradeTrap (.1.3.6.1.4.1.35047.110.17) - Database Update Alert."),
     ("sfBypassChangeTrap", "Passthrough status alert", "WARNING",
      "sfBypassChangeTrap (.1.3.6.1.4.1.35047.110.19) - Passthrough Status Alert (bypass mode change)."),
-    ("sfLinkUpTrap", "Link recovery alert", "INFO",
-     "sfLinkUpTrap (.1.3.6.1.4.1.35047.110.23) - Link Recovery Alert."),
-    ("sfLinkDownTrap", "Link failure alert", "HIGH",
-     "sfLinkDownTrap (.1.3.6.1.4.1.35047.110.24) - Link Failure Alert."),
     ("sfPortResourceWarnTrap", "Insufficient port resources", "WARNING",
      "sfPortResourceWarnTrap (.1.3.6.1.4.1.35047.110.25) - Insufficient Port Resources."),
     ("sfSLATrap", "SLA-based link failover", "WARNING",
      "sfSLATrap (.1.3.6.1.4.1.35047.110.27) - SLA-based Link Failover."),
-    ("warmStart", "Device warm start", "INFO",
-     "SNMPv2-MIB::warmStart (.1.3.6.1.6.3.1.1.5.2) - Warm Start Alert."),
-]
-
-for hname, title, prio, desc in trap_defs:
-    key = "snmptrap[" + hname + "]"
-    items.append({
-        "uuid": UN("trap-" + hname),
-        "name": "SNMP trap: " + title,
-        "type": "SNMP_TRAP",
-        "key": key,
-        "delay": "0",
-        "history": "31d",
-        "value_type": "TEXT",
-        "description": desc,
-        "tags": [{"tag": "component", "value": "trap"}],
-        "triggers": [{
-            "uuid": UN("trap-trig-" + hname),
-            "expression": ("find(/%s/%s,#1,\"regexp\",\"%s\")=1"
-                           % (TPL, key, hname)),
-            "recovery_mode": "RECOVERY_EXPRESSION",
-            "recovery_expression": "nodata(/%s/%s,1d)=1" % (TPL, key),
-            "name": "Sangfor: " + title + " on {HOST.NAME}",
-            "priority": prio,
-        }],
+]:
+    trap_item(keyname, title, desc, trig={
+        "uuid": U("trig-" + keyname),
+        "expression": (_find(keyname, keyname) +
+                       " and nodata(/%s/snmptrap[%s],{$SANGFOR.TRAP_PROBLEM_HOURS})=0"
+                       % (TPL, keyname)),
+        "recovery_mode": "RECOVERY_EXPRESSION",
+        "recovery_expression":
+            "nodata(/%s/snmptrap[%s],{$SANGFOR.TRAP_PROBLEM_HOURS})=1" % (TPL, keyname),
+        "name": "Sangfor: " + title + " on {HOST.NAME}",
+        "priority": prio,
     })
+
+for keyname, title, desc in [
+    ("sfFirewallTrapConfChange", "Configuration changed (event log)",
+     "sfFirewallTrapConfChange (.1.3.6.1.4.1.35047.200.200.1) - NGAF configuration was updated. Event-log item: no trigger."),
+    ("sfFirewallRulebaseUpdate", "Security rulebase updated (event log)",
+     "sfFirewallRulebaseUpdate (.1.3.6.1.4.1.35047.200.200.3) - firewall rules were updated. Event-log item: no trigger."),
+    ("sfRuleBaseUpgradeTrap", "Database update (event log)",
+     "sfRuleBaseUpgradeTrap (.1.3.6.1.4.1.35047.110.17) - Database Update Alert. Event-log item: no trigger."),
+    ("warmStart", "Device warm start (event log)",
+     "SNMPv2-MIB::warmStart (.1.3.6.1.6.3.1.1.5.2) - Warm Start Alert. Event-log item: no trigger."),
+]:
+    trap_item(keyname, title, desc)
 
 # NOTE: no snmptrap.fallback was previously omitted because the standard
 # "Network Generic Device by SNMP" template ships one. Per Eddie's request this
@@ -471,7 +507,7 @@ for hname, title, prio, desc in trap_defs:
 # ---- ported from "Network Generic Device by SNMP" (template 10226) ----
 def plain_item(name, key, itype, vtype="FLOAT", units="", desc="", delay=None,
                pre=None, trig=None, tags=()):
-    it = {"uuid": UN("item-" + key), "name": name, "type": itype, "key": key,
+    it = {"uuid": U("item-" + key), "name": name, "type": itype, "key": key,
           "delay": delay or "{$SANGFOR.UPDATE.FREQ}", "history": "7d",
           "value_type": vtype, "description": desc}
     if units:
@@ -488,16 +524,16 @@ def plain_item(name, key, itype, vtype="FLOAT", units="", desc="", delay=None,
 ICMP_TAGS = [("component", "icmp")]
 
 plain_item("ICMP ping", "icmpping", "SIMPLE", "UNSIGNED",
-           desc="Available if ping replies {$ICMP_COUNT} times, not available "
-                "if it fails {$ICMP_LOSS_MIN_OCCURRENCES} times (Simple check "
-                "from the generic SNMP template).",
+           desc="ICMP availability check (Simple check; ported from the "
+                "generic SNMP template). See the paired trigger for the "
+                "up/down logic.",
            tags=ICMP_TAGS,
            trig=TR("HIGH", "max(/%s/icmpping,#3)=0" % TPL,
                    "Device unavailable by ICMP ping on {HOST.NAME}"))
 plain_item("ICMP loss", "icmppingloss", "SIMPLE", "FLOAT", "%",
-           desc="Packet loss (%) over {$ICMP_LOSS_SAMPLES} packets, port "
-                "{$ICMP_PING_PORT}, timeout {$ICMP_TIMEOUT}s, count "
-                "{$ICMP_COUNT} (ported from generic SNMP template).",
+           desc="Packet loss (%) per ICMP check (fping defaults; tune via "
+                "the FpingLocation system setup, not per-item macros). "
+                "Ported from generic SNMP template.",
            tags=ICMP_TAGS,
            trig=TR("WARNING",
                    "min(/%s/icmppingloss,{$ICMP_LOSS_MIN_OCCURRENCES})>{$ICMP_LOSS_WARN}"
@@ -555,7 +591,7 @@ items[-1]["snmp_oid"] = "get[1.3.6.1.2.1.25.1.1.0]"
 for it in items:
     if it["key"] == "system.net.uptime[sysUpTime.0]":
         it["triggers"] = [{
-            "uuid": UN("trig-restart"),
+            "uuid": U("trig-restart"),
             "expression": ("change(/%s/system.net.uptime[sysUpTime.0])<0 and "
                            "change(/%s/system.hw.uptime[hrSystemUptime.0])<0"
                            % (TPL, TPL)),
@@ -567,7 +603,7 @@ for it in items:
         }]
     if it["key"] == "system.name":
         it["triggers"] = [{
-            "uuid": UN("trig-namechg"),
+            "uuid": U("trig-namechg"),
             "expression": ("change(/%s/system.name)<>0 and "
                            "length(last(/%s/system.name))>0" % (TPL, TPL)),
             "recovery_mode": "RECOVERY_EXPRESSION",
@@ -586,7 +622,7 @@ for it in items:
             "expression": "max(/%s/icmpping,#3)=0" % TPL}]
 
 items.append({
-    "uuid": UN("trap-fallback"),
+    "uuid": U("trap-fallback"),
     "name": "SNMP trap: catch-all (unmatched)",
     "type": "SNMP_TRAP",
     "key": "snmptrap.fallback",
@@ -610,27 +646,25 @@ for m, v, d in [
     ("{$SANGFOR.DISK.MAX}", "85", "Filesystem usage (%) warning threshold."),
     ("{$SANGFOR.DISK_TEMP.MAX}", "70", "Disk temperature (C) warning threshold."),
     ("{$SANGFOR.IF_DROP.MAX}", "1000",
-     "Interface discard rate (ps) warning threshold."),
+     "Interface discard rate (drops/s) warning threshold."),
+    ("{$SANGFOR.TRAP_PROBLEM_HOURS}", "4h",
+     "Auto-recovery window for unpaired trap problems: the problem clears "
+     "this long after the LAST matching trap (Sangfor repeats active "
+     "alerts)."),
     ("{$SANGFOR.INFO.FREQ}", "15m",
      "Update interval for system info items (ported from generic template)."),
     ("{$ICMP_LOSS_WARN}", "20",
      "Packet loss (%) that triggers a warning."),
-    ("{$ICMP_LOSS_SAMPLES}", "",
-     "The number of ECHO requests to send. Default: 3."),
     ("{$ICMP_LOSS_MIN_OCCURRENCES}", "3",
      "How many times in a row the loss must be above the warning threshold to "
      "trigger."),
     ("{$ICMP_RESPONSE_TIME_WARN}", "0.15",
      "Average response time (s) that triggers a warning."),
-    ("{$ICMP_TIMEOUT}", "3",
-     "ICMP ping timeout, in seconds."),
-    ("{$ICMP_COUNT}", "3",
-     "ICMP ping count (number of ECHO requests per check)."),
 ]:
     macros.append({"macro": m, "value": v, "description": d})
 
 # ================= assemble =================
-tpl = {"uuid": U(), "template": TPL, "name": TPL,
+tpl = {"uuid": U("template"), "template": TPL, "name": TPL,
        "description": "Sangfor NGAF monitoring via private SANGFOR-MIB "
                       "(enterprises %s). Requires SNMP v2c or later; "
                       "community/v3 credentials are configured on the host "
@@ -651,11 +685,12 @@ tpl = {"uuid": U(), "template": TPL, "name": TPL,
 
 doc = {"zabbix_export": {
     "version": "8.0",
-    "template_groups": [{"uuid": U(), "name": TGROUP}],
+    "template_groups": [{"uuid": U("group"), "name": TGROUP}],
     "templates": [tpl]}}
 
-out = "/home/eddie/.openclaw/agents/homelab/sangfor/template_sangfor_ngaf_snmp.json"
-with open(out, "w") as f:
+_here = Path(__file__).resolve().parent
+out = (_here.parent if _here.name == "scripts" else _here) / "template_sangfor_ngaf_snmp.json"
+with out.open("w", encoding="utf-8") as f:
     json.dump(doc, f, indent=2, ensure_ascii=False)
 print("written", out)
 print("items:", len(items), "lld:", len(drs))
