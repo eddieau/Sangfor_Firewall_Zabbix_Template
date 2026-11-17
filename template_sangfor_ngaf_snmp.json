@@ -559,53 +559,33 @@
           },
           {
             "uuid": "fb01ef9e3aeb4bf7942a884fccdfd7a3",
-            "name": "SNMP trap: Interface link failure",
+            "name": "SNMP trap: Interface link fail/normal (event log)",
             "type": "SNMP_TRAP",
             "key": "snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-AF-MIB::sfFirewallTrapIfFail|snmpTrapOID\\.0\\s=\\sSANGFOR-AF-MIB::sfFirewallTrapIfNormal]",
             "delay": "0",
             "history": "31d",
             "value_type": "LOG",
-            "description": "Catches sfFirewallTrapIfFail (.35047.200.200.5) and sfFirewallTrapIfNormal (.200.200.4). PROBLEM while the last trap was the failure; recovers when the normal trap arrives.",
+            "description": "Catches sfFirewallTrapIfFail (.35047.200.200.5) and sfFirewallTrapIfNormal (.200.200.4). Event-log item: no trigger - per-interface link alerting uses ifOperStatus polling.",
             "tags": [
               {
                 "tag": "component",
                 "value": "trap"
-              }
-            ],
-            "triggers": [
-              {
-                "uuid": "61618d9dfbdb46c5b0d11c92c42ab3bc",
-                "expression": "find(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-AF-MIB::sfFirewallTrapIfFail|snmpTrapOID\\.0\\s=\\sSANGFOR-AF-MIB::sfFirewallTrapIfNormal],#1,\"regexp\",\"snmpTrapOID\\.0\\s=\\sSANGFOR-AF-MIB::sfFirewallTrapIfFail\")=1",
-                "recovery_mode": "RECOVERY_EXPRESSION",
-                "recovery_expression": "find(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-AF-MIB::sfFirewallTrapIfFail|snmpTrapOID\\.0\\s=\\sSANGFOR-AF-MIB::sfFirewallTrapIfNormal],#1,\"regexp\",\"snmpTrapOID\\.0\\s=\\sSANGFOR-AF-MIB::sfFirewallTrapIfNormal\")=1",
-                "name": "Sangfor: Interface link failure on {HOST.NAME}",
-                "priority": "HIGH"
               }
             ]
           },
           {
             "uuid": "ac038537404a45aa973972a83c9bc41a",
-            "name": "SNMP trap: Link failure alert",
+            "name": "SNMP trap: Link down/up (event log)",
             "type": "SNMP_TRAP",
             "key": "snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfLinkDownTrap|snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfLinkUpTrap]",
             "delay": "0",
             "history": "31d",
             "value_type": "LOG",
-            "description": "Catches sfLinkDownTrap (.35047.110.24) and sfLinkUpTrap (.110.23). PROBLEM while the last trap was the failure; recovers when the link recovery trap arrives.",
+            "description": "Catches sfLinkDownTrap (.35047.110.24) and sfLinkUpTrap (.110.23). Event-log item: no trigger - per-interface link alerting uses ifOperStatus polling.",
             "tags": [
               {
                 "tag": "component",
                 "value": "trap"
-              }
-            ],
-            "triggers": [
-              {
-                "uuid": "b982816d61f94330990e54a1fc84d496",
-                "expression": "find(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfLinkDownTrap|snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfLinkUpTrap],#1,\"regexp\",\"snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfLinkDownTrap\")=1",
-                "recovery_mode": "RECOVERY_EXPRESSION",
-                "recovery_expression": "find(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfLinkDownTrap|snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfLinkUpTrap],#1,\"regexp\",\"snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfLinkUpTrap\")=1",
-                "name": "Sangfor: Link failure alert on {HOST.NAME}",
-                "priority": "HIGH"
               }
             ]
           },
@@ -1528,6 +1508,46 @@
                     "value": "network"
                   }
                 ]
+              },
+              {
+                "uuid": "1c074aebd2304b0281c00bee41e8b56e",
+                "name": "Interface {#SNMPVALUE}: Operational status",
+                "type": "SNMP_AGENT",
+                "snmp_oid": "get[1.3.6.1.2.1.2.2.1.8.{#SNMPINDEX}]",
+                "key": "sangfor.if.operstatus[{#SNMPINDEX}]",
+                "delay": "{$SANGFOR.UPDATE.FREQ}",
+                "history": "7d",
+                "value_type": "FLOAT",
+                "description": "IF-MIB::ifOperStatus - authoritative per-interface link state (verified exposed on AF8.0.108; indexes match sfIfTable).",
+                "tags": [
+                  {
+                    "tag": "component",
+                    "value": "network"
+                  }
+                ],
+                "valuemap": {
+                  "name": "Sangfor: if oper status"
+                }
+              },
+              {
+                "uuid": "3df34b3039e6498882d81fbb9643415a",
+                "name": "Interface {#SNMPVALUE}: Admin status",
+                "type": "SNMP_AGENT",
+                "snmp_oid": "get[1.3.6.1.2.1.2.2.1.7.{#SNMPINDEX}]",
+                "key": "sangfor.if.adminstatus[{#SNMPINDEX}]",
+                "delay": "{$SANGFOR.UPDATE.FREQ}",
+                "history": "7d",
+                "value_type": "FLOAT",
+                "description": "IF-MIB::ifAdminStatus - used to suppress link-down alerts on administratively disabled ports.",
+                "tags": [
+                  {
+                    "tag": "component",
+                    "value": "network"
+                  }
+                ],
+                "valuemap": {
+                  "name": "Sangfor: if admin status"
+                }
               }
             ],
             "trigger_prototypes": [
@@ -1542,6 +1562,12 @@
                 "expression": "last(/Sangfor NGAF by SNMP/sangfor.if.out.drop[{#SNMPINDEX}])>{$SANGFOR.IF_DROP.MAX}",
                 "name": "Interface {#SNMPVALUE}: high outbound discard rate on {HOST.NAME}",
                 "priority": "WARNING"
+              },
+              {
+                "uuid": "97836798a5214a218419e582f3bcea6a",
+                "expression": "last(/Sangfor NGAF by SNMP/sangfor.if.operstatus[{#SNMPINDEX}])=2 and last(/Sangfor NGAF by SNMP/sangfor.if.adminstatus[{#SNMPINDEX}])=1 and {$SANGFOR.IF.LINK.ALERT:\"{#SNMPVALUE}\"}=1",
+                "name": "Interface {#SNMPVALUE}: link down on {HOST.NAME}",
+                "priority": "HIGH"
               }
             ],
             "graph_prototypes": [
@@ -2018,6 +2044,11 @@
             "description": "Packet loss (%) that triggers a warning."
           },
           {
+            "macro": "{$SANGFOR.IF.LINK.ALERT}",
+            "value": "0",
+            "description": "Per-interface link-down alerting is OPT-IN: set this macro to 1 with the interface name as context on critical ports, e.g. {$SANGFOR.IF.LINK.ALERT:\"eth1\"} = 1. Default 0 because unused but admin-enabled ports would otherwise alert."
+          },
+          {
             "macro": "{$SNMP.TIMEOUT}",
             "value": "5m",
             "description": "How long SNMP polling must be down before 'No SNMP data collection' fires (ported from the generic template)."
@@ -2134,6 +2165,58 @@
               {
                 "value": "1",
                 "newvalue": "normal"
+              }
+            ]
+          },
+          {
+            "uuid": "2cce6c92e56d41848752a4a38d464d3b",
+            "name": "Sangfor: if oper status",
+            "mappings": [
+              {
+                "value": "1",
+                "newvalue": "up"
+              },
+              {
+                "value": "2",
+                "newvalue": "down"
+              },
+              {
+                "value": "3",
+                "newvalue": "testing"
+              },
+              {
+                "value": "4",
+                "newvalue": "unknown"
+              },
+              {
+                "value": "5",
+                "newvalue": "dormant"
+              },
+              {
+                "value": "6",
+                "newvalue": "notPresent"
+              },
+              {
+                "value": "7",
+                "newvalue": "lowerLayerDown"
+              }
+            ]
+          },
+          {
+            "uuid": "cd4f340f0992412cbe5a67d39b732a35",
+            "name": "Sangfor: if admin status",
+            "mappings": [
+              {
+                "value": "1",
+                "newvalue": "up"
+              },
+              {
+                "value": "2",
+                "newvalue": "down"
+              },
+              {
+                "value": "3",
+                "newvalue": "testing"
               }
             ]
           }

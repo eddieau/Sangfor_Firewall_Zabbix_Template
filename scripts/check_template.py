@@ -92,9 +92,25 @@ def main():
     check(not bad, "non-UUIDv4 objects (version/variant nibble): %s"
           % (bad[:3],))
 
-    # ---- macros: every {$X} used must be defined in the template
+    # ---- macros: every {$X} (incl. context form {$X:"ctx"}) used must be
+    #      defined in the template. Walk real string values (not the JSON
+    #      dump) so escaped quotes in context macros are seen correctly.
     defined = {m["macro"] for m in t.get("macros", [])}
-    used = set(re.findall(r"\{\$[A-Z0-9_.]+\}", json.dumps(d)))
+    strings = []
+    def collect(x):
+        if isinstance(x, dict):
+            for v in x.values():
+                collect(v)
+        elif isinstance(x, list):
+            for v in x:
+                collect(v)
+        elif isinstance(x, str):
+            strings.append(x)
+    collect(d)
+    used = set()
+    for s in strings:
+        for m in re.findall(r"\{\$[A-Z0-9_.]+(?::\"[^\"]*\")?\}", s):
+            used.add(m.split(":")[0] + "}" if ":" in m else m)
     undefined = used - defined
     check(not undefined, "macros used but not defined: %s" % sorted(undefined))
 

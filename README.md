@@ -60,16 +60,23 @@ and 11 ported generic checks:**
 Trap items are `value_type=LOG` so Zabbix parses the trap's own timestamp.
 Named keys are anchored regexes on the `snmpTrapOID.0` varbind line.
 
-- **Fail/Normal pairs share ONE item** (`sfFirewallTrapIfFail|sfFirewallTrapIfNormal`,
-  `sfLinkDownTrap|sfLinkUpTrap`): the trigger is PROBLEM while the *last* trap received
-  is the failure and recovers the moment the matching normal/recovery trap
-  arrives.
-  ⚠️ **Limitation — pairing is per trap-pair, NOT per interface:** trigger
-  expressions cannot compare varbinds. Example: WAN1 down → problem; WAN2
-  down → still one problem; **WAN1 up → the problem clears even though WAN2
-  is still down.** If you need per-interface link state, either poll
-  `sfIfTable` metrics (traffic drops to ~0) or build a JS-preprocessed
-  item per interface index as a customisation on top of this template.
+- **Link fail/normal traps are event-log items (v0.5.0)** —
+  `sfFirewallTrapIfFail|sfFirewallTrapIfNormal` and
+  `sfLinkDownTrap|sfLinkUpTrap` each share one LOG item with **no trigger**.
+  Why: the MIB defines no varbinds for these notifications and real device
+  samples carry no interface identifier, so trap-based pairing could only
+  track the pair as a whole (WAN1 up would clear WAN2's problem).
+- **Per-interface link alerting is done by POLLING instead (v0.5.0):** the
+  interface LLD adds `ifOperStatus` + `ifAdminStatus` prototypes (standard
+  IF-MIB, verified exposed; indexes match `sfIfTable`). The trigger
+  `Interface {#SNMPVALUE}: link down` fires per interface when
+  oper=down AND admin=up AND `{$SANGFOR.IF.LINK.ALERT:"<ifname>"}=1`, and
+  recovers automatically when the link comes back. WAN1/WAN2 states are
+  fully independent. Detection latency = one poll interval (default 1m);
+  the trap items still record events instantly in Latest data.
+  ⚠️ **Opt-in by design:** the macro defaults to 0 because unused but
+  admin-enabled ports would otherwise alert. Enable it per critical port
+  with a context macro, e.g. `{$SANGFOR.IF.LINK.ALERT:"eth1"} = 1`.
 - **Unpaired problem traps** (attacks, dual switch, temperature/CPU/memory/
   disk/power/interface/fan/HA/bypass/port/SLA) recover after
   `{$SANGFOR.TRAP_PROBLEM_HOURS}` (default 4 h) of trap silence — but only
@@ -99,7 +106,7 @@ Named keys are anchored regexes on the `snmpTrapOID.0` varbind line.
 
 | Discovery | Source table | Items |
 | --- | --- | --- |
-| Interface | `sfIfTable` (general.34) | in/out bit/s, in/out pps, in/out discards, IPv4 address |
+| Interface | `sfIfTable` (general.34) + IF-MIB | in/out bit/s, in/out pps, in/out discards, IPv4 address, oper/admin status + per-interface link-down trigger |
 | Disk | `sfDiskTable` (general.5) | size / used / avail / device-reported usage % / temperature |
 | CPU core | `sfCpuCostRateTable` (general.20) | user / system / utilization % |
 | Fan | `sfSysFanTable` (general.14) | speed, state (abnormal → trigger) |
@@ -188,6 +195,7 @@ Via the API, interfaces are embedded in `host.create` / `host.update`
 | `{$ICMP_LOSS_WARN}` | `20` | ICMP loss (%) warning (5 m window) |
 | `{$ICMP_RESPONSE_TIME_WARN}` | `0.15` | Avg response time (s) warning (5 m avg) |
 | `{$SNMP.TIMEOUT}` | `5m` | How long SNMP polling may be down before "No SNMP data collection" fires |
+| `{$SANGFOR.IF.LINK.ALERT}` | `0` | Opt-in per-interface link-down alerting; set `=1` with interface-name context on critical ports |
 
 ## SNMP trap receiving (optional)
 

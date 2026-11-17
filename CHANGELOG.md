@@ -3,6 +3,35 @@
 All notable changes to this template are documented here.
 Template format target: Zabbix 8.0 (JSON import).
 
+## [0.5.0] - 2026-11-17
+
+### Changed
+- **Per-interface link state replaces trap-pair alerting.** The MIB defines
+  no varbinds for the link/interface notifications and real device samples
+  carry no interface identifier, so per-trap-pair triggers could not track
+  per-interface state (WAN1 recovery cleared WAN2's problem). The two
+  fail/normal trap pairs are now event-log items (no trigger); the
+  interface LLD gains IF-MIB `ifOperStatus`/`ifAdminStatus` prototypes
+  (verified exposed on AF8.0.108, indexes match sfIfTable) and a
+  per-interface `link down` trigger prototype: oper=down AND admin=up AND
+  `{$SANGFOR.IF.LINK.ALERT:"<ifname>"}=1`. Recovery is automatic per
+  interface. Detection latency = one poll interval; traps still logged
+  instantly.
+- New macro `{$SANGFOR.IF.LINK.ALERT}` (default 0, opt-in per critical
+  port via context macro) - avoids alert spam from unused admin-enabled
+  ports.
+- Valuemaps added: `Sangfor: if oper status`, `Sangfor: if admin status`.
+
+### Added
+- check_template.py validates context macros ({$X:"ctx"}) against defined
+  macro base names.
+
+### Upgrade notes
+- Re-import with `triggers.deleteMissing: true` to remove the two old
+  pair triggers ("Interface link failure", "Link failure alert").
+- Enable link alerting on critical ports with host context macros, e.g.
+  {$SANGFOR.IF.LINK.ALERT:"eth1"} = 1.
+
 ## [0.4.0] - 2026-11-17
 
 External code-review follow-up. Behaviour fixes first:

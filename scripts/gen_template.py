@@ -282,6 +282,24 @@ lld("Interface discovery", "sangfor.if.discovery",
      proto("Interface {#SNMPVALUE}: IPv4 address",
            "sangfor.if.ipv4[{#SNMPINDEX}]", IF + ".4.{#SNMPINDEX}",
            vtype="CHAR", desc="sfIfAddr.", tags=[("component", "network")]),
+     proto("Interface {#SNMPVALUE}: Operational status",
+           "sangfor.if.operstatus[{#SNMPINDEX}]",
+           "1.3.6.1.2.1.2.2.1.8.{#SNMPINDEX}",
+           desc="IF-MIB::ifOperStatus - authoritative per-interface link "
+                "state (verified exposed on AF8.0.108; indexes match "
+                "sfIfTable).",
+           tags=[("component", "network")], valuemap="Sangfor: if oper status"),
+     proto("Interface {#SNMPVALUE}: Admin status",
+           "sangfor.if.adminstatus[{#SNMPINDEX}]",
+           "1.3.6.1.2.1.2.2.1.7.{#SNMPINDEX}",
+           desc="IF-MIB::ifAdminStatus - used to suppress link-down alerts "
+                "on administratively disabled ports.",
+           tags=[("component", "network")], valuemap="Sangfor: if admin status",
+           trig=TR("HIGH",
+                   "last(/%s/sangfor.if.operstatus[{#SNMPINDEX}])=2"
+                   " and last(/%s/sangfor.if.adminstatus[{#SNMPINDEX}])=1"
+                   " and {$SANGFOR.IF.LINK.ALERT:\"{#SNMPVALUE}\"}=1" % (TPL, TPL),
+                   "Interface {#SNMPVALUE}: link down on {HOST.NAME}")),
     ],
     desc="Interfaces from SANGFOR-MIB::sfIfTable (sfIfName column).")
 
@@ -423,28 +441,25 @@ def trap_item(keyname, title, desc, trig=None, mibs=None):
 def _find(keyre, what):
     return 'find(/%s/snmptrap[%s],#1,"regexp","%s")=1' % (TPL, keyre, what)
 
+# v0.5.0: link fail/normal traps are EVENT-LOG items (no trigger). The MIB
+# defines no varbinds for them and real samples carry no interface
+# identifier, so per-trap-pair triggers could not track per-interface state
+# (WAN1 up would clear WAN2's problem). Authoritative per-interface link
+# alerting is done by polling IF-MIB ifOperStatus/ifAdminStatus in the
+# interface LLD instead; these items keep the instant trap record.
 for keyname, mod, failn, normaln, title, desc in [
     ("sfFirewallTrapIf", TRAP_AF, "sfFirewallTrapIfFail", "sfFirewallTrapIfNormal",
-     "Interface link failure",
+     "Interface link fail/normal (event log)",
      "Catches sfFirewallTrapIfFail (.35047.200.200.5) and "
-     "sfFirewallTrapIfNormal (.200.200.4). PROBLEM while the last trap was "
-     "the failure; recovers when the normal trap arrives."),
-    ("sfLink", TRAP_SF, "sfLinkDownTrap", "sfLinkUpTrap", "Link failure alert",
+     "sfFirewallTrapIfNormal (.200.200.4). Event-log item: no trigger - "
+     "per-interface link alerting uses ifOperStatus polling."),
+    ("sfLink", TRAP_SF, "sfLinkDownTrap", "sfLinkUpTrap",
+     "Link down/up (event log)",
      "Catches sfLinkDownTrap (.35047.110.24) and sfLinkUpTrap (.110.23). "
-     "PROBLEM while the last trap was the failure; recovers when the link "
-     "recovery trap arrives."),
+     "Event-log item: no trigger - per-interface link alerting uses "
+     "ifOperStatus polling."),
 ]:
-    anch_f, anch_n = ANCHOR % (mod, failn), ANCHOR % (mod, normaln)
-    keyre = anch_f + "|" + anch_n
-    trap_item(keyname, title, desc, mibs=[(mod, failn), (mod, normaln)],
-              trig={
-        "uuid": U("trig-" + keyname),
-        "expression": _find(keyre, anch_f),
-        "recovery_mode": "RECOVERY_EXPRESSION",
-        "recovery_expression": _find(keyre, anch_n),
-        "name": "Sangfor: " + title + " on {HOST.NAME}",
-        "priority": "HIGH",
-    })
+    trap_item(keyname, title, desc, mibs=[(mod, failn), (mod, normaln)])
 
 for keyname, title, prio, desc in [
     ("sfFirewallTrapFwAttack", "Firewall under attack", "HIGH",
@@ -682,6 +697,11 @@ for m, v, d in [
      "Update interval for system info items (ported from generic template)."),
     ("{$ICMP_LOSS_WARN}", "20",
      "Packet loss (%) that triggers a warning."),
+    ("{$SANGFOR.IF.LINK.ALERT}", "0",
+     "Per-interface link-down alerting is OPT-IN: set this macro to 1 with "
+     "the interface name as context on critical ports, e.g. "
+     "{$SANGFOR.IF.LINK.ALERT:\"eth1\"} = 1. Default 0 because unused but "
+     "admin-enabled ports would otherwise alert."),
     ("{$SNMP.TIMEOUT}", "5m",
      "How long SNMP polling must be down before 'No SNMP data collection' "
      "fires (ported from the generic template)."),
@@ -811,6 +831,11 @@ valuemaps = [
               ("3", "unknown")]),
     valuemap("Sangfor: hw state",
              [("0", "abnormal"), ("1", "normal")]),
+    valuemap("Sangfor: if oper status",
+             [("1", "up"), ("2", "down"), ("3", "testing"), ("4", "unknown"),
+              ("5", "dormant"), ("6", "notPresent"), ("7", "lowerLayerDown")]),
+    valuemap("Sangfor: if admin status",
+             [("1", "up"), ("2", "down"), ("3", "testing")]),
 ]
 
 # ================= assemble =================
