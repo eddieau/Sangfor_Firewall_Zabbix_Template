@@ -13,7 +13,9 @@ SNMPv3 authPriv, monitored through a Zabbix proxy.
 
 ## What it monitors
 
-**Scalar items (28) + SNMP trap items (21) + ported generic checks (11):**
+The template contains **60 template-level items in total: 28 Sangfor scalar
+items, 21 SNMP trap items (20 named + the `snmptrap.fallback` catch-all),
+and 11 ported generic checks:**
 
 - Device info: description, name, software version, AF version, serial
   (serial ships DISABLED — `sfSnGW` is not implemented on AF 8.0.108)
@@ -199,23 +201,26 @@ trapper runs on the proxy:
    interface IP, then routes it to the first `snmptrap[regexp]` item whose
    key parameter matches the trap text; anything unmatched goes to
    `snmptrap.fallback`.
-4. For readable trap names, mount `SANGFOR-MIB-AF.txt` (as
-   `SANGFOR-AF-MIB.txt`) into the snmptrapd MIBs dir — trap items here match
-   on the `sfFirewall*` MIB names, so keep the MIB loaded. If the MIB is
-   missing, traps still arrive in `snmptrap.fallback` as numeric OIDs.
+4. **Mount BOTH vendor MIB files** into the receiver's
+   `/var/lib/zabbix/mibs` (rename them to valid module filenames):
+
+   | Vendor file | Mount as | Provides trap names for |
+   | --- | --- | --- |
+   | `SANGFOR-MIB-COMPATIBLE.txt` | `SANGFOR-MIB.txt` | the `sfGeneralTrap` family — all 14 of the NGAF UI's 35047.**110.x** alerts |
+   | `SANGFOR-MIB-AF.txt` | `SANGFOR-AF-MIB.txt` | the `sfFirewallTraps` family — 35047.**200.200.x** |
+
+   The 20 named trap items match on MIB notification names, so **both**
+   files are required: mount only one and the other family's traps still
+   arrive but print numerically, miss their named items, and pile into
+   `snmptrap.fallback`. (Note `SANGFOR-MIB-COMPATIBLE.txt` declares the
+   same `SANGFOR-MIB` module - that is intentional; it is the file that
+   contains the 110.x definitions.) Restart the receiver after mounting.
 5. Configure the NGAF itself (web UI) to send traps to the collector
    (server or proxy) IP:162 with its trap community (e.g. v2c). The
    `zabbix-snmptraps` image runs `snmptrapd` with `disableAuthorization yes`,
    so any community is accepted — restrict at snmptrapd / network level if
    that matters to you.
-6. **Mount the vendor MIB files** into the receiver's
-   `/var/lib/zabbix/mibs` (`SANGFOR-MIB-COMPATIBLE.txt` — it declares the
-   same `SANGFOR-MIB` module and contains the `sfGeneralTrap` 110.x
-   notification names — plus `SANGFOR-MIB-AF.txt` for the 200.200.x names).
-   Without them the OIDs print numerically and all 20 named trap items sit
-   idle while everything lands in `snmptrap.fallback` (still visible, just
-   unrouted).
-7. **Source-IP caveat:** traps sent from the proxy host itself (or through
+6. **Source-IP caveat:** traps sent from the proxy host itself (or through
    Docker's userland proxy on a published port) show a bridge-gateway source
    like `172.17.0.1` and match no host. Real LAN traps keep the device IP and
    route correctly. To test locally, send the trap with the receiver on
@@ -223,11 +228,12 @@ trapper runs on the proxy:
 
 ## Relationship to "Network Generic Device by SNMP"
 
-This template **replaces** it: all 11 generic pollable items + triggers are
-ported in, plus 60 template-level items of Sangfor-specific value. Link only
-this template (both templates on one host fails on the duplicate
-`snmptrap.fallback` key). Overlap with the old generic checks is only
-informational: `system.descr` (sysDescr) ≈ `sfDeviceDescr`.
+This template **replaces** it: its 11 generic pollable items + triggers are
+already ported into the 60 template-level items counted above (28 Sangfor
+scalar + 21 trap + 11 generic = 60 - the generic checks are part of the 60,
+not additional). Link only this template (both templates on one host fails
+on the duplicate `snmptrap.fallback` key). Overlap with the old generic
+checks is only informational: `system.descr` (sysDescr) ≈ `sfDeviceDescr`.
 
 **First import into a brand-new Zabbix**: the "No SNMP data collection"
 trigger dependency can abort the import with

@@ -34,15 +34,53 @@ jobs:
         run: |
           python3 - <<'EOF'
           import json
-          t = json.load(open("template_sangfor_ngaf_snmp.json"))["zabbix_export"]["templates"][0]
+          d = json.load(open("template_sangfor_ngaf_snmp.json"))["zabbix_export"]
+          t = d["templates"][0]
           assert t["template"] == "Sangfor NGAF by SNMP"
           assert len(t["items"]) >= 50, len(t["items"])
           assert len(t["discovery_rules"]) == 6
+          assert len(d.get("graphs", [])) >= 4
           keys = [i["key"] for i in t["items"]]
           assert "snmptrap.fallback" in keys
           assert "icmpping" in keys
-          uu = [i["uuid"] for i in t["items"]]
-          assert len(uu) == len(set(uu)), "duplicate item uuids"
+
+          # Global uniqueness of every uuid anywhere in the document
+          # (items, item triggers, LLD rules, item/trigger/graph
+          # prototypes, dashboards, graphs, groups, template itself).
+          found = {}
+          collisions = []
+          def walk(x, path):
+              if isinstance(x, dict):
+                  u = x.get("uuid")
+                  if isinstance(u, str):
+                      if u in found:
+                          collisions.append((u, found[u], path))
+                      else:
+                          found[u] = path
+                  # dashboards (nested) carry no uuid in 8.0 canonical
+                  # export shape but keep walking in case one is added
+                  for k, v in x.items():
+                      walk(v, f"{path}.{k}" if path else k)
+              elif isinstance(x, list):
+                  for i, v in enumerate(x):
+                      walk(v, f"{path}[{i}]")
+          walk(d, "")
+          assert not collisions, "duplicate uuids: " + str(collisions[:5])
+          n = len(found)
+
+          # uuid layout must be parseable as UUIDv4 (version nibble) -
+          # the 8.0 importer rejects anything else with 'UUIDv4 is
+          # expected'.
+          import re
+          v4 = re.compile(r"^[0-9a-f]{12}4[0-9a-f]{19}$")
+          bad = [u for u in found if not v4.match(u)]
+          assert not bad, "non-UUIDv4 objects: " + str(bad[:5])
+
+          # item keys must be unique inside a template
+          assert len(keys) == len(set(keys)), "duplicate item keys"
+
           print("sanity OK:", len(t["items"]), "items,",
-                len(t["discovery_rules"]), "LLD rules")
+                len(t["discovery_rules"]), "LLD rules,",
+                len(d["graphs"]), "graphs,", n, "uuid-bearing objects,",
+                "all unique + UUIDv4 layout")
           EOF
