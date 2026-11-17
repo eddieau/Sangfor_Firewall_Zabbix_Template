@@ -36,7 +36,14 @@ Thanks for helping improve Sangfor NGAF monitoring in Zabbix.
 
 - Trigger dependencies in the import JSON use the **bare** trigger name (no
   template prefix); on an empty database the first import can abort and must
-  be repeated — a second identical import resolves.
+  be repeated — a second identical import resolves. (A minimal repro for
+  upstream is worth filing; do not treat the two-pass import as intended.)
+- **Object identities are content-seeded UUIDs**: items are seeded by key,
+  triggers by *name*. Renaming a trigger creates a NEW trigger on
+  re-import, and the old one only disappears when importing with
+  `triggers.deleteMissing: true`. Prefer additive changes; if you rename,
+  call it out in the PR and CHANGELOG so users re-import with
+  deleteMissing.
 - `value_type` has no `BOOLEAN` — use `UNSIGNED`.
 - Items have no community/security-name field; SNMP credentials are
   host-interface only (`hostinterface.create` no longer exists; embed

@@ -13,8 +13,8 @@ SNMPv3 authPriv, monitored through a Zabbix proxy.
 
 ## What it monitors
 
-The template contains **60 template-level items in total: 28 Sangfor scalar
-items, 21 SNMP trap items (20 named + the `snmptrap.fallback` catch-all),
+The template contains **61 template-level items in total: 28 Sangfor scalar
+items, 22 SNMP trap items (21 named + the `snmptrap.fallback` catch-all),
 and 11 ported generic checks:**
 
 - Device info: description, name, software version, AF version, serial
@@ -28,8 +28,10 @@ and 11 ported generic checks:**
   stored as bps via `×1000`)
 - HA: enable, mode, current status, control/data link status (abnormal → HIGH
   trigger), sync state
-- SNMP traps — 20 named `snmptrap[<name>]` items covering the trap list the
-  NGAF web UI actually offers, plus `snmptrap.fallback`:
+- SNMP traps — 21 named `snmptrap[...]` items covering the trap list the
+  NGAF web UI actually offers (plus `coldStart` and `snmptrap.fallback`).
+  Keys are regexes **anchored on the `snmpTrapOID.0` varbind line** — see
+  trap routing below:
 
   | UI alert | OID | MIB notification | priority |
   | --- | --- | --- | --- |
@@ -51,11 +53,15 @@ and 11 ported generic checks:**
   | Protected Network Attacked | 35047.200.200.7 | sfFirewallTrapNetworkAttack | HIGH |
   | Warm Start Alert | 1.3.6.1.6.3.1.1.5.2 | warmStart (SNMPv2-MIB) | INFO |
   | (extras not in the UI list) | 35047.200.200.1–.5 | ConfChange / RulebaseUpdate / DualSwitch / If-Fail-Normal pair | mixed |
+  | (defensive) | 1.3.6.1.6.3.1.1.5.1 | coldStart (SNMPv2-MIB, event log) | - |
 
-**Trap trigger design (v0.2.0):**
+**Trap trigger design (v0.2.0, anchored routing v0.4.0):**
 
-- **Fail/Normal pairs share ONE item** (`snmptrap[sfFirewallTrapIf]`,
-  `snmptrap[sfLink]`): the trigger is PROBLEM while the *last* trap received
+Trap items are `value_type=LOG` so Zabbix parses the trap's own timestamp.
+Named keys are anchored regexes on the `snmpTrapOID.0` varbind line.
+
+- **Fail/Normal pairs share ONE item** (`sfFirewallTrapIfFail|sfFirewallTrapIfNormal`,
+  `sfLinkDownTrap|sfLinkUpTrap`): the trigger is PROBLEM while the *last* trap received
   is the failure and recovers the moment the matching normal/recovery trap
   arrives.
   ⚠️ **Limitation — pairing is per trap-pair, NOT per interface:** trigger
@@ -73,7 +79,7 @@ and 11 ported generic checks:**
   network dies at the same time, silence is NOT evidence of recovery and
   the problem stays open.
 - **Pure informational events** (config changed, rulebase updated, database
-  update, warm start) have **no trigger** — the trap is stored as the item
+  update, warm/cold start) have **no trigger** — the trap is stored as the item
   value (event-log style); view it in Latest data or add your own trigger.
 - Because `snmptrap.fallback` lives here, **do not link "Network Generic
   Device by SNMP" on the same host** — Zabbix refuses the duplicate
@@ -179,9 +185,9 @@ Via the API, interfaces are embedded in `host.create` / `host.update`
 | `{$SANGFOR.IF_DROP.MAX}` | `1000` | Interface discard rate (drops/s) warning |
 | `{$SANGFOR.INFO.FREQ}` | `15m` | System-info item interval |
 | `{$SANGFOR.TRAP_PROBLEM_HOURS}` | `4h` | Auto-recovery window for unpaired trap problems |
-| `{$ICMP_LOSS_WARN}` | `20` | ICMP loss (%) warning |
-| `{$ICMP_LOSS_MIN_OCCURRENCES}` | `3` | Consecutive polls above loss warn |
-| `{$ICMP_RESPONSE_TIME_WARN}` | `0.15` | Avg response time (s) warning |
+| `{$ICMP_LOSS_WARN}` | `20` | ICMP loss (%) warning (5 m window) |
+| `{$ICMP_RESPONSE_TIME_WARN}` | `0.15` | Avg response time (s) warning (5 m avg) |
+| `{$SNMP.TIMEOUT}` | `5m` | How long SNMP polling may be down before "No SNMP data collection" fires |
 
 ## SNMP trap receiving (optional)
 
@@ -198,9 +204,12 @@ trapper runs on the proxy:
    `SNMPTrapperFile=/var/lib/zabbix/snmptraps/snmptraps.log`
    (docker: env `ZBX_STARTSNMPTRAPPER=1`, `ZBX_SNMPTRAPPERFILE=...`).
 3. The trapper matches each trap's source address against the host's SNMP
-   interface IP, then routes it to the first `snmptrap[regexp]` item whose
-   key parameter matches the trap text; anything unmatched goes to
-   `snmptrap.fallback`.
+   interface IP, then **copies the trap to EVERY `snmptrap[regexp]` item
+   whose key regex matches the trap text** (not just the first - official
+   behaviour); anything unmatched goes to `snmptrap.fallback`. Because of
+   the copy-to-all semantics this template anchors every named trap regex
+   on the `snmpTrapOID.0 = <MIB>::<name>` varbind line, so payload text
+   (interface names, descriptions) can never double-route a trap.
 4. **Mount BOTH vendor MIB files** into the receiver's
    `/var/lib/zabbix/mibs` (rename them to valid module filenames):
 
@@ -209,7 +218,7 @@ trapper runs on the proxy:
    | `SANGFOR-MIB-COMPATIBLE.txt` | `SANGFOR-MIB.txt` | the `sfGeneralTrap` family — all 14 of the NGAF UI's 35047.**110.x** alerts |
    | `SANGFOR-MIB-AF.txt` | `SANGFOR-AF-MIB.txt` | the `sfFirewallTraps` family — 35047.**200.200.x** |
 
-   The 20 named trap items match on MIB notification names, so **both**
+   The named trap items route on MIB notification names, so **both**
    files are required: mount only one and the other family's traps still
    arrive but print numerically, miss their named items, and pile into
    `snmptrap.fallback`. (Note `SANGFOR-MIB-COMPATIBLE.txt` declares the
@@ -229,8 +238,8 @@ trapper runs on the proxy:
 ## Relationship to "Network Generic Device by SNMP"
 
 This template **replaces** it: its 11 generic pollable items + triggers are
-already ported into the 60 template-level items counted above (28 Sangfor
-scalar + 21 trap + 11 generic = 60 - the generic checks are part of the 60,
+already ported into the 61 template-level items counted above (28 Sangfor
+scalar + 22 trap + 11 generic = 61 - the generic checks are part of the 61,
 not additional). Link only this template (both templates on one host fails
 on the duplicate `snmptrap.fallback` key). Overlap with the old generic
 checks is only informational: `system.descr` (sysDescr) ≈ `sfDeviceDescr`.

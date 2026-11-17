@@ -19,6 +19,11 @@ Sangfor's private MIB coverage varies per model and firmware.
   the documented `sfFirewallTraps` (35047.200.200.x); the web UI trap list
   mixes both families — this template covers both.
 
+- **Restart trigger requires BOTH uptimes**: `sysUpTime` (RFC1213) AND
+  `hrSystemUptime` (HOST-RESOURCES-MIB). Models without `hrSystemUptime`
+  get an unsupported hardware-uptime item, and the restart trigger then
+  silently never fires — re-verify it when testing a new model.
+
 ## SNMP version notes
 
 - Counter64 objects (`sfIf*Rate`, `sfIf*Pkts`, `sfIf*Drop`) require

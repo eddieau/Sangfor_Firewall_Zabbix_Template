@@ -34,9 +34,9 @@ drs = []
 macros = []
 
 def snmp_item(name, key, oid, vtype="FLOAT", units="", desc="", pre=None,
-              trig=None, tags=(), history="7d"):
+              trig=None, tags=(), history="7d", delay=None, valuemap=None):
     it = {"uuid": U("item-" + key), "name": name, "type": "SNMP_AGENT", "snmp_oid": oid,
-          "key": key, "delay": "{$SANGFOR.UPDATE.FREQ}",
+          "key": key, "delay": delay or "{$SANGFOR.UPDATE.FREQ}",
           "history": history, "value_type": vtype, "description": desc}
     if units:
         it["units"] = units
@@ -44,23 +44,12 @@ def snmp_item(name, key, oid, vtype="FLOAT", units="", desc="", pre=None,
         it["preprocessing"] = pre
     if tags:
         it["tags"] = [{"tag": a, "value": b} for a, b in tags]
+    if valuemap:
+        it["valuemap"] = {"name": valuemap}
     if trig:
         it["triggers"] = [trig]
     items.append(it)
     return it
-
-def calc_item(name, key, formula, units="", desc="", vtype="FLOAT",
-              trig=None, tags=()):
-    it = {"uuid": U("item-" + key), "name": name, "type": "CALCULATED", "key": key,
-          "delay": "1m", "params": formula, "history": "7d",
-          "value_type": vtype, "description": desc}
-    if units:
-        it["units"] = units
-    if tags:
-        it["tags"] = [{"tag": a, "value": b} for a, b in tags]
-    if trig:
-        it["triggers"] = [trig]
-    items.append(it)
 
 def TR(prio, expr, name):
     return {"uuid": U("trig-" + name), "expression": expr, "name": name,
@@ -80,32 +69,36 @@ M2B = [P("MULTIPLIER", "1048576")]
 # NOTE: a REGEX step with a second "output type" parameter misbehaves on
 # this Zabbix build (echoed the constant). Numeric extraction from strings is
 # done with a JAVASCRIPT step instead (verified approach).
-JSNUM = [P("JAVASCRIPT", "return value.replace(/[^0-9.]/g, '');")]
+JSNUM = [P("JAVASCRIPT",
+      "var n = value.replace(/[^0-9.]/g, '');"
+      "if (n === '' || isNaN(parseFloat(n))) { throw 'non-numeric: ' + value; }"
+      " return n;")]
 
 # ================= scalar items =================
 snmp_item("Sangfor: Device description", "sangfor.device.descr",
           "get[" + GEN + ".1.0]", "CHAR",
-          desc="sfDeviceDescr.")
+          desc="sfDeviceDescr.", delay="{$SANGFOR.INFO.FREQ}")
 snmp_item("Sangfor: Device name", "sangfor.device.name",
           "get[" + GEN + ".17.0]", "CHAR",
-          desc="sfSysDevName.")
+          desc="sfSysDevName.", delay="{$SANGFOR.INFO.FREQ}")
 snmp_item("Sangfor: Software version", "sangfor.software.version",
           "get[" + GEN + ".18.0]", "CHAR",
-          desc="sfSysSoftVersion.")
+          desc="sfSysSoftVersion.", delay="{$SANGFOR.INFO.FREQ}")
 snmp_item("Sangfor: AF version", "sangfor.af.version",
           "get[" + GEN + ".24.0]", "CHAR",
-          desc="afSysSoftVersion.")
+          desc="afSysSoftVersion.", delay="{$SANGFOR.INFO.FREQ}")
 _serial = snmp_item("Sangfor: Serial number", "sangfor.serial.number",
           "get[" + GEN + ".40.0]", "CHAR",
           desc="sfSnGW - serial number of the appliance. Not implemented on "
                "AF8.0.108 (nsf-1050a-i): item ships DISABLED to avoid "
-               "unsupported-noise; enable it if your model exposes sfSnGW.")
+               "unsupported-noise; enable it if your model exposes sfSnGW.",
+               delay="{$SANGFOR.INFO.FREQ}")
 _serial["status"] = "DISABLED"
 
 snmp_item("Sangfor: Device status", "sangfor.device.status",
           "get[" + GEN + ".12.0]",
           desc="sfDeviceStatus: 0 - Warning, 1 - Normal.",
-          tags=[("component", "health")],
+          tags=[("component", "health")], valuemap="Sangfor: device status",
           trig=TR("WARNING", "last(/%s/sangfor.device.status)=0" % TPL,
                   "Sangfor: Device reports WARNING status on {HOST.NAME}"))
 
@@ -180,15 +173,17 @@ snmp_item("Sangfor: Outbound throughput", "sangfor.throughput.out",
 snmp_item("Sangfor: HA enabled", "sangfor.ha.enabled",
           "get[" + GEN + ".64.1.0]",
           desc="sfHAEnable: 0 - disabled, 1 - enabled.",
-          tags=[("component", "ha")], history="0")
+          tags=[("component", "ha")], history="31d",
+          valuemap="Sangfor: HA enable")
 snmp_item("Sangfor: HA mode", "sangfor.ha.mode",
           "get[" + GEN + ".64.2.0]",
           desc="sfHAMode: 0 - invalid, 1 - master-master, 2 - master-slave, "
-               "3 - mirror.", tags=[("component", "ha")], history="0")
+               "3 - mirror.", tags=[("component", "ha")], history="31d",
+               valuemap="Sangfor: HA mode")
 snmp_item("Sangfor: HA current status", "sangfor.ha.status",
           "get[" + GEN + ".64.3.0]",
           desc="sfHACurStatus: 0 - invalid, 1 - init, 4 - master, 5 - slave.",
-          tags=[("component", "ha")])
+          tags=[("component", "ha")], valuemap="Sangfor: HA status")
 snmp_item("Sangfor: HA control link status", "sangfor.ha.ctrllink",
           "get[" + GEN + ".64.6.0]",
           desc="sfHACtrlLinkStatus: 0 - invalid, 1 - normal, 2 - abnormal.",
@@ -204,7 +199,8 @@ snmp_item("Sangfor: HA data link status", "sangfor.ha.datalink",
 snmp_item("Sangfor: HA sync state", "sangfor.ha.sync",
           "get[" + GEN + ".64.8.0]",
           desc="sfHASyncState: 0 - invalid, 1 - sync running, 2 - sync end, "
-               "3 - unknown.", tags=[("component", "ha")])
+               "3 - unknown.", tags=[("component", "ha")],
+               valuemap="Sangfor: HA sync state")
 
 # ================= LLD =================
 IF = GEN + ".34.1"    # sfIfTable
@@ -215,7 +211,7 @@ PW = GEN + ".15.1"    # sfSysPowerTable
 TS = GEN + ".59.1"    # sfTempSensorTable
 
 def proto(name, key, oid, units="", pre=None, vtype="FLOAT", desc="",
-          tags=(), trig=None):
+          tags=(), trig=None, valuemap=None):
     it = {"uuid": U("proto-" + key), "name": name, "type": "SNMP_AGENT",
           "snmp_oid": "get[" + oid + "]", "key": key,
           "delay": "{$SANGFOR.UPDATE.FREQ}",
@@ -226,18 +222,8 @@ def proto(name, key, oid, units="", pre=None, vtype="FLOAT", desc="",
         it["preprocessing"] = pre
     if tags:
         it["tags"] = [{"tag": a, "value": b} for a, b in tags]
-    if trig:
-        it["_trig"] = trig
-    return it
-
-def calc_proto(name, key, formula, units="", desc="", tags=(), trig=None):
-    it = {"uuid": U("item-" + key), "name": name, "type": "CALCULATED", "key": key,
-          "delay": "1m", "params": formula, "history": "7d",
-          "value_type": "FLOAT", "description": desc}
-    if units:
-        it["units"] = units
-    if tags:
-        it["tags"] = [{"tag": a, "value": b} for a, b in tags]
+    if valuemap:
+        it["valuemap"] = {"name": valuemap}
     if trig:
         it["_trig"] = trig
     return it
@@ -355,7 +341,7 @@ lld("Fan discovery", "sangfor.fan.discovery",
            tags=[("component", "hardware")]),
      proto("Fan {#SNMPVALUE}: State", "sangfor.fan.state[{#SNMPINDEX}]",
            FN + ".4.{#SNMPINDEX}", desc="sfFanState: 0 - abnormal, 1 - normal.",
-           tags=[("component", "hardware")],
+           tags=[("component", "hardware")], valuemap="Sangfor: hw state",
            trig=TR("AVERAGE",
                    "last(/%s/sangfor.fan.state[{#SNMPINDEX}])=0" % TPL,
                    "Sangfor: Fan {#SNMPVALUE} ABNORMAL on {HOST.NAME}")),
@@ -368,7 +354,7 @@ lld("Power supply discovery", "sangfor.psu.discovery",
     [
      proto("PSU {#SNMPVALUE}: State", "sangfor.psu.state[{#SNMPINDEX}]",
            PW + ".3.{#SNMPINDEX}", desc="sfPowerState: 0 - abnormal, 1 - normal.",
-           tags=[("component", "hardware")],
+           tags=[("component", "hardware")], valuemap="Sangfor: hw state",
            trig=TR("HIGH",
                    "last(/%s/sangfor.psu.state[{#SNMPINDEX}])=0" % TPL,
                    "Sangfor: Power supply {#SNMPVALUE} ABNORMAL on {HOST.NAME}")),
@@ -406,15 +392,27 @@ lld("Temperature sensor discovery", "sangfor.temp.discovery",
 #    carry NO trigger: the trap is stored as the item value (event-log
 #    style); use Latest data or build custom triggers on top.
 
-def trap_item(keyname, title, desc, trig=None):
+TRAP_AF = "SANGFOR-AF-MIB"      # 35047.200.200.x family (SANGFOR-MIB-AF.txt)
+TRAP_SF = "SANGFOR-MIB"         # 35047.110.x family (SANGFOR-MIB-COMPATIBLE.txt)
+TRAP_STD = "SNMPv2-MIB"         # warmStart / coldStart
+# Route traps ONLY on the snmpTrapOID varbind line: an unanchored trap name
+# would also match payload text (interface names, descriptions) and, since
+# a trap is copied into EVERY matching item, double-route it. \s keeps
+# literal spaces out of item keys.
+ANCHOR = "snmpTrapOID\\.0\\s=\\s%s::%s"
+
+def trap_keyre(pairs):
+    return "|".join(ANCHOR % (m, n) for m, n in pairs)
+
+def trap_item(keyname, title, desc, trig=None, mibs=None):
     it = {
         "uuid": U("trap-" + keyname),
         "name": "SNMP trap: " + title,
         "type": "SNMP_TRAP",
-        "key": "snmptrap[" + keyname + "]",
+        "key": "snmptrap[" + trap_keyre(mibs or [(TRAP_SF, keyname)]) + "]",
         "delay": "0",
         "history": "31d",
-        "value_type": "TEXT",
+        "value_type": "LOG",
         "description": desc,
         "tags": [{"tag": "component", "value": "trap"}],
     }
@@ -422,25 +420,28 @@ def trap_item(keyname, title, desc, trig=None):
         it["triggers"] = [trig]
     items.append(it)
 
-def _find(keyname, what):
-    return 'find(/%s/snmptrap[%s],#1,"regexp","%s")=1' % (TPL, keyname, what)
+def _find(keyre, what):
+    return 'find(/%s/snmptrap[%s],#1,"regexp","%s")=1' % (TPL, keyre, what)
 
-for keyname, failn, normaln, title, desc in [
-    ("sfFirewallTrapIf", "sfFirewallTrapIfFail", "sfFirewallTrapIfNormal",
+for keyname, mod, failn, normaln, title, desc in [
+    ("sfFirewallTrapIf", TRAP_AF, "sfFirewallTrapIfFail", "sfFirewallTrapIfNormal",
      "Interface link failure",
      "Catches sfFirewallTrapIfFail (.35047.200.200.5) and "
      "sfFirewallTrapIfNormal (.200.200.4). PROBLEM while the last trap was "
      "the failure; recovers when the normal trap arrives."),
-    ("sfLink", "sfLinkDownTrap", "sfLinkUpTrap", "Link failure alert",
+    ("sfLink", TRAP_SF, "sfLinkDownTrap", "sfLinkUpTrap", "Link failure alert",
      "Catches sfLinkDownTrap (.35047.110.24) and sfLinkUpTrap (.110.23). "
      "PROBLEM while the last trap was the failure; recovers when the link "
      "recovery trap arrives."),
 ]:
-    trap_item(keyname, title, desc, trig={
+    anch_f, anch_n = ANCHOR % (mod, failn), ANCHOR % (mod, normaln)
+    keyre = anch_f + "|" + anch_n
+    trap_item(keyname, title, desc, mibs=[(mod, failn), (mod, normaln)],
+              trig={
         "uuid": U("trig-" + keyname),
-        "expression": _find(keyname, failn),
+        "expression": _find(keyre, anch_f),
         "recovery_mode": "RECOVERY_EXPRESSION",
-        "recovery_expression": _find(keyname, normaln),
+        "recovery_expression": _find(keyre, anch_n),
         "name": "Sangfor: " + title + " on {HOST.NAME}",
         "priority": "HIGH",
     })
@@ -475,33 +476,37 @@ for keyname, title, prio, desc in [
     ("sfSLATrap", "SLA-based link failover", "WARNING",
      "sfSLATrap (.1.3.6.1.4.1.35047.110.27) - SLA-based Link Failover."),
 ]:
-    trap_item(keyname, title, desc, trig={
+    mod = TRAP_AF if keyname.startswith("sfFirewallTrap") else TRAP_SF
+    anch = ANCHOR % (mod, keyname)
+    trap_item(keyname, title, desc, mibs=[(mod, keyname)], trig={
         "uuid": U("trig-" + keyname),
-        "expression": (_find(keyname, keyname) +
+        "expression": (_find(anch, anch) +
                        " and nodata(/%s/snmptrap[%s],{$SANGFOR.TRAP_PROBLEM_HOURS})=0"
-                       % (TPL, keyname)),
+                       % (TPL, anch)),
         "recovery_mode": "RECOVERY_EXPRESSION",
         # Recover ONLY when traps went silent but SNMP polling still works.
         # Silence + dead polling = collector/network outage, NOT a resolved
         # attack - keep the problem open until data collection proves alive.
         "recovery_expression": (
             "nodata(/%s/snmptrap[%s],{$SANGFOR.TRAP_PROBLEM_HOURS})=1"
-            " and last(/%s/zabbix[host,snmp,available])=1" % (TPL, keyname, TPL)),
+            " and last(/%s/zabbix[host,snmp,available])=1" % (TPL, anch, TPL)),
         "name": "Sangfor: " + title + " on {HOST.NAME}",
         "priority": prio,
     })
 
-for keyname, title, desc in [
-    ("sfFirewallTrapConfChange", "Configuration changed (event log)",
+for mod, keyname, title, desc in [
+    (TRAP_AF, "sfFirewallTrapConfChange", "Configuration changed (event log)",
      "sfFirewallTrapConfChange (.1.3.6.1.4.1.35047.200.200.1) - NGAF configuration was updated. Event-log item: no trigger."),
-    ("sfFirewallRulebaseUpdate", "Security rulebase updated (event log)",
+    (TRAP_AF, "sfFirewallRulebaseUpdate", "Security rulebase updated (event log)",
      "sfFirewallRulebaseUpdate (.1.3.6.1.4.1.35047.200.200.3) - firewall rules were updated. Event-log item: no trigger."),
-    ("sfRuleBaseUpgradeTrap", "Database update (event log)",
+    (TRAP_SF, "sfRuleBaseUpgradeTrap", "Database update (event log)",
      "sfRuleBaseUpgradeTrap (.1.3.6.1.4.1.35047.110.17) - Database Update Alert. Event-log item: no trigger."),
-    ("warmStart", "Device warm start (event log)",
+    (TRAP_STD, "warmStart", "Device warm start (event log)",
      "SNMPv2-MIB::warmStart (.1.3.6.1.6.3.1.1.5.2) - Warm Start Alert. Event-log item: no trigger."),
+    (TRAP_STD, "coldStart", "Device cold start (event log)",
+     "SNMPv2-MIB::coldStart (.1.3.6.1.6.3.1.1.5.1) - full restart; not in the NGAF trap UI list but may be sent. Event-log item: no trigger."),
 ]:
-    trap_item(keyname, title, desc)
+    trap_item(keyname, title, desc, mibs=[(mod, keyname)])
 
 # NOTE: no snmptrap.fallback was previously omitted because the standard
 # "Network Generic Device by SNMP" template ships one. Per Eddie's request this
@@ -510,10 +515,12 @@ for keyname, title, desc in [
 
 # ---- ported from "Network Generic Device by SNMP" (template 10226) ----
 def plain_item(name, key, itype, vtype="FLOAT", units="", desc="", delay=None,
-               pre=None, trig=None, tags=()):
+               pre=None, trig=None, tags=(), oid=None):
     it = {"uuid": U("item-" + key), "name": name, "type": itype, "key": key,
           "delay": delay or "{$SANGFOR.UPDATE.FREQ}", "history": "7d",
           "value_type": vtype, "description": desc}
+    if oid:
+        it["snmp_oid"] = "get[" + oid + "]"
     if units:
         it["units"] = units
     if pre:
@@ -540,14 +547,14 @@ plain_item("ICMP loss", "icmppingloss", "SIMPLE", "FLOAT", "%",
                 "Ported from generic SNMP template.",
            tags=ICMP_TAGS,
            trig=TR("WARNING",
-                   "min(/%s/icmppingloss,{$ICMP_LOSS_MIN_OCCURRENCES})>{$ICMP_LOSS_WARN}"
-                   " and max(/%s/icmppingloss,#3)<100" % (TPL, TPL),
+                   "min(/%s/icmppingloss,5m)>{$ICMP_LOSS_WARN}"
+                   " and min(/%s/icmppingloss,5m)<100" % (TPL, TPL),
                    "High ICMP ping loss on {HOST.NAME}"))
 plain_item("ICMP response time", "icmppingsec", "SIMPLE", "FLOAT", "s",
            desc="Average ICMP response time in seconds (ported).",
            tags=ICMP_TAGS,
            trig=TR("WARNING",
-                   "avg(/%s/icmppingsec,15m)>{$ICMP_RESPONSE_TIME_WARN}" % TPL,
+                   "avg(/%s/icmppingsec,5m)>{$ICMP_RESPONSE_TIME_WARN}" % TPL,
                    "High ICMP ping response time on {HOST.NAME}"))
 
 plain_item("SNMP agent availability", "zabbix[host,snmp,available]",
@@ -555,10 +562,10 @@ plain_item("SNMP agent availability", "zabbix[host,snmp,available]",
            desc="Status of SNMP agent availability. 1 - available, 0 - not "
                 "available (ported from generic SNMP template).",
            tags=[("component", "snmp")],
-           trig=TR("WARNING", "last(/%s/zabbix[host,snmp,available])=0" % TPL,
+           trig=TR("WARNING",
+                   "max(/%s/zabbix[host,snmp,available],{$SNMP.TIMEOUT})=0" % TPL,
                    "No SNMP data collection from {HOST.NAME}"))
 
-SYS15M = ["{$SANGFOR.INFO.FREQ}"]
 for nm, ky, oid, ds in [
     ("System contact details", "system.contact[sysContact.0]",
      "1.3.6.1.2.1.1.4.0", "The contact person responsible for this device (RFC1213-MIB::sysContact)."),
@@ -572,24 +579,21 @@ for nm, ky, oid, ds in [
      "1.3.6.1.2.1.1.2.0", "Vendor's identification of this device (RFC1213-MIB::sysObjectID)."),
 ]:
     plain_item(nm, ky, "SNMP_AGENT", "CHAR", desc=ds + " Ported from generic "
-               "SNMP template.", delay=SYS15M[0], tags=[("component", "system")],
-               trig=None)
-    items[-1]["snmp_oid"] = "get[" + oid + "]"
+               "SNMP template.", delay="{$SANGFOR.INFO.FREQ}",
+               tags=[("component", "system")], oid=oid)
 
 plain_item("Uptime (network)", "system.net.uptime[sysUpTime.0]", "SNMP_AGENT",
            "FLOAT", "uptime",
            desc="Time since the network management portion of the system was "
                 "last re-initialized (RFC1213-MIB::sysUpTime, timeticks -> s). "
                 "Ported.", delay="30s", pre=[P("MULTIPLIER", "0.01")],
-           tags=[("component", "system")])
-items[-1]["snmp_oid"] = "get[1.3.6.1.2.1.1.3.0]"
+           tags=[("component", "system")], oid="1.3.6.1.2.1.1.3.0")
 plain_item("Uptime (hardware)", "system.hw.uptime[hrSystemUptime.0]",
            "SNMP_AGENT", "FLOAT", "uptime",
            desc="Time since the whole system was last re-initialized "
                 "(HOST-RESOURCES-MIB::hrSystemUptime, timeticks -> s). Ported.",
            delay="30s", pre=[P("MULTIPLIER", "0.01")],
-           tags=[("component", "system")])
-items[-1]["snmp_oid"] = "get[1.3.6.1.2.1.25.1.1.0]"
+           tags=[("component", "system")], oid="1.3.6.1.2.1.25.1.1.0")
 
 # restart + rename triggers (attached to uptime/name items)
 for it in items:
@@ -604,16 +608,24 @@ for it in items:
             "name": "{HOST.NAME} has been restarted",
             "event_name": "{HOST.NAME} has been restarted",
             "priority": "WARNING",
+            "dependencies": [{
+                "name": "No SNMP data collection from {HOST.NAME}",
+                "expression":
+                    "max(/%s/zabbix[host,snmp,available],{$SNMP.TIMEOUT})=0"
+                    % TPL}],
         }]
     if it["key"] == "system.name":
         it["triggers"] = [{
             "uuid": U("trig-namechg"),
-            "expression": ("change(/%s/system.name)<>0 and "
-                           "length(last(/%s/system.name))>0" % (TPL, TPL)),
-            "recovery_mode": "RECOVERY_EXPRESSION",
-            "recovery_expression": "nodata(/%s/system.name,1d)=1" % TPL,
+            "expression": ("last(/%s/system.name,#1)<>last(/%s/system.name,#2)"
+                           " and length(last(/%s/system.name))>0"
+                           % (TPL, TPL, TPL)),
+            "event_name": "System name has changed (new name: {ITEM.VALUE})",
+            "description": "The name of the system has changed. Acknowledge "
+                           "to close the problem manually.",
             "name": "System name has changed (new name: {ITEM.LASTVALUE1})",
             "priority": "INFO",
+            "manual_close": "YES",
         }]
     if it["key"] == "zabbix[host,snmp,available]":
         # 8.0 JSON import: dependency "name" must be the BARE trigger name
@@ -624,6 +636,17 @@ for it in items:
         it["triggers"][0]["dependencies"] = [{
             "name": "Device unavailable by ICMP ping on {HOST.NAME}",
             "expression": "max(/%s/icmpping,#3)=0" % TPL}]
+    if it["key"] == "icmppingloss":
+        it["triggers"][0]["dependencies"] = [{
+            "name": "Device unavailable by ICMP ping on {HOST.NAME}",
+            "expression": "max(/%s/icmpping,#3)=0" % TPL}]
+    if it["key"] == "icmppingsec":
+        it["triggers"][0]["dependencies"] = [
+            {"name": "High ICMP ping loss on {HOST.NAME}",
+             "expression": "min(/%s/icmppingloss,5m)>{$ICMP_LOSS_WARN}"
+                           " and min(/%s/icmppingloss,5m)<100" % (TPL, TPL)},
+            {"name": "Device unavailable by ICMP ping on {HOST.NAME}",
+             "expression": "max(/%s/icmpping,#3)=0" % TPL}]
 
 items.append({
     "uuid": U("trap-fallback"),
@@ -632,7 +655,7 @@ items.append({
     "key": "snmptrap.fallback",
     "delay": "0",
     "history": "31d",
-    "value_type": "TEXT",
+    "value_type": "LOG",
     "description": "Catches any SNMP trap not matched by a named snmptrap[] "
                    "item. Ported from Network Generic Device by SNMP; this "
                    "template is standalone, do NOT link it together with that "
@@ -659,9 +682,9 @@ for m, v, d in [
      "Update interval for system info items (ported from generic template)."),
     ("{$ICMP_LOSS_WARN}", "20",
      "Packet loss (%) that triggers a warning."),
-    ("{$ICMP_LOSS_MIN_OCCURRENCES}", "3",
-     "How many times in a row the loss must be above the warning threshold to "
-     "trigger."),
+    ("{$SNMP.TIMEOUT}", "5m",
+     "How long SNMP polling must be down before 'No SNMP data collection' "
+     "fires (ported from the generic template)."),
     ("{$ICMP_RESPONSE_TIME_WARN}", "0.15",
      "Average response time (s) that triggers a warning."),
 ]:
@@ -693,7 +716,8 @@ graphs = [
         gitem("sangfor.mem.util", "FF00FF", "BOLD_LINE", ys="RIGHT", so=2)]),
     graph("Sangfor NGAF: Sessions", [
         gitem("sangfor.sessions.current", "3333FF", "GRADIENT_LINE", so=0),
-        gitem("sangfor.sessions.new.persec", "FF6600", so=1)]),
+        gitem("sangfor.sessions.new.persec", "FF6600", so=1,
+              ys="RIGHT")]),
     graph("Sangfor NGAF: Throughput", [
         gitem("sangfor.throughput.in", "00C800", "GRADIENT_LINE", so=0),
         gitem("sangfor.throughput.out", "FF3333", "BOLD_LINE", so=1)]),
@@ -705,8 +729,8 @@ next(d for d in drs if d["key"] == "sangfor.if.discovery")["graph_prototypes"] =
         gitem("sangfor.if.in.bps[{#SNMPINDEX}]", "199C0D", "GRADIENT_LINE", so=0),
         gitem("sangfor.if.out.bps[{#SNMPINDEX}]", "F63100", "BOLD_LINE", so=1)]),
     graph("Interface {#SNMPVALUE}: Discards", [
-        gitem("sangfor.if.in.drop[{#SNMPINDEX}]", "FF4646", ys="RIGHT", so=0),
-        gitem("sangfor.if.out.drop[{#SNMPINDEX}]", "005500", ys="RIGHT", so=1)]),
+        gitem("sangfor.if.in.drop[{#SNMPINDEX}]", "FF4646", so=0),
+        gitem("sangfor.if.out.drop[{#SNMPINDEX}]", "005500", so=1)]),
 ]
 
 # ================= dashboard =================
@@ -735,7 +759,11 @@ def w_graph(gname, name, x, y, w=36, h=6):
             "fields": [
                 {"type": "GRAPH", "name": "graphid.0",
                  "value": {"host": TPL, "name": gname}},
-                {"type": "STRING", "name": "reference", "value": "AAAAA"}]}
+                # reference must be unique per dashboard (cross-widget
+                # addressing namespace); deterministic + collision-free
+                # via the object-seeded uuid.
+                {"type": "STRING", "name": "reference",
+                 "value": U("widget-" + name + "|" + gname)[:5].upper()}]}
 
 # 8.0 canonical template-dashboard shape (verified against official
 # "Ruckus UnLeashed by SNMP" export): dashboard keys are
@@ -763,6 +791,28 @@ dashboards = [{
             w_graph("Sangfor NGAF: Memory", "Memory", 36, 0, 36, 6)]},
     ]}]
 
+# ================= valuemaps =================
+def valuemap(name, pairs):
+    return {"uuid": U("vm-" + name), "name": name,
+            "mappings": [{"value": v, "newvalue": t} for v, t in pairs]}
+
+valuemaps = [
+    valuemap("Sangfor: device status",
+             [("0", "Warning"), ("1", "Normal")]),
+    valuemap("Sangfor: HA enable",
+             [("0", "disabled"), ("1", "enabled")]),
+    valuemap("Sangfor: HA mode",
+             [("0", "invalid"), ("1", "master-master"), ("2", "master-slave"),
+              ("3", "mirror")]),
+    valuemap("Sangfor: HA status",
+             [("0", "invalid"), ("1", "init"), ("4", "master"), ("5", "slave")]),
+    valuemap("Sangfor: HA sync state",
+             [("0", "invalid"), ("1", "sync running"), ("2", "sync end"),
+              ("3", "unknown")]),
+    valuemap("Sangfor: hw state",
+             [("0", "abnormal"), ("1", "normal")]),
+]
+
 # ================= assemble =================
 tpl = {"uuid": U("template"), "template": TPL, "name": TPL,
        "description": "Sangfor NGAF monitoring via private SANGFOR-MIB "
@@ -782,6 +832,7 @@ tpl = {"uuid": U("template"), "template": TPL, "name": TPL,
        "items": items,
        "discovery_rules": drs,
        "macros": macros,
+       "valuemaps": valuemaps,
        "dashboards": dashboards}
 # NOTE (8.0 JSON format): template-level graphs go under
 # zabbix_export.graphs (sibling of templates), NOT inside the template

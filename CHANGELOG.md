@@ -3,6 +3,61 @@
 All notable changes to this template are documented here.
 Template format target: Zabbix 8.0 (JSON import).
 
+## [0.4.0] - 2026-11-17
+
+External code-review follow-up. Behaviour fixes first:
+
+### Fixed
+- **Trap routing anchored**: named trap item keys previously matched the
+  bare MIB notification name anywhere in the trap text. Since Zabbix
+  copies a trap to EVERY matching item, payload text containing another
+  trap name would double-route it. Keys are now regexes anchored on the
+  `snmpTrapOID.0 = <MIB>::<name>` varbind line.
+- **ICMP loss trigger**: `min(key,{$ICMP_LOSS_MIN_OCCURRENCES})` was
+  silently a *3-second time window* (function arg without `#` = seconds),
+  so one bad poll fired the alert. Now the official
+  `min(...,5m)>{$ICMP_LOSS_WARN} and min(...,5m)<100`; response time
+  aligned to official `avg(...,5m)`. Macro `{$ICMP_LOSS_MIN_OCCURRENCES}`
+  removed.
+- **"System name has changed" could never recover** (`nodata(...,1d)` on a
+  15-min-polled item, and no manual close): now official-style
+  `manual_close: YES`, no recovery expression, `last(#1)<>last(#2)` form.
+- **"No SNMP data collection" fired on a single transient failure**: now
+  `max(...,{$SNMP.TIMEOUT})=0` (new macro, default 5m).
+- **Dashboard graph widgets all shared `reference: AAAAA`** - references
+  must be unique per dashboard; each widget now gets a deterministic
+  unique 5-char reference.
+- **JAVASCRIPT numeric extraction** now throws on empty/non-numeric input
+  instead of emitting garbage into a numeric item.
+
+### Changed
+- Trap items are `value_type LOG` (Zabbix parses the trap timestamp
+  instead of receive time). `coldStart` added as defensive event-log item.
+- Official trigger dependency chain ported: loss -> unavailable,
+  response time -> loss + unavailable, restart -> No-SNMP.
+- Valuemaps added: device status, HA enable/mode/status/sync, fan/PSU
+  state (Latest data + dashboard show words, not raw numbers).
+- Static info items (descr/name/versions) poll at `{$SANGFOR.INFO.FREQ}`
+  instead of 1m; HA enable/mode keep 31d history so changes are visible.
+- Graph axes: Sessions new/s moved to right axis; per-interface Discards
+  graph draws on the left axis.
+- README trap-routing wording corrected ("first match" -> copies to all
+  matching items); item counts 60 -> 61 (coldStart).
+
+### Added
+- `scripts/check_template.py`: full integrity suite (UUID hygiene across
+  all objects, all `{$MACRO}` uses defined, trigger/graph/dashboard
+  references resolve, trap keys anchored, widget references unique,
+  page objects contain only `widgets`).
+- CI: `permissions: contents: read`, SHA-pinned actions, runs
+  check_template.py + py_compile, keeps the generator/JSON drift guard.
+
+### Notes
+- Trap item keys changed -> re-import purges the old trap items/triggers
+  via `deleteMissing`; their (short-lived) history goes with them.
+- The known 8.0.0 nested-dashboard import gap and the two-pass first
+  import remain upstream issues; install_dashboard.py still required.
+
 ## [0.3.0] - 2026-11-17
 
 ### Added

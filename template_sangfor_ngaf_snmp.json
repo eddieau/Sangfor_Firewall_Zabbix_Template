@@ -25,7 +25,7 @@
             "type": "SNMP_AGENT",
             "snmp_oid": "get[1.3.6.1.4.1.35047.1.1.0]",
             "key": "sangfor.device.descr",
-            "delay": "{$SANGFOR.UPDATE.FREQ}",
+            "delay": "{$SANGFOR.INFO.FREQ}",
             "history": "7d",
             "value_type": "CHAR",
             "description": "sfDeviceDescr."
@@ -36,7 +36,7 @@
             "type": "SNMP_AGENT",
             "snmp_oid": "get[1.3.6.1.4.1.35047.1.17.0]",
             "key": "sangfor.device.name",
-            "delay": "{$SANGFOR.UPDATE.FREQ}",
+            "delay": "{$SANGFOR.INFO.FREQ}",
             "history": "7d",
             "value_type": "CHAR",
             "description": "sfSysDevName."
@@ -47,7 +47,7 @@
             "type": "SNMP_AGENT",
             "snmp_oid": "get[1.3.6.1.4.1.35047.1.18.0]",
             "key": "sangfor.software.version",
-            "delay": "{$SANGFOR.UPDATE.FREQ}",
+            "delay": "{$SANGFOR.INFO.FREQ}",
             "history": "7d",
             "value_type": "CHAR",
             "description": "sfSysSoftVersion."
@@ -58,7 +58,7 @@
             "type": "SNMP_AGENT",
             "snmp_oid": "get[1.3.6.1.4.1.35047.1.24.0]",
             "key": "sangfor.af.version",
-            "delay": "{$SANGFOR.UPDATE.FREQ}",
+            "delay": "{$SANGFOR.INFO.FREQ}",
             "history": "7d",
             "value_type": "CHAR",
             "description": "afSysSoftVersion."
@@ -69,7 +69,7 @@
             "type": "SNMP_AGENT",
             "snmp_oid": "get[1.3.6.1.4.1.35047.1.40.0]",
             "key": "sangfor.serial.number",
-            "delay": "{$SANGFOR.UPDATE.FREQ}",
+            "delay": "{$SANGFOR.INFO.FREQ}",
             "history": "7d",
             "value_type": "CHAR",
             "description": "sfSnGW - serial number of the appliance. Not implemented on AF8.0.108 (nsf-1050a-i): item ships DISABLED to avoid unsupported-noise; enable it if your model exposes sfSnGW.",
@@ -91,6 +91,9 @@
                 "value": "health"
               }
             ],
+            "valuemap": {
+              "name": "Sangfor: device status"
+            },
             "triggers": [
               {
                 "uuid": "379872cc9e9546fe94ff82de625d06e9",
@@ -246,7 +249,7 @@
               {
                 "type": "JAVASCRIPT",
                 "parameters": [
-                  "return value.replace(/[^0-9.]/g, '');"
+                  "var n = value.replace(/[^0-9.]/g, '');if (n === '' || isNaN(parseFloat(n))) { throw 'non-numeric: ' + value; } return n;"
                 ]
               }
             ],
@@ -431,7 +434,7 @@
             "snmp_oid": "get[1.3.6.1.4.1.35047.1.64.1.0]",
             "key": "sangfor.ha.enabled",
             "delay": "{$SANGFOR.UPDATE.FREQ}",
-            "history": "0",
+            "history": "31d",
             "value_type": "FLOAT",
             "description": "sfHAEnable: 0 - disabled, 1 - enabled.",
             "tags": [
@@ -439,7 +442,10 @@
                 "tag": "component",
                 "value": "ha"
               }
-            ]
+            ],
+            "valuemap": {
+              "name": "Sangfor: HA enable"
+            }
           },
           {
             "uuid": "6f4574cdc39744ae82b6adaaa6e1971f",
@@ -448,7 +454,7 @@
             "snmp_oid": "get[1.3.6.1.4.1.35047.1.64.2.0]",
             "key": "sangfor.ha.mode",
             "delay": "{$SANGFOR.UPDATE.FREQ}",
-            "history": "0",
+            "history": "31d",
             "value_type": "FLOAT",
             "description": "sfHAMode: 0 - invalid, 1 - master-master, 2 - master-slave, 3 - mirror.",
             "tags": [
@@ -456,7 +462,10 @@
                 "tag": "component",
                 "value": "ha"
               }
-            ]
+            ],
+            "valuemap": {
+              "name": "Sangfor: HA mode"
+            }
           },
           {
             "uuid": "93d6268c0b504c35936386d2aa0a3d00",
@@ -473,7 +482,10 @@
                 "tag": "component",
                 "value": "ha"
               }
-            ]
+            ],
+            "valuemap": {
+              "name": "Sangfor: HA status"
+            }
           },
           {
             "uuid": "e8ee280c9b6d4f83ae59800db780bff9",
@@ -540,16 +552,19 @@
                 "tag": "component",
                 "value": "ha"
               }
-            ]
+            ],
+            "valuemap": {
+              "name": "Sangfor: HA sync state"
+            }
           },
           {
             "uuid": "fb01ef9e3aeb4bf7942a884fccdfd7a3",
             "name": "SNMP trap: Interface link failure",
             "type": "SNMP_TRAP",
-            "key": "snmptrap[sfFirewallTrapIf]",
+            "key": "snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-AF-MIB::sfFirewallTrapIfFail|snmpTrapOID\\.0\\s=\\sSANGFOR-AF-MIB::sfFirewallTrapIfNormal]",
             "delay": "0",
             "history": "31d",
-            "value_type": "TEXT",
+            "value_type": "LOG",
             "description": "Catches sfFirewallTrapIfFail (.35047.200.200.5) and sfFirewallTrapIfNormal (.200.200.4). PROBLEM while the last trap was the failure; recovers when the normal trap arrives.",
             "tags": [
               {
@@ -560,9 +575,9 @@
             "triggers": [
               {
                 "uuid": "61618d9dfbdb46c5b0d11c92c42ab3bc",
-                "expression": "find(/Sangfor NGAF by SNMP/snmptrap[sfFirewallTrapIf],#1,\"regexp\",\"sfFirewallTrapIfFail\")=1",
+                "expression": "find(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-AF-MIB::sfFirewallTrapIfFail|snmpTrapOID\\.0\\s=\\sSANGFOR-AF-MIB::sfFirewallTrapIfNormal],#1,\"regexp\",\"snmpTrapOID\\.0\\s=\\sSANGFOR-AF-MIB::sfFirewallTrapIfFail\")=1",
                 "recovery_mode": "RECOVERY_EXPRESSION",
-                "recovery_expression": "find(/Sangfor NGAF by SNMP/snmptrap[sfFirewallTrapIf],#1,\"regexp\",\"sfFirewallTrapIfNormal\")=1",
+                "recovery_expression": "find(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-AF-MIB::sfFirewallTrapIfFail|snmpTrapOID\\.0\\s=\\sSANGFOR-AF-MIB::sfFirewallTrapIfNormal],#1,\"regexp\",\"snmpTrapOID\\.0\\s=\\sSANGFOR-AF-MIB::sfFirewallTrapIfNormal\")=1",
                 "name": "Sangfor: Interface link failure on {HOST.NAME}",
                 "priority": "HIGH"
               }
@@ -572,10 +587,10 @@
             "uuid": "ac038537404a45aa973972a83c9bc41a",
             "name": "SNMP trap: Link failure alert",
             "type": "SNMP_TRAP",
-            "key": "snmptrap[sfLink]",
+            "key": "snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfLinkDownTrap|snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfLinkUpTrap]",
             "delay": "0",
             "history": "31d",
-            "value_type": "TEXT",
+            "value_type": "LOG",
             "description": "Catches sfLinkDownTrap (.35047.110.24) and sfLinkUpTrap (.110.23). PROBLEM while the last trap was the failure; recovers when the link recovery trap arrives.",
             "tags": [
               {
@@ -586,9 +601,9 @@
             "triggers": [
               {
                 "uuid": "b982816d61f94330990e54a1fc84d496",
-                "expression": "find(/Sangfor NGAF by SNMP/snmptrap[sfLink],#1,\"regexp\",\"sfLinkDownTrap\")=1",
+                "expression": "find(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfLinkDownTrap|snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfLinkUpTrap],#1,\"regexp\",\"snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfLinkDownTrap\")=1",
                 "recovery_mode": "RECOVERY_EXPRESSION",
-                "recovery_expression": "find(/Sangfor NGAF by SNMP/snmptrap[sfLink],#1,\"regexp\",\"sfLinkUpTrap\")=1",
+                "recovery_expression": "find(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfLinkDownTrap|snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfLinkUpTrap],#1,\"regexp\",\"snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfLinkUpTrap\")=1",
                 "name": "Sangfor: Link failure alert on {HOST.NAME}",
                 "priority": "HIGH"
               }
@@ -598,10 +613,10 @@
             "uuid": "fb6e9a966fb74d529a870c1cd4bac9ea",
             "name": "SNMP trap: Firewall under attack",
             "type": "SNMP_TRAP",
-            "key": "snmptrap[sfFirewallTrapFwAttack]",
+            "key": "snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-AF-MIB::sfFirewallTrapFwAttack]",
             "delay": "0",
             "history": "31d",
-            "value_type": "TEXT",
+            "value_type": "LOG",
             "description": "sfFirewallTrapFwAttack (.1.3.6.1.4.1.35047.200.200.6) - firewall itself under attack.",
             "tags": [
               {
@@ -612,9 +627,9 @@
             "triggers": [
               {
                 "uuid": "c1f88b2098654c7cb6a240cf80de9eb6",
-                "expression": "find(/Sangfor NGAF by SNMP/snmptrap[sfFirewallTrapFwAttack],#1,\"regexp\",\"sfFirewallTrapFwAttack\")=1 and nodata(/Sangfor NGAF by SNMP/snmptrap[sfFirewallTrapFwAttack],{$SANGFOR.TRAP_PROBLEM_HOURS})=0",
+                "expression": "find(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-AF-MIB::sfFirewallTrapFwAttack],#1,\"regexp\",\"snmpTrapOID\\.0\\s=\\sSANGFOR-AF-MIB::sfFirewallTrapFwAttack\")=1 and nodata(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-AF-MIB::sfFirewallTrapFwAttack],{$SANGFOR.TRAP_PROBLEM_HOURS})=0",
                 "recovery_mode": "RECOVERY_EXPRESSION",
-                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfFirewallTrapFwAttack],{$SANGFOR.TRAP_PROBLEM_HOURS})=1 and last(/Sangfor NGAF by SNMP/zabbix[host,snmp,available])=1",
+                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-AF-MIB::sfFirewallTrapFwAttack],{$SANGFOR.TRAP_PROBLEM_HOURS})=1 and last(/Sangfor NGAF by SNMP/zabbix[host,snmp,available])=1",
                 "name": "Sangfor: Firewall under attack on {HOST.NAME}",
                 "priority": "HIGH"
               }
@@ -624,10 +639,10 @@
             "uuid": "442cfb2a3c594c3d8431aa7d6a889bc6",
             "name": "SNMP trap: Protected network under attack",
             "type": "SNMP_TRAP",
-            "key": "snmptrap[sfFirewallTrapNetworkAttack]",
+            "key": "snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-AF-MIB::sfFirewallTrapNetworkAttack]",
             "delay": "0",
             "history": "31d",
-            "value_type": "TEXT",
+            "value_type": "LOG",
             "description": "sfFirewallTrapNetworkAttack (.1.3.6.1.4.1.35047.200.200.7) - protected network under attack.",
             "tags": [
               {
@@ -638,9 +653,9 @@
             "triggers": [
               {
                 "uuid": "e666c97f566f41a0961bafcbbafb6491",
-                "expression": "find(/Sangfor NGAF by SNMP/snmptrap[sfFirewallTrapNetworkAttack],#1,\"regexp\",\"sfFirewallTrapNetworkAttack\")=1 and nodata(/Sangfor NGAF by SNMP/snmptrap[sfFirewallTrapNetworkAttack],{$SANGFOR.TRAP_PROBLEM_HOURS})=0",
+                "expression": "find(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-AF-MIB::sfFirewallTrapNetworkAttack],#1,\"regexp\",\"snmpTrapOID\\.0\\s=\\sSANGFOR-AF-MIB::sfFirewallTrapNetworkAttack\")=1 and nodata(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-AF-MIB::sfFirewallTrapNetworkAttack],{$SANGFOR.TRAP_PROBLEM_HOURS})=0",
                 "recovery_mode": "RECOVERY_EXPRESSION",
-                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfFirewallTrapNetworkAttack],{$SANGFOR.TRAP_PROBLEM_HOURS})=1 and last(/Sangfor NGAF by SNMP/zabbix[host,snmp,available])=1",
+                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-AF-MIB::sfFirewallTrapNetworkAttack],{$SANGFOR.TRAP_PROBLEM_HOURS})=1 and last(/Sangfor NGAF by SNMP/zabbix[host,snmp,available])=1",
                 "name": "Sangfor: Protected network under attack on {HOST.NAME}",
                 "priority": "HIGH"
               }
@@ -650,10 +665,10 @@
             "uuid": "30fc1ebd92cd41a4b32c4103deba854d",
             "name": "SNMP trap: HA dual-active switch event",
             "type": "SNMP_TRAP",
-            "key": "snmptrap[sfFirewallTrapDualSwitch]",
+            "key": "snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-AF-MIB::sfFirewallTrapDualSwitch]",
             "delay": "0",
             "history": "31d",
-            "value_type": "TEXT",
+            "value_type": "LOG",
             "description": "sfFirewallTrapDualSwitch (.1.3.6.1.4.1.35047.200.200.2) - HA failover/dual switch occurred.",
             "tags": [
               {
@@ -664,9 +679,9 @@
             "triggers": [
               {
                 "uuid": "14a471e4921d4e2db1784521b617787e",
-                "expression": "find(/Sangfor NGAF by SNMP/snmptrap[sfFirewallTrapDualSwitch],#1,\"regexp\",\"sfFirewallTrapDualSwitch\")=1 and nodata(/Sangfor NGAF by SNMP/snmptrap[sfFirewallTrapDualSwitch],{$SANGFOR.TRAP_PROBLEM_HOURS})=0",
+                "expression": "find(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-AF-MIB::sfFirewallTrapDualSwitch],#1,\"regexp\",\"snmpTrapOID\\.0\\s=\\sSANGFOR-AF-MIB::sfFirewallTrapDualSwitch\")=1 and nodata(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-AF-MIB::sfFirewallTrapDualSwitch],{$SANGFOR.TRAP_PROBLEM_HOURS})=0",
                 "recovery_mode": "RECOVERY_EXPRESSION",
-                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfFirewallTrapDualSwitch],{$SANGFOR.TRAP_PROBLEM_HOURS})=1 and last(/Sangfor NGAF by SNMP/zabbix[host,snmp,available])=1",
+                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-AF-MIB::sfFirewallTrapDualSwitch],{$SANGFOR.TRAP_PROBLEM_HOURS})=1 and last(/Sangfor NGAF by SNMP/zabbix[host,snmp,available])=1",
                 "name": "Sangfor: HA dual-active switch event on {HOST.NAME}",
                 "priority": "HIGH"
               }
@@ -676,10 +691,10 @@
             "uuid": "1af091cc46494e90819ac1c19e349eb8",
             "name": "SNMP trap: Temperature alert",
             "type": "SNMP_TRAP",
-            "key": "snmptrap[sfTemperatureWarnTrap]",
+            "key": "snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfTemperatureWarnTrap]",
             "delay": "0",
             "history": "31d",
-            "value_type": "TEXT",
+            "value_type": "LOG",
             "description": "sfTemperatureWarnTrap (.1.3.6.1.4.1.35047.110.1) - Temperature Alert.",
             "tags": [
               {
@@ -690,9 +705,9 @@
             "triggers": [
               {
                 "uuid": "bc3f853f5cc1427d8357ec6ef56ab79b",
-                "expression": "find(/Sangfor NGAF by SNMP/snmptrap[sfTemperatureWarnTrap],#1,\"regexp\",\"sfTemperatureWarnTrap\")=1 and nodata(/Sangfor NGAF by SNMP/snmptrap[sfTemperatureWarnTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=0",
+                "expression": "find(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfTemperatureWarnTrap],#1,\"regexp\",\"snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfTemperatureWarnTrap\")=1 and nodata(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfTemperatureWarnTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=0",
                 "recovery_mode": "RECOVERY_EXPRESSION",
-                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfTemperatureWarnTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=1 and last(/Sangfor NGAF by SNMP/zabbix[host,snmp,available])=1",
+                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfTemperatureWarnTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=1 and last(/Sangfor NGAF by SNMP/zabbix[host,snmp,available])=1",
                 "name": "Sangfor: Temperature alert on {HOST.NAME}",
                 "priority": "HIGH"
               }
@@ -702,10 +717,10 @@
             "uuid": "a6202ee5959642118e81cfbbe6845f4c",
             "name": "SNMP trap: CPU alert",
             "type": "SNMP_TRAP",
-            "key": "snmptrap[sfCPUWarnTrap]",
+            "key": "snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfCPUWarnTrap]",
             "delay": "0",
             "history": "31d",
-            "value_type": "TEXT",
+            "value_type": "LOG",
             "description": "sfCPUWarnTrap (.1.3.6.1.4.1.35047.110.2) - CPU Alert.",
             "tags": [
               {
@@ -716,9 +731,9 @@
             "triggers": [
               {
                 "uuid": "d1d095ba62bf4075a95c39eb79690610",
-                "expression": "find(/Sangfor NGAF by SNMP/snmptrap[sfCPUWarnTrap],#1,\"regexp\",\"sfCPUWarnTrap\")=1 and nodata(/Sangfor NGAF by SNMP/snmptrap[sfCPUWarnTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=0",
+                "expression": "find(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfCPUWarnTrap],#1,\"regexp\",\"snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfCPUWarnTrap\")=1 and nodata(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfCPUWarnTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=0",
                 "recovery_mode": "RECOVERY_EXPRESSION",
-                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfCPUWarnTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=1 and last(/Sangfor NGAF by SNMP/zabbix[host,snmp,available])=1",
+                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfCPUWarnTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=1 and last(/Sangfor NGAF by SNMP/zabbix[host,snmp,available])=1",
                 "name": "Sangfor: CPU alert on {HOST.NAME}",
                 "priority": "WARNING"
               }
@@ -728,10 +743,10 @@
             "uuid": "568d50f1bdbe4e56919f4fcfbc83330a",
             "name": "SNMP trap: Memory alert",
             "type": "SNMP_TRAP",
-            "key": "snmptrap[sfMemoryWarnTrap]",
+            "key": "snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfMemoryWarnTrap]",
             "delay": "0",
             "history": "31d",
-            "value_type": "TEXT",
+            "value_type": "LOG",
             "description": "sfMemoryWarnTrap (.1.3.6.1.4.1.35047.110.3) - Memory Alert.",
             "tags": [
               {
@@ -742,9 +757,9 @@
             "triggers": [
               {
                 "uuid": "22ffa8a89148404586aadb511aafdac8",
-                "expression": "find(/Sangfor NGAF by SNMP/snmptrap[sfMemoryWarnTrap],#1,\"regexp\",\"sfMemoryWarnTrap\")=1 and nodata(/Sangfor NGAF by SNMP/snmptrap[sfMemoryWarnTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=0",
+                "expression": "find(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfMemoryWarnTrap],#1,\"regexp\",\"snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfMemoryWarnTrap\")=1 and nodata(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfMemoryWarnTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=0",
                 "recovery_mode": "RECOVERY_EXPRESSION",
-                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfMemoryWarnTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=1 and last(/Sangfor NGAF by SNMP/zabbix[host,snmp,available])=1",
+                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfMemoryWarnTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=1 and last(/Sangfor NGAF by SNMP/zabbix[host,snmp,available])=1",
                 "name": "Sangfor: Memory alert on {HOST.NAME}",
                 "priority": "WARNING"
               }
@@ -754,10 +769,10 @@
             "uuid": "4c16da5d819144d180c1a7cca1bddd1f",
             "name": "SNMP trap: Hard disk alert",
             "type": "SNMP_TRAP",
-            "key": "snmptrap[sfDiskWarnTrap]",
+            "key": "snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfDiskWarnTrap]",
             "delay": "0",
             "history": "31d",
-            "value_type": "TEXT",
+            "value_type": "LOG",
             "description": "sfDiskWarnTrap (.1.3.6.1.4.1.35047.110.4) - Hard Disk Alert.",
             "tags": [
               {
@@ -768,9 +783,9 @@
             "triggers": [
               {
                 "uuid": "c2835d30360f46bf91d836a78e3ac4c1",
-                "expression": "find(/Sangfor NGAF by SNMP/snmptrap[sfDiskWarnTrap],#1,\"regexp\",\"sfDiskWarnTrap\")=1 and nodata(/Sangfor NGAF by SNMP/snmptrap[sfDiskWarnTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=0",
+                "expression": "find(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfDiskWarnTrap],#1,\"regexp\",\"snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfDiskWarnTrap\")=1 and nodata(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfDiskWarnTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=0",
                 "recovery_mode": "RECOVERY_EXPRESSION",
-                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfDiskWarnTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=1 and last(/Sangfor NGAF by SNMP/zabbix[host,snmp,available])=1",
+                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfDiskWarnTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=1 and last(/Sangfor NGAF by SNMP/zabbix[host,snmp,available])=1",
                 "name": "Sangfor: Hard disk alert on {HOST.NAME}",
                 "priority": "HIGH"
               }
@@ -780,10 +795,10 @@
             "uuid": "46eec196def14dab8fc522838c8ea462",
             "name": "SNMP trap: Power alert",
             "type": "SNMP_TRAP",
-            "key": "snmptrap[sfPowerWarnTrap]",
+            "key": "snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfPowerWarnTrap]",
             "delay": "0",
             "history": "31d",
-            "value_type": "TEXT",
+            "value_type": "LOG",
             "description": "sfPowerWarnTrap (.1.3.6.1.4.1.35047.110.5) - Power Alert.",
             "tags": [
               {
@@ -794,9 +809,9 @@
             "triggers": [
               {
                 "uuid": "b2f626e4b9a1442891f67c3ccbc66760",
-                "expression": "find(/Sangfor NGAF by SNMP/snmptrap[sfPowerWarnTrap],#1,\"regexp\",\"sfPowerWarnTrap\")=1 and nodata(/Sangfor NGAF by SNMP/snmptrap[sfPowerWarnTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=0",
+                "expression": "find(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfPowerWarnTrap],#1,\"regexp\",\"snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfPowerWarnTrap\")=1 and nodata(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfPowerWarnTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=0",
                 "recovery_mode": "RECOVERY_EXPRESSION",
-                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfPowerWarnTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=1 and last(/Sangfor NGAF by SNMP/zabbix[host,snmp,available])=1",
+                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfPowerWarnTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=1 and last(/Sangfor NGAF by SNMP/zabbix[host,snmp,available])=1",
                 "name": "Sangfor: Power alert on {HOST.NAME}",
                 "priority": "HIGH"
               }
@@ -806,10 +821,10 @@
             "uuid": "f62f545a5adb4745aa9bff16867ee530",
             "name": "SNMP trap: Interface alert",
             "type": "SNMP_TRAP",
-            "key": "snmptrap[sfInterfaceDownTrap]",
+            "key": "snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfInterfaceDownTrap]",
             "delay": "0",
             "history": "31d",
-            "value_type": "TEXT",
+            "value_type": "LOG",
             "description": "sfInterfaceDownTrap (.1.3.6.1.4.1.35047.110.6) - Interface Alert.",
             "tags": [
               {
@@ -820,9 +835,9 @@
             "triggers": [
               {
                 "uuid": "d6018aa368cb42ada50092a97f4fe5b0",
-                "expression": "find(/Sangfor NGAF by SNMP/snmptrap[sfInterfaceDownTrap],#1,\"regexp\",\"sfInterfaceDownTrap\")=1 and nodata(/Sangfor NGAF by SNMP/snmptrap[sfInterfaceDownTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=0",
+                "expression": "find(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfInterfaceDownTrap],#1,\"regexp\",\"snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfInterfaceDownTrap\")=1 and nodata(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfInterfaceDownTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=0",
                 "recovery_mode": "RECOVERY_EXPRESSION",
-                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfInterfaceDownTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=1 and last(/Sangfor NGAF by SNMP/zabbix[host,snmp,available])=1",
+                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfInterfaceDownTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=1 and last(/Sangfor NGAF by SNMP/zabbix[host,snmp,available])=1",
                 "name": "Sangfor: Interface alert on {HOST.NAME}",
                 "priority": "HIGH"
               }
@@ -832,10 +847,10 @@
             "uuid": "cee1225cc3e7445f923c0f7939af4d5c",
             "name": "SNMP trap: Fan alert",
             "type": "SNMP_TRAP",
-            "key": "snmptrap[sfFanWarnTrap]",
+            "key": "snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfFanWarnTrap]",
             "delay": "0",
             "history": "31d",
-            "value_type": "TEXT",
+            "value_type": "LOG",
             "description": "sfFanWarnTrap (.1.3.6.1.4.1.35047.110.7) - Fan Alert.",
             "tags": [
               {
@@ -846,9 +861,9 @@
             "triggers": [
               {
                 "uuid": "c4ab92d6ad9445d89c95b4cc7435a788",
-                "expression": "find(/Sangfor NGAF by SNMP/snmptrap[sfFanWarnTrap],#1,\"regexp\",\"sfFanWarnTrap\")=1 and nodata(/Sangfor NGAF by SNMP/snmptrap[sfFanWarnTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=0",
+                "expression": "find(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfFanWarnTrap],#1,\"regexp\",\"snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfFanWarnTrap\")=1 and nodata(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfFanWarnTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=0",
                 "recovery_mode": "RECOVERY_EXPRESSION",
-                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfFanWarnTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=1 and last(/Sangfor NGAF by SNMP/zabbix[host,snmp,available])=1",
+                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfFanWarnTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=1 and last(/Sangfor NGAF by SNMP/zabbix[host,snmp,available])=1",
                 "name": "Sangfor: Fan alert on {HOST.NAME}",
                 "priority": "HIGH"
               }
@@ -858,10 +873,10 @@
             "uuid": "922327ee1bf04a129de6f76c4f16111e",
             "name": "SNMP trap: HA status alert",
             "type": "SNMP_TRAP",
-            "key": "snmptrap[sfHAStatusTrap]",
+            "key": "snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfHAStatusTrap]",
             "delay": "0",
             "history": "31d",
-            "value_type": "TEXT",
+            "value_type": "LOG",
             "description": "sfHAStatusTrap (.1.3.6.1.4.1.35047.110.8) - HA Status Alert.",
             "tags": [
               {
@@ -872,9 +887,9 @@
             "triggers": [
               {
                 "uuid": "5293e30f1abb4b248b4eb669ef89b49d",
-                "expression": "find(/Sangfor NGAF by SNMP/snmptrap[sfHAStatusTrap],#1,\"regexp\",\"sfHAStatusTrap\")=1 and nodata(/Sangfor NGAF by SNMP/snmptrap[sfHAStatusTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=0",
+                "expression": "find(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfHAStatusTrap],#1,\"regexp\",\"snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfHAStatusTrap\")=1 and nodata(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfHAStatusTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=0",
                 "recovery_mode": "RECOVERY_EXPRESSION",
-                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfHAStatusTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=1 and last(/Sangfor NGAF by SNMP/zabbix[host,snmp,available])=1",
+                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfHAStatusTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=1 and last(/Sangfor NGAF by SNMP/zabbix[host,snmp,available])=1",
                 "name": "Sangfor: HA status alert on {HOST.NAME}",
                 "priority": "HIGH"
               }
@@ -884,10 +899,10 @@
             "uuid": "1866b6b976ed4e02a32502aece3f18ec",
             "name": "SNMP trap: Passthrough status alert",
             "type": "SNMP_TRAP",
-            "key": "snmptrap[sfBypassChangeTrap]",
+            "key": "snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfBypassChangeTrap]",
             "delay": "0",
             "history": "31d",
-            "value_type": "TEXT",
+            "value_type": "LOG",
             "description": "sfBypassChangeTrap (.1.3.6.1.4.1.35047.110.19) - Passthrough Status Alert (bypass mode change).",
             "tags": [
               {
@@ -898,9 +913,9 @@
             "triggers": [
               {
                 "uuid": "8a9c6ac476f44b6e9b07d92554cb92cb",
-                "expression": "find(/Sangfor NGAF by SNMP/snmptrap[sfBypassChangeTrap],#1,\"regexp\",\"sfBypassChangeTrap\")=1 and nodata(/Sangfor NGAF by SNMP/snmptrap[sfBypassChangeTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=0",
+                "expression": "find(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfBypassChangeTrap],#1,\"regexp\",\"snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfBypassChangeTrap\")=1 and nodata(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfBypassChangeTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=0",
                 "recovery_mode": "RECOVERY_EXPRESSION",
-                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfBypassChangeTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=1 and last(/Sangfor NGAF by SNMP/zabbix[host,snmp,available])=1",
+                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfBypassChangeTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=1 and last(/Sangfor NGAF by SNMP/zabbix[host,snmp,available])=1",
                 "name": "Sangfor: Passthrough status alert on {HOST.NAME}",
                 "priority": "WARNING"
               }
@@ -910,10 +925,10 @@
             "uuid": "07e0683ab5e542b1a5ef480570fcd4fe",
             "name": "SNMP trap: Insufficient port resources",
             "type": "SNMP_TRAP",
-            "key": "snmptrap[sfPortResourceWarnTrap]",
+            "key": "snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfPortResourceWarnTrap]",
             "delay": "0",
             "history": "31d",
-            "value_type": "TEXT",
+            "value_type": "LOG",
             "description": "sfPortResourceWarnTrap (.1.3.6.1.4.1.35047.110.25) - Insufficient Port Resources.",
             "tags": [
               {
@@ -924,9 +939,9 @@
             "triggers": [
               {
                 "uuid": "623950e2f41542b6a31be07a1e9d5e06",
-                "expression": "find(/Sangfor NGAF by SNMP/snmptrap[sfPortResourceWarnTrap],#1,\"regexp\",\"sfPortResourceWarnTrap\")=1 and nodata(/Sangfor NGAF by SNMP/snmptrap[sfPortResourceWarnTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=0",
+                "expression": "find(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfPortResourceWarnTrap],#1,\"regexp\",\"snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfPortResourceWarnTrap\")=1 and nodata(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfPortResourceWarnTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=0",
                 "recovery_mode": "RECOVERY_EXPRESSION",
-                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfPortResourceWarnTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=1 and last(/Sangfor NGAF by SNMP/zabbix[host,snmp,available])=1",
+                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfPortResourceWarnTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=1 and last(/Sangfor NGAF by SNMP/zabbix[host,snmp,available])=1",
                 "name": "Sangfor: Insufficient port resources on {HOST.NAME}",
                 "priority": "WARNING"
               }
@@ -936,10 +951,10 @@
             "uuid": "209e9725b8b84a98bbaaec902ecb7670",
             "name": "SNMP trap: SLA-based link failover",
             "type": "SNMP_TRAP",
-            "key": "snmptrap[sfSLATrap]",
+            "key": "snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfSLATrap]",
             "delay": "0",
             "history": "31d",
-            "value_type": "TEXT",
+            "value_type": "LOG",
             "description": "sfSLATrap (.1.3.6.1.4.1.35047.110.27) - SLA-based Link Failover.",
             "tags": [
               {
@@ -950,9 +965,9 @@
             "triggers": [
               {
                 "uuid": "028c611f2776413f97c7efed56730f52",
-                "expression": "find(/Sangfor NGAF by SNMP/snmptrap[sfSLATrap],#1,\"regexp\",\"sfSLATrap\")=1 and nodata(/Sangfor NGAF by SNMP/snmptrap[sfSLATrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=0",
+                "expression": "find(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfSLATrap],#1,\"regexp\",\"snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfSLATrap\")=1 and nodata(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfSLATrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=0",
                 "recovery_mode": "RECOVERY_EXPRESSION",
-                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfSLATrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=1 and last(/Sangfor NGAF by SNMP/zabbix[host,snmp,available])=1",
+                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfSLATrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=1 and last(/Sangfor NGAF by SNMP/zabbix[host,snmp,available])=1",
                 "name": "Sangfor: SLA-based link failover on {HOST.NAME}",
                 "priority": "WARNING"
               }
@@ -962,10 +977,10 @@
             "uuid": "875f7b59397d4a628dd8526f2f8f703e",
             "name": "SNMP trap: Configuration changed (event log)",
             "type": "SNMP_TRAP",
-            "key": "snmptrap[sfFirewallTrapConfChange]",
+            "key": "snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-AF-MIB::sfFirewallTrapConfChange]",
             "delay": "0",
             "history": "31d",
-            "value_type": "TEXT",
+            "value_type": "LOG",
             "description": "sfFirewallTrapConfChange (.1.3.6.1.4.1.35047.200.200.1) - NGAF configuration was updated. Event-log item: no trigger.",
             "tags": [
               {
@@ -978,10 +993,10 @@
             "uuid": "54356f8e5a364757934104a2cb862ba4",
             "name": "SNMP trap: Security rulebase updated (event log)",
             "type": "SNMP_TRAP",
-            "key": "snmptrap[sfFirewallRulebaseUpdate]",
+            "key": "snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-AF-MIB::sfFirewallRulebaseUpdate]",
             "delay": "0",
             "history": "31d",
-            "value_type": "TEXT",
+            "value_type": "LOG",
             "description": "sfFirewallRulebaseUpdate (.1.3.6.1.4.1.35047.200.200.3) - firewall rules were updated. Event-log item: no trigger.",
             "tags": [
               {
@@ -994,10 +1009,10 @@
             "uuid": "5a08efe2fcd84451bb48ac2ccb76cef9",
             "name": "SNMP trap: Database update (event log)",
             "type": "SNMP_TRAP",
-            "key": "snmptrap[sfRuleBaseUpgradeTrap]",
+            "key": "snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfRuleBaseUpgradeTrap]",
             "delay": "0",
             "history": "31d",
-            "value_type": "TEXT",
+            "value_type": "LOG",
             "description": "sfRuleBaseUpgradeTrap (.1.3.6.1.4.1.35047.110.17) - Database Update Alert. Event-log item: no trigger.",
             "tags": [
               {
@@ -1010,11 +1025,27 @@
             "uuid": "aa1df03e144c44c99a1e13c9753a3bc5",
             "name": "SNMP trap: Device warm start (event log)",
             "type": "SNMP_TRAP",
-            "key": "snmptrap[warmStart]",
+            "key": "snmptrap[snmpTrapOID\\.0\\s=\\sSNMPv2-MIB::warmStart]",
             "delay": "0",
             "history": "31d",
-            "value_type": "TEXT",
+            "value_type": "LOG",
             "description": "SNMPv2-MIB::warmStart (.1.3.6.1.6.3.1.1.5.2) - Warm Start Alert. Event-log item: no trigger.",
+            "tags": [
+              {
+                "tag": "component",
+                "value": "trap"
+              }
+            ]
+          },
+          {
+            "uuid": "670e597fa234476d90065c9b89820165",
+            "name": "SNMP trap: Device cold start (event log)",
+            "type": "SNMP_TRAP",
+            "key": "snmptrap[snmpTrapOID\\.0\\s=\\sSNMPv2-MIB::coldStart]",
+            "delay": "0",
+            "history": "31d",
+            "value_type": "LOG",
+            "description": "SNMPv2-MIB::coldStart (.1.3.6.1.6.3.1.1.5.1) - full restart; not in the NGAF trap UI list but may be sent. Event-log item: no trigger.",
             "tags": [
               {
                 "tag": "component",
@@ -1065,9 +1096,15 @@
             "triggers": [
               {
                 "uuid": "67a59203e1034be897d906a9986b6aeb",
-                "expression": "min(/Sangfor NGAF by SNMP/icmppingloss,{$ICMP_LOSS_MIN_OCCURRENCES})>{$ICMP_LOSS_WARN} and max(/Sangfor NGAF by SNMP/icmppingloss,#3)<100",
+                "expression": "min(/Sangfor NGAF by SNMP/icmppingloss,5m)>{$ICMP_LOSS_WARN} and min(/Sangfor NGAF by SNMP/icmppingloss,5m)<100",
                 "name": "High ICMP ping loss on {HOST.NAME}",
-                "priority": "WARNING"
+                "priority": "WARNING",
+                "dependencies": [
+                  {
+                    "name": "Device unavailable by ICMP ping on {HOST.NAME}",
+                    "expression": "max(/Sangfor NGAF by SNMP/icmpping,#3)=0"
+                  }
+                ]
               }
             ]
           },
@@ -1090,9 +1127,19 @@
             "triggers": [
               {
                 "uuid": "a093ac5e84cb467fa7f376332db19653",
-                "expression": "avg(/Sangfor NGAF by SNMP/icmppingsec,15m)>{$ICMP_RESPONSE_TIME_WARN}",
+                "expression": "avg(/Sangfor NGAF by SNMP/icmppingsec,5m)>{$ICMP_RESPONSE_TIME_WARN}",
                 "name": "High ICMP ping response time on {HOST.NAME}",
-                "priority": "WARNING"
+                "priority": "WARNING",
+                "dependencies": [
+                  {
+                    "name": "High ICMP ping loss on {HOST.NAME}",
+                    "expression": "min(/Sangfor NGAF by SNMP/icmppingloss,5m)>{$ICMP_LOSS_WARN} and min(/Sangfor NGAF by SNMP/icmppingloss,5m)<100"
+                  },
+                  {
+                    "name": "Device unavailable by ICMP ping on {HOST.NAME}",
+                    "expression": "max(/Sangfor NGAF by SNMP/icmpping,#3)=0"
+                  }
+                ]
               }
             ]
           },
@@ -1114,7 +1161,7 @@
             "triggers": [
               {
                 "uuid": "e68c881210a2429b8d0c29e6ecb1fc24",
-                "expression": "last(/Sangfor NGAF by SNMP/zabbix[host,snmp,available])=0",
+                "expression": "max(/Sangfor NGAF by SNMP/zabbix[host,snmp,available],{$SNMP.TIMEOUT})=0",
                 "name": "No SNMP data collection from {HOST.NAME}",
                 "priority": "WARNING",
                 "dependencies": [
@@ -1135,13 +1182,13 @@
             "history": "7d",
             "value_type": "CHAR",
             "description": "The contact person responsible for this device (RFC1213-MIB::sysContact). Ported from generic SNMP template.",
+            "snmp_oid": "get[1.3.6.1.2.1.1.4.0]",
             "tags": [
               {
                 "tag": "component",
                 "value": "system"
               }
-            ],
-            "snmp_oid": "get[1.3.6.1.2.1.1.4.0]"
+            ]
           },
           {
             "uuid": "d7a9e5e820cf414982faca1b41d0122a",
@@ -1152,13 +1199,13 @@
             "history": "7d",
             "value_type": "CHAR",
             "description": "Full description of the device (RFC1213-MIB::sysDescr). Ported from generic SNMP template.",
+            "snmp_oid": "get[1.3.6.1.2.1.1.1.0]",
             "tags": [
               {
                 "tag": "component",
                 "value": "system"
               }
-            ],
-            "snmp_oid": "get[1.3.6.1.2.1.1.1.0]"
+            ]
           },
           {
             "uuid": "bd80376e2dd043a6b64870bc61dc65a7",
@@ -1169,13 +1216,13 @@
             "history": "7d",
             "value_type": "CHAR",
             "description": "Physical location (RFC1213-MIB::sysLocation). Ported from generic SNMP template.",
+            "snmp_oid": "get[1.3.6.1.2.1.1.6.0]",
             "tags": [
               {
                 "tag": "component",
                 "value": "system"
               }
-            ],
-            "snmp_oid": "get[1.3.6.1.2.1.1.6.0]"
+            ]
           },
           {
             "uuid": "156bda1543ef498d952554a82218df7e",
@@ -1186,21 +1233,22 @@
             "history": "7d",
             "value_type": "CHAR",
             "description": "Name of this device, as set on the device itself (RFC1213-MIB::sysName). Ported from generic SNMP template.",
+            "snmp_oid": "get[1.3.6.1.2.1.1.5.0]",
             "tags": [
               {
                 "tag": "component",
                 "value": "system"
               }
             ],
-            "snmp_oid": "get[1.3.6.1.2.1.1.5.0]",
             "triggers": [
               {
                 "uuid": "b35bdcc1b83c4ac0be5c17eadaeb0d14",
-                "expression": "change(/Sangfor NGAF by SNMP/system.name)<>0 and length(last(/Sangfor NGAF by SNMP/system.name))>0",
-                "recovery_mode": "RECOVERY_EXPRESSION",
-                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/system.name,1d)=1",
+                "expression": "last(/Sangfor NGAF by SNMP/system.name,#1)<>last(/Sangfor NGAF by SNMP/system.name,#2) and length(last(/Sangfor NGAF by SNMP/system.name))>0",
+                "event_name": "System name has changed (new name: {ITEM.VALUE})",
+                "description": "The name of the system has changed. Acknowledge to close the problem manually.",
                 "name": "System name has changed (new name: {ITEM.LASTVALUE1})",
-                "priority": "INFO"
+                "priority": "INFO",
+                "manual_close": "YES"
               }
             ]
           },
@@ -1213,13 +1261,13 @@
             "history": "7d",
             "value_type": "CHAR",
             "description": "Vendor's identification of this device (RFC1213-MIB::sysObjectID). Ported from generic SNMP template.",
+            "snmp_oid": "get[1.3.6.1.2.1.1.2.0]",
             "tags": [
               {
                 "tag": "component",
                 "value": "system"
               }
-            ],
-            "snmp_oid": "get[1.3.6.1.2.1.1.2.0]"
+            ]
           },
           {
             "uuid": "05a64cdbc2264221b3f575c65924a969",
@@ -1230,6 +1278,7 @@
             "history": "7d",
             "value_type": "FLOAT",
             "description": "Time since the network management portion of the system was last re-initialized (RFC1213-MIB::sysUpTime, timeticks -> s). Ported.",
+            "snmp_oid": "get[1.3.6.1.2.1.1.3.0]",
             "units": "uptime",
             "preprocessing": [
               {
@@ -1245,7 +1294,6 @@
                 "value": "system"
               }
             ],
-            "snmp_oid": "get[1.3.6.1.2.1.1.3.0]",
             "triggers": [
               {
                 "uuid": "5f0569d8d33046a6885e3e0e53143e3f",
@@ -1254,7 +1302,13 @@
                 "recovery_expression": "nodata(/Sangfor NGAF by SNMP/system.net.uptime[sysUpTime.0],10m)=0",
                 "name": "{HOST.NAME} has been restarted",
                 "event_name": "{HOST.NAME} has been restarted",
-                "priority": "WARNING"
+                "priority": "WARNING",
+                "dependencies": [
+                  {
+                    "name": "No SNMP data collection from {HOST.NAME}",
+                    "expression": "max(/Sangfor NGAF by SNMP/zabbix[host,snmp,available],{$SNMP.TIMEOUT})=0"
+                  }
+                ]
               }
             ]
           },
@@ -1267,6 +1321,7 @@
             "history": "7d",
             "value_type": "FLOAT",
             "description": "Time since the whole system was last re-initialized (HOST-RESOURCES-MIB::hrSystemUptime, timeticks -> s). Ported.",
+            "snmp_oid": "get[1.3.6.1.2.1.25.1.1.0]",
             "units": "uptime",
             "preprocessing": [
               {
@@ -1281,8 +1336,7 @@
                 "tag": "component",
                 "value": "system"
               }
-            ],
-            "snmp_oid": "get[1.3.6.1.2.1.25.1.1.0]"
+            ]
           },
           {
             "uuid": "52169d6058574f2e99c029d03e298587",
@@ -1291,7 +1345,7 @@
             "key": "snmptrap.fallback",
             "delay": "0",
             "history": "31d",
-            "value_type": "TEXT",
+            "value_type": "LOG",
             "description": "Catches any SNMP trap not matched by a named snmptrap[] item. Ported from Network Generic Device by SNMP; this template is standalone, do NOT link it together with that template (duplicate fallback key).",
             "tags": [
               {
@@ -1525,8 +1579,7 @@
                     "item": {
                       "host": "Sangfor NGAF by SNMP",
                       "key": "sangfor.if.in.drop[{#SNMPINDEX}]"
-                    },
-                    "yaxisside": "RIGHT"
+                    }
                   },
                   {
                     "color": "005500",
@@ -1534,8 +1587,7 @@
                     "item": {
                       "host": "Sangfor NGAF by SNMP",
                       "key": "sangfor.if.out.drop[{#SNMPINDEX}]"
-                    },
-                    "yaxisside": "RIGHT"
+                    }
                   }
                 ]
               }
@@ -1653,7 +1705,7 @@
                   {
                     "type": "JAVASCRIPT",
                     "parameters": [
-                      "return value.replace(/[^0-9.]/g, '');"
+                      "var n = value.replace(/[^0-9.]/g, '');if (n === '' || isNaN(parseFloat(n))) { throw 'non-numeric: ' + value; } return n;"
                     ]
                   }
                 ],
@@ -1819,7 +1871,10 @@
                     "tag": "component",
                     "value": "hardware"
                   }
-                ]
+                ],
+                "valuemap": {
+                  "name": "Sangfor: hw state"
+                }
               }
             ],
             "trigger_prototypes": [
@@ -1858,7 +1913,10 @@
                     "tag": "component",
                     "value": "hardware"
                   }
-                ]
+                ],
+                "valuemap": {
+                  "name": "Sangfor: hw state"
+                }
               }
             ],
             "trigger_prototypes": [
@@ -1960,14 +2018,124 @@
             "description": "Packet loss (%) that triggers a warning."
           },
           {
-            "macro": "{$ICMP_LOSS_MIN_OCCURRENCES}",
-            "value": "3",
-            "description": "How many times in a row the loss must be above the warning threshold to trigger."
+            "macro": "{$SNMP.TIMEOUT}",
+            "value": "5m",
+            "description": "How long SNMP polling must be down before 'No SNMP data collection' fires (ported from the generic template)."
           },
           {
             "macro": "{$ICMP_RESPONSE_TIME_WARN}",
             "value": "0.15",
             "description": "Average response time (s) that triggers a warning."
+          }
+        ],
+        "valuemaps": [
+          {
+            "uuid": "7f93e246e0cd46df9249e5fd52948cb0",
+            "name": "Sangfor: device status",
+            "mappings": [
+              {
+                "value": "0",
+                "newvalue": "Warning"
+              },
+              {
+                "value": "1",
+                "newvalue": "Normal"
+              }
+            ]
+          },
+          {
+            "uuid": "f67ca90f374b46edb86a1bce1be9694e",
+            "name": "Sangfor: HA enable",
+            "mappings": [
+              {
+                "value": "0",
+                "newvalue": "disabled"
+              },
+              {
+                "value": "1",
+                "newvalue": "enabled"
+              }
+            ]
+          },
+          {
+            "uuid": "377171479dad471fb78cf691e14945cd",
+            "name": "Sangfor: HA mode",
+            "mappings": [
+              {
+                "value": "0",
+                "newvalue": "invalid"
+              },
+              {
+                "value": "1",
+                "newvalue": "master-master"
+              },
+              {
+                "value": "2",
+                "newvalue": "master-slave"
+              },
+              {
+                "value": "3",
+                "newvalue": "mirror"
+              }
+            ]
+          },
+          {
+            "uuid": "7fefbed01e3e40a59fb7606dd10f3de6",
+            "name": "Sangfor: HA status",
+            "mappings": [
+              {
+                "value": "0",
+                "newvalue": "invalid"
+              },
+              {
+                "value": "1",
+                "newvalue": "init"
+              },
+              {
+                "value": "4",
+                "newvalue": "master"
+              },
+              {
+                "value": "5",
+                "newvalue": "slave"
+              }
+            ]
+          },
+          {
+            "uuid": "431704aa9da147f48d0862a6af6a3bed",
+            "name": "Sangfor: HA sync state",
+            "mappings": [
+              {
+                "value": "0",
+                "newvalue": "invalid"
+              },
+              {
+                "value": "1",
+                "newvalue": "sync running"
+              },
+              {
+                "value": "2",
+                "newvalue": "sync end"
+              },
+              {
+                "value": "3",
+                "newvalue": "unknown"
+              }
+            ]
+          },
+          {
+            "uuid": "d04228709783411dab57d013533696a0",
+            "name": "Sangfor: hw state",
+            "mappings": [
+              {
+                "value": "0",
+                "newvalue": "abnormal"
+              },
+              {
+                "value": "1",
+                "newvalue": "normal"
+              }
+            ]
           }
         ],
         "dashboards": [
@@ -2234,7 +2402,7 @@
                       {
                         "type": "STRING",
                         "name": "reference",
-                        "value": "AAAAA"
+                        "value": "3D7CA"
                       }
                     ]
                   },
@@ -2257,7 +2425,7 @@
                       {
                         "type": "STRING",
                         "name": "reference",
-                        "value": "AAAAA"
+                        "value": "B1F83"
                       }
                     ]
                   }
@@ -2284,7 +2452,7 @@
                       {
                         "type": "STRING",
                         "name": "reference",
-                        "value": "AAAAA"
+                        "value": "9C81B"
                       }
                     ]
                   },
@@ -2307,7 +2475,7 @@
                       {
                         "type": "STRING",
                         "name": "reference",
-                        "value": "AAAAA"
+                        "value": "25B77"
                       }
                     ]
                   }
@@ -2403,7 +2571,8 @@
             "item": {
               "host": "Sangfor NGAF by SNMP",
               "key": "sangfor.sessions.new.persec"
-            }
+            },
+            "yaxisside": "RIGHT"
           }
         ]
       },
