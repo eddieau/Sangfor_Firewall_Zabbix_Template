@@ -667,6 +667,102 @@ for m, v, d in [
 ]:
     macros.append({"macro": m, "value": v, "description": d})
 
+# ================= graphs =================
+def gitem(key, color, dt=None, ys=None, so=0):
+    # NOTE: omit drawtype for plain LINE - the 8.0 JSON importer rejects the
+    # literal "LINE" constant (only non-default drawtypes are written).
+    gi = {"color": color, "sortorder": str(so),
+          "item": {"host": TPL, "key": key}}
+    if dt:
+        gi["drawtype"] = dt
+    if ys:
+        gi["yaxisside"] = ys
+    return gi
+
+def graph(name, gitems):
+    return {"uuid": U("graph-" + name), "name": name, "graph_items": gitems}
+
+graphs = [
+    graph("Sangfor NGAF: CPU utilization", [
+        gitem("sangfor.cpu.util.30s", "00C800", "GRADIENT_LINE", so=0),
+        gitem("sangfor.cpu.util.1m", "FF3333", "BOLD_LINE", so=1),
+        gitem("sangfor.cpu.util.5m", "0000FF", so=2)]),
+    graph("Sangfor NGAF: Memory", [
+        gitem("sangfor.mem.total", "00AA00", so=0),
+        gitem("sangfor.mem.free", "AAAAAA", "DASHED_LINE", so=1),
+        gitem("sangfor.mem.util", "FF00FF", "BOLD_LINE", ys="RIGHT", so=2)]),
+    graph("Sangfor NGAF: Sessions", [
+        gitem("sangfor.sessions.current", "3333FF", "GRADIENT_LINE", so=0),
+        gitem("sangfor.sessions.new.persec", "FF6600", so=1)]),
+    graph("Sangfor NGAF: Throughput", [
+        gitem("sangfor.throughput.in", "00C800", "GRADIENT_LINE", so=0),
+        gitem("sangfor.throughput.out", "FF3333", "BOLD_LINE", so=1)]),
+]
+
+# graph prototypes on the interface discovery (per-interface WAN traffic)
+next(d for d in drs if d["key"] == "sangfor.if.discovery")["graph_prototypes"] = [
+    graph("Interface {#SNMPVALUE}: Traffic", [
+        gitem("sangfor.if.in.bps[{#SNMPINDEX}]", "199C0D", "GRADIENT_LINE", so=0),
+        gitem("sangfor.if.out.bps[{#SNMPINDEX}]", "F63100", "BOLD_LINE", so=1)]),
+    graph("Interface {#SNMPVALUE}: Discards", [
+        gitem("sangfor.if.in.drop[{#SNMPINDEX}]", "FF4646", ys="RIGHT", so=0),
+        gitem("sangfor.if.out.drop[{#SNMPINDEX}]", "005500", ys="RIGHT", so=1)]),
+]
+
+# ================= dashboard =================
+def w_item(key, name, x, y, w=18, h=2, show="2"):
+    return {"type": "item", "name": name, "x": str(x), "y": str(y),
+            "width": str(w), "height": str(h),
+            "fields": [
+                {"type": "ITEM", "name": "itemid.0",
+                 "value": {"host": TPL, "key": key}},
+                {"type": "INTEGER", "name": "show.0", "value": show}]}
+
+def w_gauge(key, name, x, y, w=8, h=3):
+    return {"type": "gauge", "name": name, "x": str(x), "y": str(y),
+            "width": str(w), "height": str(h),
+            "fields": [
+                {"type": "ITEM", "name": "itemid.0",
+                 "value": {"host": TPL, "key": key}},
+                {"type": "STRING", "name": "min", "value": "0"},
+                {"type": "STRING", "name": "max", "value": "100"},
+                {"type": "INTEGER", "name": "decimal_places", "value": "0"},
+                {"type": "INTEGER", "name": "angle", "value": "270"}]}
+
+def w_graph(gname, name, x, y, w=36, h=6):
+    return {"type": "graph", "name": name, "x": str(x), "y": str(y),
+            "width": str(w), "height": str(h),
+            "fields": [
+                {"type": "GRAPH", "name": "graphid.0",
+                 "value": {"host": TPL, "name": gname}},
+                {"type": "STRING", "name": "reference", "value": "AAAAA"}]}
+
+# 8.0 canonical template-dashboard shape (verified against official
+# "Ruckus UnLeashed by SNMP" export): dashboard keys are
+# uuid/name/auto_start/pages and PAGES carry ONLY "widgets" - a page
+# "name" makes the importer silently drop the whole dashboard.
+dashboards = [{
+    "uuid": U("dashboard-ngaf"),
+    "name": "Sangfor NGAF",
+    "auto_start": "NO",
+    "pages": [
+        {"widgets": [
+            w_item("sangfor.device.name", "Device name", 0, 0, 18, 1),
+            w_item("sangfor.software.version", "SangforOS", 18, 0, 18, 1),
+            w_item("sangfor.af.version", "AF build", 36, 0, 36, 1),
+            w_gauge("sangfor.cpu.util.1m", "CPU utilization", 0, 1, 8, 3),
+            w_gauge("sangfor.mem.util", "Memory usage", 8, 1, 8, 3),
+            w_item("sangfor.sessions.current", "Current sessions", 16, 1, 10, 3),
+            w_item("sangfor.device.status", "Device status", 26, 1, 10, 3),
+            w_item("sangfor.ha.status", "HA status", 36, 1, 10, 3),
+            w_item("system.hw.uptime[hrSystemUptime.0]", "Uptime", 46, 1, 10, 3),
+            w_graph("Sangfor NGAF: Throughput", "System throughput", 0, 4, 36, 6),
+            w_graph("Sangfor NGAF: Sessions", "Sessions", 36, 4, 36, 6)]},
+        {"widgets": [
+            w_graph("Sangfor NGAF: CPU utilization", "CPU", 0, 0, 36, 6),
+            w_graph("Sangfor NGAF: Memory", "Memory", 36, 0, 36, 6)]},
+    ]}]
+
 # ================= assemble =================
 tpl = {"uuid": U("template"), "template": TPL, "name": TPL,
        "description": "Sangfor NGAF monitoring via private SANGFOR-MIB "
@@ -685,12 +781,18 @@ tpl = {"uuid": U("template"), "template": TPL, "name": TPL,
        "groups": [{"name": TGROUP}],
        "items": items,
        "discovery_rules": drs,
-       "macros": macros}
+       "macros": macros,
+       "dashboards": dashboards}
+# NOTE (8.0 JSON format): template-level graphs go under
+# zabbix_export.graphs (sibling of templates), NOT inside the template
+# object - verified against official template exports. graph_prototypes
+# inside discovery rules DO stay nested.
 
 doc = {"zabbix_export": {
     "version": "8.0",
     "template_groups": [{"uuid": U("group"), "name": TGROUP}],
-    "templates": [tpl]}}
+    "templates": [tpl],
+    "graphs": graphs}}
 
 _here = Path(__file__).resolve().parent
 out = (_here.parent if _here.name == "scripts" else _here) / "template_sangfor_ngaf_snmp.json"

@@ -3,6 +3,36 @@
 All notable changes to this template are documented here.
 Template format target: Zabbix 8.0 (JSON import).
 
+## [0.3.0] - 2026-11-17
+
+### Added
+- **Template graphs (4)**: CPU utilization (30s/1m/5m), Memory
+  (total/free/usage % dual-axis), Sessions (current + new/s), Throughput
+  (in/out).
+- **Per-interface graph prototypes (2)** on `sangfor.if.discovery`:
+  `Interface {#SNMPVALUE}: Traffic` (in/out bps) and
+  `Interface {#SNMPVALUE}: Discards` - 32 graphs materialize via LLD on a
+  16-port NGAF (verified live).
+- **Dashboard "Sangfor NGAF"** (2 pages): Overview (device info, CPU/Memory
+  gauges, sessions/status/HA/uptime tiles, Throughput + Sessions graphs) and
+  Health (CPU + Memory graphs). Shipped as a template-nested dashboards
+  block AND installable via `scripts/install_dashboard.py`.
+- `scripts/install_dashboard.py` - resolves template item/graph references
+  against your real NGAF host and imports a standalone dashboard document
+  through the API (idempotent).
+
+### Known Zabbix 8.0.0 limitations (documented + worked around)
+- `configuration.import` silently DROPS template-nested dashboards in all
+  three formats (JSON/XML/YAML) - verified empirically; the official
+  templates' dashboards predate this. Use `install_dashboard.py` for now;
+  keep the nested block for forward compatibility.
+- `dashboard.create` API widget-field type codes are numeric
+  (0=INTEGER 2=STRING 4=ITEM 5=ITEM_PROTOTYPE 6=GRAPH) and differ from the
+  import-format string constants; `hide_header` is not accepted there.
+- Template-level `graphs` must be top-level `zabbix_export.graphs`
+  (nested-under-template `graphs` tag is rejected); `drawtype` must be
+  omitted for plain LINE (the literal constant "LINE" is rejected).
+
 ## [0.2.1] - 2026-11-17
 
 ### Added

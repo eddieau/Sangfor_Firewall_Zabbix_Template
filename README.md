@@ -98,6 +98,33 @@ SNMPv3 authPriv, monitored through a Zabbix proxy.
 | Power supply | `sfSysPowerTable` (general.15) | state (abnormal → HIGH trigger) |
 | Temperature sensor | `sfTempSensorTable` (general.59) | reading |
 
+## Graphs & Dashboard (v0.3.0)
+
+The template ships with **4 template graphs** (CPU utilization, Memory,
+Sessions, Throughput) and **2 per-interface graph prototypes** (Traffic,
+Discards) that LLD instantiates for every discovered interface.
+
+It also contains a **"Sangfor NGAF" dashboard** (2 pages: Overview +
+Health: device info tiles, CPU/Memory gauges, sessions/status/HA/uptime,
+graph widgets).
+
+⚠️ **Zabbix 8.0.0 quirk**: `configuration.import` silently DROPS
+template-nested dashboards (verified on JSON, XML and YAML imports - official
+templates' dashboards were seeded by the distributor, not through this API
+path). Until that is fixed upstream, install the dashboard with the helper
+script, which rewrites the template item/graph references to your real host
+and imports a standalone dashboard document:
+
+```bash
+export ZABBIX_URL=https://your-zabbix.example.com/api_jsonrpc.php
+export ZABBIX_API_KEY=***
+python3 scripts/install_dashboard.py --host "your-ngaf-host-name"
+```
+
+The dashboard block stays inside the template JSON for forward
+compatibility; once your Zabbix build supports nested dashboard import you
+can skip the script.
+
 ## Requirements
 
 - Zabbix **8.0** or newer (JSON import format matches 8.0 exactly)

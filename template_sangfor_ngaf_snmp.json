@@ -1489,6 +1489,56 @@
                 "name": "Interface {#SNMPVALUE}: high outbound discard rate on {HOST.NAME}",
                 "priority": "WARNING"
               }
+            ],
+            "graph_prototypes": [
+              {
+                "uuid": "6b147f9735e448918e976ca5f696dd79",
+                "name": "Interface {#SNMPVALUE}: Traffic",
+                "graph_items": [
+                  {
+                    "color": "199C0D",
+                    "sortorder": "0",
+                    "item": {
+                      "host": "Sangfor NGAF by SNMP",
+                      "key": "sangfor.if.in.bps[{#SNMPINDEX}]"
+                    },
+                    "drawtype": "GRADIENT_LINE"
+                  },
+                  {
+                    "color": "F63100",
+                    "sortorder": "1",
+                    "item": {
+                      "host": "Sangfor NGAF by SNMP",
+                      "key": "sangfor.if.out.bps[{#SNMPINDEX}]"
+                    },
+                    "drawtype": "BOLD_LINE"
+                  }
+                ]
+              },
+              {
+                "uuid": "ef21e0ad4bfc43ca8c0b9c04a06b76b1",
+                "name": "Interface {#SNMPVALUE}: Discards",
+                "graph_items": [
+                  {
+                    "color": "FF4646",
+                    "sortorder": "0",
+                    "item": {
+                      "host": "Sangfor NGAF by SNMP",
+                      "key": "sangfor.if.in.drop[{#SNMPINDEX}]"
+                    },
+                    "yaxisside": "RIGHT"
+                  },
+                  {
+                    "color": "005500",
+                    "sortorder": "1",
+                    "item": {
+                      "host": "Sangfor NGAF by SNMP",
+                      "key": "sangfor.if.out.drop[{#SNMPINDEX}]"
+                    },
+                    "yaxisside": "RIGHT"
+                  }
+                ]
+              }
             ]
           },
           {
@@ -1918,6 +1968,466 @@
             "macro": "{$ICMP_RESPONSE_TIME_WARN}",
             "value": "0.15",
             "description": "Average response time (s) that triggers a warning."
+          }
+        ],
+        "dashboards": [
+          {
+            "uuid": "e221a4c6c0a34b8e8147d5cc944d2259",
+            "name": "Sangfor NGAF",
+            "auto_start": "NO",
+            "pages": [
+              {
+                "widgets": [
+                  {
+                    "type": "item",
+                    "name": "Device name",
+                    "x": "0",
+                    "y": "0",
+                    "width": "18",
+                    "height": "1",
+                    "fields": [
+                      {
+                        "type": "ITEM",
+                        "name": "itemid.0",
+                        "value": {
+                          "host": "Sangfor NGAF by SNMP",
+                          "key": "sangfor.device.name"
+                        }
+                      },
+                      {
+                        "type": "INTEGER",
+                        "name": "show.0",
+                        "value": "2"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "item",
+                    "name": "SangforOS",
+                    "x": "18",
+                    "y": "0",
+                    "width": "18",
+                    "height": "1",
+                    "fields": [
+                      {
+                        "type": "ITEM",
+                        "name": "itemid.0",
+                        "value": {
+                          "host": "Sangfor NGAF by SNMP",
+                          "key": "sangfor.software.version"
+                        }
+                      },
+                      {
+                        "type": "INTEGER",
+                        "name": "show.0",
+                        "value": "2"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "item",
+                    "name": "AF build",
+                    "x": "36",
+                    "y": "0",
+                    "width": "36",
+                    "height": "1",
+                    "fields": [
+                      {
+                        "type": "ITEM",
+                        "name": "itemid.0",
+                        "value": {
+                          "host": "Sangfor NGAF by SNMP",
+                          "key": "sangfor.af.version"
+                        }
+                      },
+                      {
+                        "type": "INTEGER",
+                        "name": "show.0",
+                        "value": "2"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "gauge",
+                    "name": "CPU utilization",
+                    "x": "0",
+                    "y": "1",
+                    "width": "8",
+                    "height": "3",
+                    "fields": [
+                      {
+                        "type": "ITEM",
+                        "name": "itemid.0",
+                        "value": {
+                          "host": "Sangfor NGAF by SNMP",
+                          "key": "sangfor.cpu.util.1m"
+                        }
+                      },
+                      {
+                        "type": "STRING",
+                        "name": "min",
+                        "value": "0"
+                      },
+                      {
+                        "type": "STRING",
+                        "name": "max",
+                        "value": "100"
+                      },
+                      {
+                        "type": "INTEGER",
+                        "name": "decimal_places",
+                        "value": "0"
+                      },
+                      {
+                        "type": "INTEGER",
+                        "name": "angle",
+                        "value": "270"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "gauge",
+                    "name": "Memory usage",
+                    "x": "8",
+                    "y": "1",
+                    "width": "8",
+                    "height": "3",
+                    "fields": [
+                      {
+                        "type": "ITEM",
+                        "name": "itemid.0",
+                        "value": {
+                          "host": "Sangfor NGAF by SNMP",
+                          "key": "sangfor.mem.util"
+                        }
+                      },
+                      {
+                        "type": "STRING",
+                        "name": "min",
+                        "value": "0"
+                      },
+                      {
+                        "type": "STRING",
+                        "name": "max",
+                        "value": "100"
+                      },
+                      {
+                        "type": "INTEGER",
+                        "name": "decimal_places",
+                        "value": "0"
+                      },
+                      {
+                        "type": "INTEGER",
+                        "name": "angle",
+                        "value": "270"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "item",
+                    "name": "Current sessions",
+                    "x": "16",
+                    "y": "1",
+                    "width": "10",
+                    "height": "3",
+                    "fields": [
+                      {
+                        "type": "ITEM",
+                        "name": "itemid.0",
+                        "value": {
+                          "host": "Sangfor NGAF by SNMP",
+                          "key": "sangfor.sessions.current"
+                        }
+                      },
+                      {
+                        "type": "INTEGER",
+                        "name": "show.0",
+                        "value": "2"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "item",
+                    "name": "Device status",
+                    "x": "26",
+                    "y": "1",
+                    "width": "10",
+                    "height": "3",
+                    "fields": [
+                      {
+                        "type": "ITEM",
+                        "name": "itemid.0",
+                        "value": {
+                          "host": "Sangfor NGAF by SNMP",
+                          "key": "sangfor.device.status"
+                        }
+                      },
+                      {
+                        "type": "INTEGER",
+                        "name": "show.0",
+                        "value": "2"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "item",
+                    "name": "HA status",
+                    "x": "36",
+                    "y": "1",
+                    "width": "10",
+                    "height": "3",
+                    "fields": [
+                      {
+                        "type": "ITEM",
+                        "name": "itemid.0",
+                        "value": {
+                          "host": "Sangfor NGAF by SNMP",
+                          "key": "sangfor.ha.status"
+                        }
+                      },
+                      {
+                        "type": "INTEGER",
+                        "name": "show.0",
+                        "value": "2"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "item",
+                    "name": "Uptime",
+                    "x": "46",
+                    "y": "1",
+                    "width": "10",
+                    "height": "3",
+                    "fields": [
+                      {
+                        "type": "ITEM",
+                        "name": "itemid.0",
+                        "value": {
+                          "host": "Sangfor NGAF by SNMP",
+                          "key": "system.hw.uptime[hrSystemUptime.0]"
+                        }
+                      },
+                      {
+                        "type": "INTEGER",
+                        "name": "show.0",
+                        "value": "2"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "graph",
+                    "name": "System throughput",
+                    "x": "0",
+                    "y": "4",
+                    "width": "36",
+                    "height": "6",
+                    "fields": [
+                      {
+                        "type": "GRAPH",
+                        "name": "graphid.0",
+                        "value": {
+                          "host": "Sangfor NGAF by SNMP",
+                          "name": "Sangfor NGAF: Throughput"
+                        }
+                      },
+                      {
+                        "type": "STRING",
+                        "name": "reference",
+                        "value": "AAAAA"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "graph",
+                    "name": "Sessions",
+                    "x": "36",
+                    "y": "4",
+                    "width": "36",
+                    "height": "6",
+                    "fields": [
+                      {
+                        "type": "GRAPH",
+                        "name": "graphid.0",
+                        "value": {
+                          "host": "Sangfor NGAF by SNMP",
+                          "name": "Sangfor NGAF: Sessions"
+                        }
+                      },
+                      {
+                        "type": "STRING",
+                        "name": "reference",
+                        "value": "AAAAA"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "widgets": [
+                  {
+                    "type": "graph",
+                    "name": "CPU",
+                    "x": "0",
+                    "y": "0",
+                    "width": "36",
+                    "height": "6",
+                    "fields": [
+                      {
+                        "type": "GRAPH",
+                        "name": "graphid.0",
+                        "value": {
+                          "host": "Sangfor NGAF by SNMP",
+                          "name": "Sangfor NGAF: CPU utilization"
+                        }
+                      },
+                      {
+                        "type": "STRING",
+                        "name": "reference",
+                        "value": "AAAAA"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "graph",
+                    "name": "Memory",
+                    "x": "36",
+                    "y": "0",
+                    "width": "36",
+                    "height": "6",
+                    "fields": [
+                      {
+                        "type": "GRAPH",
+                        "name": "graphid.0",
+                        "value": {
+                          "host": "Sangfor NGAF by SNMP",
+                          "name": "Sangfor NGAF: Memory"
+                        }
+                      },
+                      {
+                        "type": "STRING",
+                        "name": "reference",
+                        "value": "AAAAA"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "graphs": [
+      {
+        "uuid": "7738f9bbb70f4dd38e5829f503896289",
+        "name": "Sangfor NGAF: CPU utilization",
+        "graph_items": [
+          {
+            "color": "00C800",
+            "sortorder": "0",
+            "item": {
+              "host": "Sangfor NGAF by SNMP",
+              "key": "sangfor.cpu.util.30s"
+            },
+            "drawtype": "GRADIENT_LINE"
+          },
+          {
+            "color": "FF3333",
+            "sortorder": "1",
+            "item": {
+              "host": "Sangfor NGAF by SNMP",
+              "key": "sangfor.cpu.util.1m"
+            },
+            "drawtype": "BOLD_LINE"
+          },
+          {
+            "color": "0000FF",
+            "sortorder": "2",
+            "item": {
+              "host": "Sangfor NGAF by SNMP",
+              "key": "sangfor.cpu.util.5m"
+            }
+          }
+        ]
+      },
+      {
+        "uuid": "dfa65714beeb4821aba30db588c1d1a5",
+        "name": "Sangfor NGAF: Memory",
+        "graph_items": [
+          {
+            "color": "00AA00",
+            "sortorder": "0",
+            "item": {
+              "host": "Sangfor NGAF by SNMP",
+              "key": "sangfor.mem.total"
+            }
+          },
+          {
+            "color": "AAAAAA",
+            "sortorder": "1",
+            "item": {
+              "host": "Sangfor NGAF by SNMP",
+              "key": "sangfor.mem.free"
+            },
+            "drawtype": "DASHED_LINE"
+          },
+          {
+            "color": "FF00FF",
+            "sortorder": "2",
+            "item": {
+              "host": "Sangfor NGAF by SNMP",
+              "key": "sangfor.mem.util"
+            },
+            "drawtype": "BOLD_LINE",
+            "yaxisside": "RIGHT"
+          }
+        ]
+      },
+      {
+        "uuid": "22a04f89220a432996b3d7ae50303854",
+        "name": "Sangfor NGAF: Sessions",
+        "graph_items": [
+          {
+            "color": "3333FF",
+            "sortorder": "0",
+            "item": {
+              "host": "Sangfor NGAF by SNMP",
+              "key": "sangfor.sessions.current"
+            },
+            "drawtype": "GRADIENT_LINE"
+          },
+          {
+            "color": "FF6600",
+            "sortorder": "1",
+            "item": {
+              "host": "Sangfor NGAF by SNMP",
+              "key": "sangfor.sessions.new.persec"
+            }
+          }
+        ]
+      },
+      {
+        "uuid": "fe64b027102f470da287813bdcc3626e",
+        "name": "Sangfor NGAF: Throughput",
+        "graph_items": [
+          {
+            "color": "00C800",
+            "sortorder": "0",
+            "item": {
+              "host": "Sangfor NGAF by SNMP",
+              "key": "sangfor.throughput.in"
+            },
+            "drawtype": "GRADIENT_LINE"
+          },
+          {
+            "color": "FF3333",
+            "sortorder": "1",
+            "item": {
+              "host": "Sangfor NGAF by SNMP",
+              "key": "sangfor.throughput.out"
+            },
+            "drawtype": "BOLD_LINE"
           }
         ]
       }
