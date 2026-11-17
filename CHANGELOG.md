@@ -53,8 +53,12 @@ External code-review follow-up. Behaviour fixes first:
   check_template.py + py_compile, keeps the generator/JSON drift guard.
 
 ### Notes
-- Trap item keys changed -> re-import purges the old trap items/triggers
-  via `deleteMissing`; their (short-lived) history goes with them.
+- Trap item keys changed, but item/trigger UUIDs are seeded from the short
+  trap names (unchanged), so a normal `updateExisting` re-import updates
+  keys/expressions IN PLACE and history is preserved - no `deleteMissing`
+  purge needed. (Verified: all 16 v0.3 trap trigger UUIDs identical in
+  v0.4.) Note: TEXT->LOG value_type change leaves pre-upgrade values in
+  the old history table; new values land in history_log.
 - The known 8.0.0 nested-dashboard import gap and the two-pass first
   import remain upstream issues; install_dashboard.py still required.
 

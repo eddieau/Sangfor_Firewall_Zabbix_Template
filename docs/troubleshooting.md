@@ -12,6 +12,38 @@ Fix: verify `Data collection → Hosts → <host> → Templates` lists
 `{$SANGFOR.*}`. If items are orphaned (no owning template), delete the host
 and recreate it with the template linked from the start.
 
+## Named trap items stay empty although traps arrive
+
+The anchored keys assume the **official `zabbix/zabbix-snmptraps` bash
+handler output format**: a line exactly like
+`SNMPv2-MIB::snmpTrapOID.0 = SANGFOR-MIB::sfCPUWarnTrap`. If you use a
+Perl receiver (`snmpTrapOID.0 type=6 value=OID: ...`) or SNMPTT with a
+different format, the anchored regexes miss and everything lands in
+`snmptrap.fallback`. Either standardise on the bash handler (recommended,
+what this template is tested with) or rewrite the key regexes to match
+your receiver's format. The regexes also hard-code the MIB **module
+names** `SANGFOR-MIB` (110.x family, from SANGFOR-MIB-COMPATIBLE.txt) and
+`SANGFOR-AF-MIB` (200.200.x family) - verified against the vendor files;
+if your MIB copies declare different module names, adjust accordingly.
+
+## Real device traps arrive but never reach the host (source-IP NAT)
+
+Docker's userland-proxy SNATs published UDP ports: a trap from
+192.0.2.1 to host:162 can appear inside the container as coming from the
+bridge gateway (e.g. 172.18.0.1), so Zabbix matches no host interface and
+drops the trap (it does NOT go to fallback - fallback only applies once a
+host matched). Diagnose with a privileged capture on the host
+(`tcpdump -ni any udp port 162`) vs the ZBXTRAP line in snmptraps.log.
+Fixes, in order of preference:
+
+1. Run `zabbix-snmptraps` with `network_mode: host` (no NAT, real source
+   preserved). The image listens on **1162/udp** (fixed; a non-root
+   container cannot bind 162 in host mode), so point the device's trap
+   destination at port **1162**. Verified working.
+2. Disable docker's userland-proxy daemon-wide
+   (`/etc/docker/daemon.json: {"userland-proxy": false}` + docker
+   restart) - keeps port 162 but restarts every container on the host.
+
 ## Traps land in `snmptrap.fallback` instead of the named items
 
 1. **MIB not loaded.** The trap text must contain `SANGFOR-MIB::sf...` or

@@ -250,13 +250,23 @@ trigger dependency can abort the import with
 import a second time; the referenced triggers now exist and it resolves.
 (Verified on 8.0.0.)
 
-## Verified against live hardware (2026-11-16, AF8.0.108.657 nsf-1050a-i)
+## Verified against live hardware (AF8.0.108.657 nsf-1050a-i)
 
-All enabled items (60 template + ~163 discovered) poll clean **through
-Zabbix proxy 8.0** — ICMP Simple checks and `zabbix[host,snmp,available]`
-both work proxy-side; 0 unsupported. Real Sangfor traps from the device
-arrive, resolve to MIB names and route into the named trap items end-to-end
-through the proxy chain. Findings:
+**v0.4.0 trap-path re-verification (2026-11-17):** anchored routing tested
+end-to-end with synthetic traps carrying `snmpTrapAddress.0 = <device IP>`:
+`35047.110.1` (SANGFOR-MIB family) and `35047.200.200.6` (SANGFOR-AF-MIB
+family) each landed in their NAMED items (not fallback) and raised
+problems; `110.24` link-down raised the pair problem and `110.23` link-up
+RECOVERED it. Both MIB module names confirmed against the vendor files
+(`SANGFOR-MIB`, `SANGFOR-AF-MIB`). v0.4.0 adds coldStart + anchored trap
+keys (61 template items); in-place upgrade preserved trap history
+(UUIDs unchanged).
+
+**v0.2-era baseline (2026-11-16):** all enabled items (then 60 template +
+~163 discovered) polled clean through Zabbix proxy 8.0 — ICMP Simple checks
+and `zabbix[host,snmp,available]` both work proxy-side; 0 unsupported.
+Real Sangfor traps from the device arrived, resolved to MIB names and
+routed into the named trap items end-to-end. Findings:
 
 - `sfIfInRate`/`sfIfOutRate` **are instantaneous byte/s gauges** despite being
   typed Counter64 — two samples 12 s apart went *down* (302 → 274). Template

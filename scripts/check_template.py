@@ -86,9 +86,11 @@ def main():
     found, collisions = {}, []
     collect_uuids(d, found, collisions)
     check(not collisions, "duplicate uuids: %s" % (collisions[:3],))
-    v4 = re.compile(r"^[0-9a-f]{12}4[0-9a-f]{19}$")
+    # UUIDv4 layout: version nibble "4" at hex pos 12, variant 8/9/a/b at pos 16
+    v4 = re.compile(r"^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$")
     bad = [u for u in found if not v4.match(u)]
-    check(not bad, "non-UUIDv4 objects: %s" % (bad[:3],))
+    check(not bad, "non-UUIDv4 objects (version/variant nibble): %s"
+          % (bad[:3],))
 
     # ---- macros: every {$X} used must be defined in the template
     defined = {m["macro"] for m in t.get("macros", [])}
@@ -128,6 +130,16 @@ def main():
           "duplicate trigger names (bare-name dependency resolution is "
           "ambiguous): %s" % [n for n in names if names.count(n) > 1][:3])
 
+    # every dependency name must exist among trigger names (import resolves
+    # deps by bare name; a typo passes expression checks but fails import)
+    nameset = set(names)
+    for i in t["items"]:
+        for tr in i.get("triggers", []):
+            for dep in tr.get("dependencies", []):
+                check(dep["name"] in nameset,
+                      "trigger %r depends on unknown trigger name %r"
+                      % (tr["name"], dep["name"]))
+
     # ---- trap routing anchored: named trap keys must anchor on the
     #      snmpTrapOID varbind line (prevents payload false matches and
     #      double-routing, since a trap is copied to EVERY matching item)
@@ -150,6 +162,9 @@ def main():
     for dr in t["discovery_rules"]:
         for g in dr.get("graph_prototypes", []):
             for gi in g["graph_items"]:
+                check(gi["item"]["host"] == TPL,
+                      "graph prototype %s: foreign host %s"
+                      % (g["name"], gi["item"]["host"]))
                 check(gi["item"]["key"] in proto_keys,
                       "graph prototype %s references unknown prototype key %r"
                       % (g["name"], gi["item"]["key"]))
