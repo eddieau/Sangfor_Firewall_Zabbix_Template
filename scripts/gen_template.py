@@ -38,6 +38,8 @@ def snmp_item(name, key, oid, vtype="FLOAT", units="", desc="", pre=None,
     it = {"uuid": U("item-" + key), "name": name, "type": "SNMP_AGENT", "snmp_oid": oid,
           "key": key, "delay": delay or "{$SANGFOR.UPDATE.FREQ}",
           "history": history, "value_type": vtype, "description": desc}
+    if vtype in ("FLOAT", "UNSIGNED"):
+        it["trends"] = "90d" if any(s in key for s in (".bps", ".pps", ".drop")) else "365d"
     if units:
         it["units"] = units
     if pre:
@@ -54,6 +56,13 @@ def snmp_item(name, key, oid, vtype="FLOAT", units="", desc="", pre=None,
 def TR(prio, expr, name):
     return {"uuid": U("trig-" + name), "expression": expr, "name": name,
             "priority": prio}
+
+def TRH(prio, expr, name, rec):
+    # threshold trigger with hysteresis: recover only below a lower band so
+    # values hovering at the threshold do not flap problem/recovery.
+    return {"uuid": U("trig-" + name), "expression": expr, "name": name,
+            "priority": prio, "recovery_mode": "RECOVERY_EXPRESSION",
+            "recovery_expression": rec}
 
 # preprocessing helpers
 def P(t, *params):
@@ -108,9 +117,10 @@ snmp_item("Sangfor: CPU utilization (30s)", "sangfor.cpu.util.30s",
 snmp_item("Sangfor: CPU utilization (1 min)", "sangfor.cpu.util.1m",
           "get[" + GEN + ".19.5.0]", units="%",
           desc="sfCpuAllCostRateLast1Min.", tags=[("component", "cpu")],
-          trig=TR("AVERAGE",
+          trig=TRH("AVERAGE",
                   "last(/%s/sangfor.cpu.util.1m)>{$SANGFOR.CPU.MAX}" % TPL,
-                  "Sangfor: High CPU utilization over {$SANGFOR.CPU.MAX}% on {HOST.NAME}"))
+                  "Sangfor: High CPU utilization over {$SANGFOR.CPU.MAX}% on {HOST.NAME}",
+                  "last(/%s/sangfor.cpu.util.1m)<{$SANGFOR.CPU.MAX}*0.9" % TPL))
 snmp_item("Sangfor: CPU utilization (5 min)", "sangfor.cpu.util.5m",
           "get[" + GEN + ".19.6.0]", units="%",
           desc="sfCpuAllCostRateLast5Min.", tags=[("component", "cpu")])
@@ -131,9 +141,10 @@ snmp_item("Sangfor: Memory usage", "sangfor.mem.util",
           desc="sfSysMemoryUsage - device-reported usage % (string, matches "
                "vendor UI; free/total ints would over-count cache/buffer).",
           tags=[("component", "memory")],
-          trig=TR("AVERAGE",
+          trig=TRH("AVERAGE",
                   "last(/%s/sangfor.mem.util)>{$SANGFOR.MEM.MAX}" % TPL,
-                  "Sangfor: High memory usage over {$SANGFOR.MEM.MAX}% on {HOST.NAME}"))
+                  "Sangfor: High memory usage over {$SANGFOR.MEM.MAX}% on {HOST.NAME}",
+                  "last(/%s/sangfor.mem.util)<{$SANGFOR.MEM.MAX}*0.9" % TPL))
 snmp_item("Sangfor: Swap total", "sangfor.swap.total",
           "get[" + GEN + ".38.1.0]",
           desc="sfMemTotalSwap. Units as reported by device.")
@@ -216,6 +227,8 @@ def proto(name, key, oid, units="", pre=None, vtype="FLOAT", desc="",
           "snmp_oid": "get[" + oid + "]", "key": key,
           "delay": "{$SANGFOR.UPDATE.FREQ}",
           "history": "7d", "value_type": vtype, "description": desc}
+    if vtype in ("FLOAT", "UNSIGNED"):
+        it["trends"] = "90d" if any(s in key for s in (".bps", ".pps", ".drop")) else "365d"
     if units:
         it["units"] = units
     if pre:
@@ -232,6 +245,10 @@ def lld(name, key, disc_oid, protos, desc="", filter=None):
     dr = {"uuid": U("lld-" + key), "name": name, "type": "SNMP_AGENT",
           "snmp_oid": disc_oid, "key": key,
           "delay": "{$SANGFOR.DISCOVERY.FREQ}",
+          # lost resources: disable immediately, delete after 30d (keeps
+          # history of vanished interfaces longer than the 7d default)
+          "lifetime": "30d",
+          "enabled_lifetime": "0",
           "description": desc,
           "filter": {"evaltype": "AND"} if not filter else
                     {"evaltype": "AND", "conditions": filter}}
@@ -319,15 +336,17 @@ lld("Disk discovery", "sangfor.disk.discovery",
            DK + ".6.{#SNMPINDEX}", "%", pre=JSNUM,
            desc="sfDiskUsedPercent - device-reported usage (string).",
            tags=[("component", "disk")],
-           trig=TR("WARNING",
+           trig=TRH("WARNING",
                    "last(/%s/sangfor.disk.pused[{#SNMPINDEX}])>{$SANGFOR.DISK.MAX}" % TPL,
-                   "Disk {#SNMPVALUE}: space usage over {$SANGFOR.DISK.MAX}% on {HOST.NAME}")),
+                   "Disk {#SNMPVALUE}: space usage over {$SANGFOR.DISK.MAX}% on {HOST.NAME}",
+                   "last(/%s/sangfor.disk.pused[{#SNMPINDEX}])<{$SANGFOR.DISK.MAX}*0.9" % TPL)),
      proto("Disk {#SNMPVALUE}: Temperature", "sangfor.disk.temp[{#SNMPINDEX}]",
            DK + ".10.{#SNMPINDEX}", "\u00b0C",
            desc="sfDiskTemp.", tags=[("component", "disk")],
-           trig=TR("WARNING",
+           trig=TRH("WARNING",
                    "last(/%s/sangfor.disk.temp[{#SNMPINDEX}])>{$SANGFOR.DISK_TEMP.MAX}" % TPL,
-                   "Disk {#SNMPVALUE}: high temperature ({ITEM.LASTVALUE1}) on {HOST.NAME}")),
+                   "Disk {#SNMPVALUE}: high temperature ({ITEM.LASTVALUE1}) on {HOST.NAME}",
+                   "last(/%s/sangfor.disk.temp[{#SNMPINDEX}])<{$SANGFOR.DISK_TEMP.MAX}-5" % TPL)),
     ],
     desc="Filesystems from SANGFOR-MIB::sfDiskTable (sfFilesystemName column).",
     filter=[{"macro": "{#SNMPVALUE}", "value": "/dev/loop",
@@ -345,9 +364,10 @@ lld("CPU core discovery", "sangfor.cpu.discovery",
      proto("CPU core {#SNMPVALUE}: CPU utilization", "sangfor.cpu.util[{#SNMPINDEX}]",
            CC + ".4.{#SNMPINDEX}", "%", desc="sfCpuAll per core.",
            tags=[("component", "cpu")],
-           trig=TR("WARNING",
+           trig=TRH("WARNING",
                    "last(/%s/sangfor.cpu.util[{#SNMPINDEX}])>{$SANGFOR.CPU_CORE.MAX}" % TPL,
-                   "CPU core {#SNMPVALUE}: utilization over {$SANGFOR.CPU_CORE.MAX}% on {HOST.NAME}")),
+                   "CPU core {#SNMPVALUE}: utilization over {$SANGFOR.CPU_CORE.MAX}% on {HOST.NAME}",
+                   "last(/%s/sangfor.cpu.util[{#SNMPINDEX}])<{$SANGFOR.CPU_CORE.MAX}*0.9" % TPL)),
     ],
     desc="Per-core load from SANGFOR-MIB::sfCpuCostRateTable.")
 
@@ -534,6 +554,8 @@ def plain_item(name, key, itype, vtype="FLOAT", units="", desc="", delay=None,
     it = {"uuid": U("item-" + key), "name": name, "type": itype, "key": key,
           "delay": delay or "{$SANGFOR.UPDATE.FREQ}", "history": "7d",
           "value_type": vtype, "description": desc}
+    if vtype in ("FLOAT", "UNSIGNED"):
+        it["trends"] = "365d"
     if oid:
         it["snmp_oid"] = "get[" + oid + "]"
     if units:
@@ -856,6 +878,10 @@ tpl = {"uuid": U("template"), "template": TPL, "name": TPL,
        "groups": [{"name": TGROUP}],
        "items": items,
        "discovery_rules": drs,
+       "tags": [{"tag": "class", "value": "network"},
+                {"tag": "target", "value": "sangfor"},
+                {"tag": "component", "value": "firewall"},
+                {"tag": "vendor", "value": "Sangfor"}],
        "macros": macros,
        "valuemaps": valuemaps,
        "dashboards": dashboards}

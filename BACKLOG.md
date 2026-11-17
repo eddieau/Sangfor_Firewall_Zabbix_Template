@@ -4,23 +4,24 @@ Accepted improvements and roadmap ideas from external reviews (2026-11-17),
 triaged against the actual v0.5.0 template. Items here are NOT yet
 implemented; anything shipped moves to CHANGELOG.md.
 
-## P0 — polish (small, safe, next minor release)
+## P0 — polish — DONE in v0.5.1 (2026-11-17)
 
-- [ ] **Template-level tags** (`class: network`, `target: sangfor`,
+- [x] **Template-level tags** (`class: network`, `target: sangfor`,
   `component: firewall`, `vendor: Sangfor`). Item-level `component:*` tags
   already exist (54/61 items); template-level tags are the official-guideline
   gap. Generator: add `tags` to the template object.
-- [ ] **Explicit `trends`** on numeric items (currently 0/61 set; Zabbix
+- [x] **Explicit `trends`** on numeric items (currently 0/61 set; Zabbix
   defaults apply). Suggested: `365d` for gauges/utilization, `90d` for
   high-cardinality rates (per-interface bps/pps). Generator default + override.
-- [ ] **Hysteresis on threshold triggers** (CPU/memory/disk): add recovery
+- [x] **Hysteresis on threshold triggers** (CPU/memory/disk): add recovery
   expressions below the warn threshold (e.g. CPU warn >90, recover <80) to
   stop flapping. Applies to scalar + prototype thresholds.
-- [ ] **Explicit LLD `lifetime` / `enabled_lifetime`**: currently unset
+- [x] **Explicit LLD `lifetime` / `enabled_lifetime`**: currently unset
   (8.0 defaults apply — lost resources are cleaned after the default
   lifetime, so "orphans linger forever" is not true, but explicit values
-  document intent). VERIFY 8.0 `enabled_lifetime` semantics (0 vs duration)
-  before choosing values; do not copy review snippets blindly.
+  document intent). VERIFIED 8.0 semantics: lifetime default 7d (delete),
+  enabled_lifetime default 0 + enabled_lifetime_type 2 (disable
+  immediately); shipped lifetime 30d / enabled_lifetime 0.
 
 ## P1 — considered (needs design/verification first)
 

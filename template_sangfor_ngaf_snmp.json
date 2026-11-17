@@ -85,6 +85,7 @@
             "history": "7d",
             "value_type": "FLOAT",
             "description": "sfDeviceStatus: 0 - Warning, 1 - Normal.",
+            "trends": "365d",
             "tags": [
               {
                 "tag": "component",
@@ -113,6 +114,7 @@
             "history": "7d",
             "value_type": "FLOAT",
             "description": "sfCpuAllCostRateLast30Sec.",
+            "trends": "365d",
             "units": "%",
             "tags": [
               {
@@ -131,6 +133,7 @@
             "history": "7d",
             "value_type": "FLOAT",
             "description": "sfCpuAllCostRateLast1Min.",
+            "trends": "365d",
             "units": "%",
             "tags": [
               {
@@ -143,7 +146,9 @@
                 "uuid": "fc0c541db83b49beb9e4851f6ba867e9",
                 "expression": "last(/Sangfor NGAF by SNMP/sangfor.cpu.util.1m)>{$SANGFOR.CPU.MAX}",
                 "name": "Sangfor: High CPU utilization over {$SANGFOR.CPU.MAX}% on {HOST.NAME}",
-                "priority": "AVERAGE"
+                "priority": "AVERAGE",
+                "recovery_mode": "RECOVERY_EXPRESSION",
+                "recovery_expression": "last(/Sangfor NGAF by SNMP/sangfor.cpu.util.1m)<{$SANGFOR.CPU.MAX}*0.9"
               }
             ]
           },
@@ -157,6 +162,7 @@
             "history": "7d",
             "value_type": "FLOAT",
             "description": "sfCpuAllCostRateLast5Min.",
+            "trends": "365d",
             "units": "%",
             "tags": [
               {
@@ -175,6 +181,7 @@
             "history": "7d",
             "value_type": "FLOAT",
             "description": "sfCpuNum.",
+            "trends": "365d",
             "tags": [
               {
                 "tag": "component",
@@ -192,6 +199,7 @@
             "history": "7d",
             "value_type": "FLOAT",
             "description": "sfIntSysTotalMemory (kB, converted to bytes).",
+            "trends": "365d",
             "units": "B",
             "preprocessing": [
               {
@@ -218,6 +226,7 @@
             "history": "7d",
             "value_type": "FLOAT",
             "description": "sfIntSysFreeMemory (kB, converted to bytes).",
+            "trends": "365d",
             "units": "B",
             "preprocessing": [
               {
@@ -244,6 +253,7 @@
             "history": "7d",
             "value_type": "FLOAT",
             "description": "sfSysMemoryUsage - device-reported usage % (string, matches vendor UI; free/total ints would over-count cache/buffer).",
+            "trends": "365d",
             "units": "%",
             "preprocessing": [
               {
@@ -264,7 +274,9 @@
                 "uuid": "0334fb5ec76d4ce0b6d75a092bc94b3f",
                 "expression": "last(/Sangfor NGAF by SNMP/sangfor.mem.util)>{$SANGFOR.MEM.MAX}",
                 "name": "Sangfor: High memory usage over {$SANGFOR.MEM.MAX}% on {HOST.NAME}",
-                "priority": "AVERAGE"
+                "priority": "AVERAGE",
+                "recovery_mode": "RECOVERY_EXPRESSION",
+                "recovery_expression": "last(/Sangfor NGAF by SNMP/sangfor.mem.util)<{$SANGFOR.MEM.MAX}*0.9"
               }
             ]
           },
@@ -277,7 +289,8 @@
             "delay": "{$SANGFOR.UPDATE.FREQ}",
             "history": "7d",
             "value_type": "FLOAT",
-            "description": "sfMemTotalSwap. Units as reported by device."
+            "description": "sfMemTotalSwap. Units as reported by device.",
+            "trends": "365d"
           },
           {
             "uuid": "cbf049302c9c495a9f8c71dd28f967b2",
@@ -288,7 +301,8 @@
             "delay": "{$SANGFOR.UPDATE.FREQ}",
             "history": "7d",
             "value_type": "FLOAT",
-            "description": "sfMemAvailSwap. Units as reported by device."
+            "description": "sfMemAvailSwap. Units as reported by device.",
+            "trends": "365d"
           },
           {
             "uuid": "447ef21aeeb9475895279baa4aec91de",
@@ -300,6 +314,7 @@
             "history": "7d",
             "value_type": "FLOAT",
             "description": "sfCurSession.",
+            "trends": "365d",
             "tags": [
               {
                 "tag": "component",
@@ -317,6 +332,7 @@
             "history": "7d",
             "value_type": "FLOAT",
             "description": "sfNewSessions.",
+            "trends": "365d",
             "tags": [
               {
                 "tag": "component",
@@ -334,6 +350,7 @@
             "history": "7d",
             "value_type": "FLOAT",
             "description": "sfTotalSessions.",
+            "trends": "365d",
             "tags": [
               {
                 "tag": "component",
@@ -351,6 +368,7 @@
             "history": "7d",
             "value_type": "FLOAT",
             "description": "sfNewSessionPerSec.",
+            "trends": "365d",
             "tags": [
               {
                 "tag": "component",
@@ -368,6 +386,7 @@
             "history": "7d",
             "value_type": "FLOAT",
             "description": "sfUsers.",
+            "trends": "365d",
             "tags": [
               {
                 "tag": "component",
@@ -385,6 +404,7 @@
             "history": "7d",
             "value_type": "FLOAT",
             "description": "sfSysInThroughput - instantaneous kbps (confirmed by operator 2026-11-16); multiplied by 1000 for bps display.",
+            "trends": "365d",
             "units": "bps",
             "preprocessing": [
               {
@@ -411,6 +431,7 @@
             "history": "7d",
             "value_type": "FLOAT",
             "description": "sfSysOutThroughput - instantaneous kbps (confirmed by operator 2026-11-16); multiplied by 1000 for bps display.",
+            "trends": "365d",
             "units": "bps",
             "preprocessing": [
               {
@@ -437,6 +458,7 @@
             "history": "31d",
             "value_type": "FLOAT",
             "description": "sfHAEnable: 0 - disabled, 1 - enabled.",
+            "trends": "365d",
             "tags": [
               {
                 "tag": "component",
@@ -457,6 +479,7 @@
             "history": "31d",
             "value_type": "FLOAT",
             "description": "sfHAMode: 0 - invalid, 1 - master-master, 2 - master-slave, 3 - mirror.",
+            "trends": "365d",
             "tags": [
               {
                 "tag": "component",
@@ -477,6 +500,7 @@
             "history": "7d",
             "value_type": "FLOAT",
             "description": "sfHACurStatus: 0 - invalid, 1 - init, 4 - master, 5 - slave.",
+            "trends": "365d",
             "tags": [
               {
                 "tag": "component",
@@ -497,6 +521,7 @@
             "history": "7d",
             "value_type": "FLOAT",
             "description": "sfHACtrlLinkStatus: 0 - invalid, 1 - normal, 2 - abnormal.",
+            "trends": "365d",
             "tags": [
               {
                 "tag": "component",
@@ -522,6 +547,7 @@
             "history": "7d",
             "value_type": "FLOAT",
             "description": "sfHADataLinkStatus: 0 - invalid, 1 - normal, 2 - abnormal.",
+            "trends": "365d",
             "tags": [
               {
                 "tag": "component",
@@ -547,6 +573,7 @@
             "history": "7d",
             "value_type": "FLOAT",
             "description": "sfHASyncState: 0 - invalid, 1 - sync running, 2 - sync end, 3 - unknown.",
+            "trends": "365d",
             "tags": [
               {
                 "tag": "component",
@@ -1042,6 +1069,7 @@
             "history": "7d",
             "value_type": "UNSIGNED",
             "description": "ICMP availability check (Simple check; ported from the generic SNMP template). See the paired trigger for the up/down logic.",
+            "trends": "365d",
             "tags": [
               {
                 "tag": "component",
@@ -1066,6 +1094,7 @@
             "history": "7d",
             "value_type": "FLOAT",
             "description": "Packet loss (%) per ICMP check (fping defaults; tune via the FpingLocation system setup, not per-item macros). Ported from generic SNMP template.",
+            "trends": "365d",
             "units": "%",
             "tags": [
               {
@@ -1097,6 +1126,7 @@
             "history": "7d",
             "value_type": "FLOAT",
             "description": "Average ICMP response time in seconds (ported).",
+            "trends": "365d",
             "units": "s",
             "tags": [
               {
@@ -1132,6 +1162,7 @@
             "history": "7d",
             "value_type": "UNSIGNED",
             "description": "Status of SNMP agent availability. 1 - available, 0 - not available (ported from generic SNMP template).",
+            "trends": "365d",
             "tags": [
               {
                 "tag": "component",
@@ -1258,6 +1289,7 @@
             "history": "7d",
             "value_type": "FLOAT",
             "description": "Time since the network management portion of the system was last re-initialized (RFC1213-MIB::sysUpTime, timeticks -> s). Ported.",
+            "trends": "365d",
             "snmp_oid": "get[1.3.6.1.2.1.1.3.0]",
             "units": "uptime",
             "preprocessing": [
@@ -1301,6 +1333,7 @@
             "history": "7d",
             "value_type": "FLOAT",
             "description": "Time since the whole system was last re-initialized (HOST-RESOURCES-MIB::hrSystemUptime, timeticks -> s). Ported.",
+            "trends": "365d",
             "snmp_oid": "get[1.3.6.1.2.1.25.1.1.0]",
             "units": "uptime",
             "preprocessing": [
@@ -1343,6 +1376,8 @@
             "snmp_oid": "discovery[{#SNMPVALUE},1.3.6.1.4.1.35047.1.34.1.2]",
             "key": "sangfor.if.discovery",
             "delay": "{$SANGFOR.DISCOVERY.FREQ}",
+            "lifetime": "30d",
+            "enabled_lifetime": "0",
             "description": "Interfaces from SANGFOR-MIB::sfIfTable (sfIfName column).",
             "filter": {
               "evaltype": "AND"
@@ -1358,6 +1393,7 @@
                 "history": "7d",
                 "value_type": "FLOAT",
                 "description": "sfIfInRate - instantaneous byte/s (verified on AF8.0.108), x8 to bit/s.",
+                "trends": "90d",
                 "units": "bps",
                 "preprocessing": [
                   {
@@ -1384,6 +1420,7 @@
                 "history": "7d",
                 "value_type": "FLOAT",
                 "description": "sfIfOutRate - instantaneous byte/s (verified on AF8.0.108), x8 to bit/s.",
+                "trends": "90d",
                 "units": "bps",
                 "preprocessing": [
                   {
@@ -1410,6 +1447,7 @@
                 "history": "7d",
                 "value_type": "FLOAT",
                 "description": "sfIfInPkts (cumulative counter -> packets/s).",
+                "trends": "90d",
                 "units": "pps",
                 "preprocessing": [
                   {
@@ -1433,6 +1471,7 @@
                 "history": "7d",
                 "value_type": "FLOAT",
                 "description": "sfIfOutPkts (cumulative counter -> packets/s).",
+                "trends": "90d",
                 "units": "pps",
                 "preprocessing": [
                   {
@@ -1456,6 +1495,7 @@
                 "history": "7d",
                 "value_type": "FLOAT",
                 "description": "sfIfInDrop (cumulative counter -> drops/s).",
+                "trends": "90d",
                 "units": "pps",
                 "preprocessing": [
                   {
@@ -1479,6 +1519,7 @@
                 "history": "7d",
                 "value_type": "FLOAT",
                 "description": "sfIfOutDrop (cumulative counter -> drops/s).",
+                "trends": "90d",
                 "units": "pps",
                 "preprocessing": [
                   {
@@ -1519,6 +1560,7 @@
                 "history": "7d",
                 "value_type": "FLOAT",
                 "description": "IF-MIB::ifOperStatus - authoritative per-interface link state (verified exposed on AF8.0.108; indexes match sfIfTable).",
+                "trends": "365d",
                 "tags": [
                   {
                     "tag": "component",
@@ -1539,6 +1581,7 @@
                 "history": "7d",
                 "value_type": "FLOAT",
                 "description": "IF-MIB::ifAdminStatus - used to suppress link-down alerts on administratively disabled ports.",
+                "trends": "365d",
                 "tags": [
                   {
                     "tag": "component",
@@ -1626,6 +1669,8 @@
             "snmp_oid": "discovery[{#SNMPVALUE},1.3.6.1.4.1.35047.1.5.1.2]",
             "key": "sangfor.disk.discovery",
             "delay": "{$SANGFOR.DISCOVERY.FREQ}",
+            "lifetime": "30d",
+            "enabled_lifetime": "0",
             "description": "Filesystems from SANGFOR-MIB::sfDiskTable (sfFilesystemName column).",
             "filter": {
               "evaltype": "AND",
@@ -1648,6 +1693,7 @@
                 "history": "7d",
                 "value_type": "FLOAT",
                 "description": "sfIntDiskSize (MB -> bytes).",
+                "trends": "365d",
                 "units": "B",
                 "preprocessing": [
                   {
@@ -1674,6 +1720,7 @@
                 "history": "7d",
                 "value_type": "FLOAT",
                 "description": "sfIntDiskUsed (MB -> bytes).",
+                "trends": "365d",
                 "units": "B",
                 "preprocessing": [
                   {
@@ -1700,6 +1747,7 @@
                 "history": "7d",
                 "value_type": "FLOAT",
                 "description": "sfIntDiskAvail (MB -> bytes).",
+                "trends": "365d",
                 "units": "B",
                 "preprocessing": [
                   {
@@ -1726,6 +1774,7 @@
                 "history": "7d",
                 "value_type": "FLOAT",
                 "description": "sfDiskUsedPercent - device-reported usage (string).",
+                "trends": "365d",
                 "units": "%",
                 "preprocessing": [
                   {
@@ -1752,6 +1801,7 @@
                 "history": "7d",
                 "value_type": "FLOAT",
                 "description": "sfDiskTemp.",
+                "trends": "365d",
                 "units": "°C",
                 "tags": [
                   {
@@ -1766,13 +1816,17 @@
                 "uuid": "3d30d99c78174762af9e239f6aae3020",
                 "expression": "last(/Sangfor NGAF by SNMP/sangfor.disk.pused[{#SNMPINDEX}])>{$SANGFOR.DISK.MAX}",
                 "name": "Disk {#SNMPVALUE}: space usage over {$SANGFOR.DISK.MAX}% on {HOST.NAME}",
-                "priority": "WARNING"
+                "priority": "WARNING",
+                "recovery_mode": "RECOVERY_EXPRESSION",
+                "recovery_expression": "last(/Sangfor NGAF by SNMP/sangfor.disk.pused[{#SNMPINDEX}])<{$SANGFOR.DISK.MAX}*0.9"
               },
               {
                 "uuid": "f2d4de7751324d7cb0c26003777a2913",
                 "expression": "last(/Sangfor NGAF by SNMP/sangfor.disk.temp[{#SNMPINDEX}])>{$SANGFOR.DISK_TEMP.MAX}",
                 "name": "Disk {#SNMPVALUE}: high temperature ({ITEM.LASTVALUE1}) on {HOST.NAME}",
-                "priority": "WARNING"
+                "priority": "WARNING",
+                "recovery_mode": "RECOVERY_EXPRESSION",
+                "recovery_expression": "last(/Sangfor NGAF by SNMP/sangfor.disk.temp[{#SNMPINDEX}])<{$SANGFOR.DISK_TEMP.MAX}-5"
               }
             ]
           },
@@ -1783,6 +1837,8 @@
             "snmp_oid": "discovery[{#SNMPVALUE},1.3.6.1.4.1.35047.1.20.1.1]",
             "key": "sangfor.cpu.discovery",
             "delay": "{$SANGFOR.DISCOVERY.FREQ}",
+            "lifetime": "30d",
+            "enabled_lifetime": "0",
             "description": "Per-core load from SANGFOR-MIB::sfCpuCostRateTable.",
             "filter": {
               "evaltype": "AND"
@@ -1798,6 +1854,7 @@
                 "history": "7d",
                 "value_type": "FLOAT",
                 "description": "sfCpuUser per core.",
+                "trends": "365d",
                 "units": "%",
                 "tags": [
                   {
@@ -1816,6 +1873,7 @@
                 "history": "7d",
                 "value_type": "FLOAT",
                 "description": "sfCpuSys per core.",
+                "trends": "365d",
                 "units": "%",
                 "tags": [
                   {
@@ -1834,6 +1892,7 @@
                 "history": "7d",
                 "value_type": "FLOAT",
                 "description": "sfCpuAll per core.",
+                "trends": "365d",
                 "units": "%",
                 "tags": [
                   {
@@ -1848,7 +1907,9 @@
                 "uuid": "e2f474f56075494abec18051f33e8765",
                 "expression": "last(/Sangfor NGAF by SNMP/sangfor.cpu.util[{#SNMPINDEX}])>{$SANGFOR.CPU_CORE.MAX}",
                 "name": "CPU core {#SNMPVALUE}: utilization over {$SANGFOR.CPU_CORE.MAX}% on {HOST.NAME}",
-                "priority": "WARNING"
+                "priority": "WARNING",
+                "recovery_mode": "RECOVERY_EXPRESSION",
+                "recovery_expression": "last(/Sangfor NGAF by SNMP/sangfor.cpu.util[{#SNMPINDEX}])<{$SANGFOR.CPU_CORE.MAX}*0.9"
               }
             ]
           },
@@ -1859,6 +1920,8 @@
             "snmp_oid": "discovery[{#SNMPVALUE},1.3.6.1.4.1.35047.1.14.1.2]",
             "key": "sangfor.fan.discovery",
             "delay": "{$SANGFOR.DISCOVERY.FREQ}",
+            "lifetime": "30d",
+            "enabled_lifetime": "0",
             "description": "Fans from SANGFOR-MIB::sfSysFanTable. Some NGAF models do not expose this table (verified empty on AF8.0.108 nsf-1050a-i).",
             "filter": {
               "evaltype": "AND"
@@ -1874,6 +1937,7 @@
                 "history": "7d",
                 "value_type": "FLOAT",
                 "description": "sfFanSpeed.",
+                "trends": "365d",
                 "units": "rpm",
                 "tags": [
                   {
@@ -1892,6 +1956,7 @@
                 "history": "7d",
                 "value_type": "FLOAT",
                 "description": "sfFanState: 0 - abnormal, 1 - normal.",
+                "trends": "365d",
                 "tags": [
                   {
                     "tag": "component",
@@ -1919,6 +1984,8 @@
             "snmp_oid": "discovery[{#SNMPVALUE},1.3.6.1.4.1.35047.1.15.1.2]",
             "key": "sangfor.psu.discovery",
             "delay": "{$SANGFOR.DISCOVERY.FREQ}",
+            "lifetime": "30d",
+            "enabled_lifetime": "0",
             "description": "PSUs from SANGFOR-MIB::sfSysPowerTable. Some NGAF models do not expose this table (verified empty on AF8.0.108 nsf-1050a-i).",
             "filter": {
               "evaltype": "AND"
@@ -1934,6 +2001,7 @@
                 "history": "7d",
                 "value_type": "FLOAT",
                 "description": "sfPowerState: 0 - abnormal, 1 - normal.",
+                "trends": "365d",
                 "tags": [
                   {
                     "tag": "component",
@@ -1961,6 +2029,8 @@
             "snmp_oid": "discovery[{#SNMPVALUE},1.3.6.1.4.1.35047.1.59.1.2]",
             "key": "sangfor.temp.discovery",
             "delay": "{$SANGFOR.DISCOVERY.FREQ}",
+            "lifetime": "30d",
+            "enabled_lifetime": "0",
             "description": "Temperature sensors from SANGFOR-MIB::sfTempSensorTable. Some NGAF models do not expose this table (verified empty on AF8.0.108 nsf-1050a-i).",
             "filter": {
               "evaltype": "AND"
@@ -1976,6 +2046,7 @@
                 "history": "7d",
                 "value_type": "FLOAT",
                 "description": "sfTempSensorReading.",
+                "trends": "365d",
                 "units": "°C",
                 "tags": [
                   {
@@ -1985,6 +2056,24 @@
                 ]
               }
             ]
+          }
+        ],
+        "tags": [
+          {
+            "tag": "class",
+            "value": "network"
+          },
+          {
+            "tag": "target",
+            "value": "sangfor"
+          },
+          {
+            "tag": "component",
+            "value": "firewall"
+          },
+          {
+            "tag": "vendor",
+            "value": "Sangfor"
           }
         ],
         "macros": [

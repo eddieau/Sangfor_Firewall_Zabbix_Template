@@ -3,6 +3,31 @@
 All notable changes to this template are documented here.
 Template format target: Zabbix 8.0 (JSON import).
 
+## [0.5.1] - 2026-11-17
+
+P0 polish from the triaged external review (see BACKLOG.md):
+
+### Added
+- Template-level tags: `class: network`, `target: sangfor`,
+  `component: firewall`, `vendor: Sangfor` (official-guideline alignment;
+  item-level component tags unchanged).
+- Explicit `trends` on all numeric items/prototypes: `365d` for gauges and
+  utilization, `90d` for high-cardinality per-interface rates
+  (bps/pps/drops). Previously relied on Zabbix defaults.
+- Hysteresis on the five threshold triggers (CPU scalar + per-core, memory,
+  disk space, disk temperature): recovery expressions at 90% of the warn
+  threshold (temperature: -5°C) so values hovering at the threshold do not
+  flap. Trap/ICMP/uptime triggers unchanged.
+- Explicit LLD `lifetime: 30d` + `enabled_lifetime: 0` on all six discovery
+  rules: lost resources disable immediately (8.0 default behaviour, now
+  explicit) and are deleted after 30d instead of the 7d default, keeping
+  history of vanished interfaces longer.
+
+### Upgrade notes
+- Normal `updateExisting` re-import updates everything in place (UUIDs
+  unchanged). Already-discovered items pick up the new trends values on the
+  next LLD run (verified live: forced run flipped interface rates to 90d).
+
 ## [0.5.0] - 2026-11-17
 
 ### Changed
