@@ -614,7 +614,7 @@
                 "uuid": "c1f88b2098654c7cb6a240cf80de9eb6",
                 "expression": "find(/Sangfor NGAF by SNMP/snmptrap[sfFirewallTrapFwAttack],#1,\"regexp\",\"sfFirewallTrapFwAttack\")=1 and nodata(/Sangfor NGAF by SNMP/snmptrap[sfFirewallTrapFwAttack],{$SANGFOR.TRAP_PROBLEM_HOURS})=0",
                 "recovery_mode": "RECOVERY_EXPRESSION",
-                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfFirewallTrapFwAttack],{$SANGFOR.TRAP_PROBLEM_HOURS})=1",
+                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfFirewallTrapFwAttack],{$SANGFOR.TRAP_PROBLEM_HOURS})=1 and last(/Sangfor NGAF by SNMP/zabbix[host,snmp,available])=1",
                 "name": "Sangfor: Firewall under attack on {HOST.NAME}",
                 "priority": "HIGH"
               }
@@ -640,7 +640,7 @@
                 "uuid": "e666c97f566f41a0961bafcbbafb6491",
                 "expression": "find(/Sangfor NGAF by SNMP/snmptrap[sfFirewallTrapNetworkAttack],#1,\"regexp\",\"sfFirewallTrapNetworkAttack\")=1 and nodata(/Sangfor NGAF by SNMP/snmptrap[sfFirewallTrapNetworkAttack],{$SANGFOR.TRAP_PROBLEM_HOURS})=0",
                 "recovery_mode": "RECOVERY_EXPRESSION",
-                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfFirewallTrapNetworkAttack],{$SANGFOR.TRAP_PROBLEM_HOURS})=1",
+                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfFirewallTrapNetworkAttack],{$SANGFOR.TRAP_PROBLEM_HOURS})=1 and last(/Sangfor NGAF by SNMP/zabbix[host,snmp,available])=1",
                 "name": "Sangfor: Protected network under attack on {HOST.NAME}",
                 "priority": "HIGH"
               }
@@ -666,7 +666,7 @@
                 "uuid": "14a471e4921d4e2db1784521b617787e",
                 "expression": "find(/Sangfor NGAF by SNMP/snmptrap[sfFirewallTrapDualSwitch],#1,\"regexp\",\"sfFirewallTrapDualSwitch\")=1 and nodata(/Sangfor NGAF by SNMP/snmptrap[sfFirewallTrapDualSwitch],{$SANGFOR.TRAP_PROBLEM_HOURS})=0",
                 "recovery_mode": "RECOVERY_EXPRESSION",
-                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfFirewallTrapDualSwitch],{$SANGFOR.TRAP_PROBLEM_HOURS})=1",
+                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfFirewallTrapDualSwitch],{$SANGFOR.TRAP_PROBLEM_HOURS})=1 and last(/Sangfor NGAF by SNMP/zabbix[host,snmp,available])=1",
                 "name": "Sangfor: HA dual-active switch event on {HOST.NAME}",
                 "priority": "HIGH"
               }
@@ -692,7 +692,7 @@
                 "uuid": "bc3f853f5cc1427d8357ec6ef56ab79b",
                 "expression": "find(/Sangfor NGAF by SNMP/snmptrap[sfTemperatureWarnTrap],#1,\"regexp\",\"sfTemperatureWarnTrap\")=1 and nodata(/Sangfor NGAF by SNMP/snmptrap[sfTemperatureWarnTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=0",
                 "recovery_mode": "RECOVERY_EXPRESSION",
-                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfTemperatureWarnTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=1",
+                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfTemperatureWarnTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=1 and last(/Sangfor NGAF by SNMP/zabbix[host,snmp,available])=1",
                 "name": "Sangfor: Temperature alert on {HOST.NAME}",
                 "priority": "HIGH"
               }
@@ -718,7 +718,7 @@
                 "uuid": "d1d095ba62bf4075a95c39eb79690610",
                 "expression": "find(/Sangfor NGAF by SNMP/snmptrap[sfCPUWarnTrap],#1,\"regexp\",\"sfCPUWarnTrap\")=1 and nodata(/Sangfor NGAF by SNMP/snmptrap[sfCPUWarnTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=0",
                 "recovery_mode": "RECOVERY_EXPRESSION",
-                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfCPUWarnTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=1",
+                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfCPUWarnTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=1 and last(/Sangfor NGAF by SNMP/zabbix[host,snmp,available])=1",
                 "name": "Sangfor: CPU alert on {HOST.NAME}",
                 "priority": "WARNING"
               }
@@ -744,7 +744,7 @@
                 "uuid": "22ffa8a89148404586aadb511aafdac8",
                 "expression": "find(/Sangfor NGAF by SNMP/snmptrap[sfMemoryWarnTrap],#1,\"regexp\",\"sfMemoryWarnTrap\")=1 and nodata(/Sangfor NGAF by SNMP/snmptrap[sfMemoryWarnTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=0",
                 "recovery_mode": "RECOVERY_EXPRESSION",
-                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfMemoryWarnTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=1",
+                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfMemoryWarnTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=1 and last(/Sangfor NGAF by SNMP/zabbix[host,snmp,available])=1",
                 "name": "Sangfor: Memory alert on {HOST.NAME}",
                 "priority": "WARNING"
               }
@@ -770,7 +770,7 @@
                 "uuid": "c2835d30360f46bf91d836a78e3ac4c1",
                 "expression": "find(/Sangfor NGAF by SNMP/snmptrap[sfDiskWarnTrap],#1,\"regexp\",\"sfDiskWarnTrap\")=1 and nodata(/Sangfor NGAF by SNMP/snmptrap[sfDiskWarnTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=0",
                 "recovery_mode": "RECOVERY_EXPRESSION",
-                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfDiskWarnTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=1",
+                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfDiskWarnTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=1 and last(/Sangfor NGAF by SNMP/zabbix[host,snmp,available])=1",
                 "name": "Sangfor: Hard disk alert on {HOST.NAME}",
                 "priority": "HIGH"
               }
@@ -796,7 +796,7 @@
                 "uuid": "b2f626e4b9a1442891f67c3ccbc66760",
                 "expression": "find(/Sangfor NGAF by SNMP/snmptrap[sfPowerWarnTrap],#1,\"regexp\",\"sfPowerWarnTrap\")=1 and nodata(/Sangfor NGAF by SNMP/snmptrap[sfPowerWarnTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=0",
                 "recovery_mode": "RECOVERY_EXPRESSION",
-                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfPowerWarnTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=1",
+                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfPowerWarnTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=1 and last(/Sangfor NGAF by SNMP/zabbix[host,snmp,available])=1",
                 "name": "Sangfor: Power alert on {HOST.NAME}",
                 "priority": "HIGH"
               }
@@ -822,7 +822,7 @@
                 "uuid": "d6018aa368cb42ada50092a97f4fe5b0",
                 "expression": "find(/Sangfor NGAF by SNMP/snmptrap[sfInterfaceDownTrap],#1,\"regexp\",\"sfInterfaceDownTrap\")=1 and nodata(/Sangfor NGAF by SNMP/snmptrap[sfInterfaceDownTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=0",
                 "recovery_mode": "RECOVERY_EXPRESSION",
-                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfInterfaceDownTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=1",
+                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfInterfaceDownTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=1 and last(/Sangfor NGAF by SNMP/zabbix[host,snmp,available])=1",
                 "name": "Sangfor: Interface alert on {HOST.NAME}",
                 "priority": "HIGH"
               }
@@ -848,7 +848,7 @@
                 "uuid": "c4ab92d6ad9445d89c95b4cc7435a788",
                 "expression": "find(/Sangfor NGAF by SNMP/snmptrap[sfFanWarnTrap],#1,\"regexp\",\"sfFanWarnTrap\")=1 and nodata(/Sangfor NGAF by SNMP/snmptrap[sfFanWarnTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=0",
                 "recovery_mode": "RECOVERY_EXPRESSION",
-                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfFanWarnTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=1",
+                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfFanWarnTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=1 and last(/Sangfor NGAF by SNMP/zabbix[host,snmp,available])=1",
                 "name": "Sangfor: Fan alert on {HOST.NAME}",
                 "priority": "HIGH"
               }
@@ -874,7 +874,7 @@
                 "uuid": "5293e30f1abb4b248b4eb669ef89b49d",
                 "expression": "find(/Sangfor NGAF by SNMP/snmptrap[sfHAStatusTrap],#1,\"regexp\",\"sfHAStatusTrap\")=1 and nodata(/Sangfor NGAF by SNMP/snmptrap[sfHAStatusTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=0",
                 "recovery_mode": "RECOVERY_EXPRESSION",
-                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfHAStatusTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=1",
+                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfHAStatusTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=1 and last(/Sangfor NGAF by SNMP/zabbix[host,snmp,available])=1",
                 "name": "Sangfor: HA status alert on {HOST.NAME}",
                 "priority": "HIGH"
               }
@@ -900,7 +900,7 @@
                 "uuid": "8a9c6ac476f44b6e9b07d92554cb92cb",
                 "expression": "find(/Sangfor NGAF by SNMP/snmptrap[sfBypassChangeTrap],#1,\"regexp\",\"sfBypassChangeTrap\")=1 and nodata(/Sangfor NGAF by SNMP/snmptrap[sfBypassChangeTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=0",
                 "recovery_mode": "RECOVERY_EXPRESSION",
-                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfBypassChangeTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=1",
+                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfBypassChangeTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=1 and last(/Sangfor NGAF by SNMP/zabbix[host,snmp,available])=1",
                 "name": "Sangfor: Passthrough status alert on {HOST.NAME}",
                 "priority": "WARNING"
               }
@@ -926,7 +926,7 @@
                 "uuid": "623950e2f41542b6a31be07a1e9d5e06",
                 "expression": "find(/Sangfor NGAF by SNMP/snmptrap[sfPortResourceWarnTrap],#1,\"regexp\",\"sfPortResourceWarnTrap\")=1 and nodata(/Sangfor NGAF by SNMP/snmptrap[sfPortResourceWarnTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=0",
                 "recovery_mode": "RECOVERY_EXPRESSION",
-                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfPortResourceWarnTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=1",
+                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfPortResourceWarnTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=1 and last(/Sangfor NGAF by SNMP/zabbix[host,snmp,available])=1",
                 "name": "Sangfor: Insufficient port resources on {HOST.NAME}",
                 "priority": "WARNING"
               }
@@ -952,7 +952,7 @@
                 "uuid": "028c611f2776413f97c7efed56730f52",
                 "expression": "find(/Sangfor NGAF by SNMP/snmptrap[sfSLATrap],#1,\"regexp\",\"sfSLATrap\")=1 and nodata(/Sangfor NGAF by SNMP/snmptrap[sfSLATrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=0",
                 "recovery_mode": "RECOVERY_EXPRESSION",
-                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfSLATrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=1",
+                "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[sfSLATrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=1 and last(/Sangfor NGAF by SNMP/zabbix[host,snmp,available])=1",
                 "name": "Sangfor: SLA-based link failover on {HOST.NAME}",
                 "priority": "WARNING"
               }

@@ -55,14 +55,21 @@ SNMPv3 authPriv, monitored through a Zabbix proxy.
 - **Fail/Normal pairs share ONE item** (`snmptrap[sfFirewallTrapIf]`,
   `snmptrap[sfLink]`): the trigger is PROBLEM while the *last* trap received
   is the failure and recovers the moment the matching normal/recovery trap
-  arrives. Caveat: pairing is per trap-pair, not per interface index —
-  trigger expressions cannot compare varbinds, so a recovery trap for one
-  interface clears the problem for the pair.
+  arrives.
+  ⚠️ **Limitation — pairing is per trap-pair, NOT per interface:** trigger
+  expressions cannot compare varbinds. Example: WAN1 down → problem; WAN2
+  down → still one problem; **WAN1 up → the problem clears even though WAN2
+  is still down.** If you need per-interface link state, either poll
+  `sfIfTable` metrics (traffic drops to ~0) or build a JS-preprocessed
+  item per interface index as a customisation on top of this template.
 - **Unpaired problem traps** (attacks, dual switch, temperature/CPU/memory/
-  disk/power/interface/fan/HA/bypass/port/SLA) recover automatically after
-  `{$SANGFOR.TRAP_PROBLEM_HOURS}` (default 4 h) without a repeat — Sangfor
-  re-sends active alerts (verified: attack traps every ~10 s), so a
-  persistent problem means the condition is still firing.
+  disk/power/interface/fan/HA/bypass/port/SLA) recover after
+  `{$SANGFOR.TRAP_PROBLEM_HOURS}` (default 4 h) of trap silence — but only
+  while SNMP polling is still alive (`zabbix[host,snmp,available]=1`).
+  Sangfor re-sends active alerts (verified: attack traps every ~10 s), so
+  silence usually means the condition ended. If the collector or the
+  network dies at the same time, silence is NOT evidence of recovery and
+  the problem stays open.
 - **Pure informational events** (config changed, rulebase updated, database
   update, warm start) have **no trigger** — the trap is stored as the item
   value (event-log style); view it in Latest data or add your own trigger.
@@ -178,7 +185,7 @@ trapper runs on the proxy:
    `/var/lib/zabbix/mibs` (`SANGFOR-MIB-COMPATIBLE.txt` — it declares the
    same `SANGFOR-MIB` module and contains the `sfGeneralTrap` 110.x
    notification names — plus `SANGFOR-MIB-AF.txt` for the 200.200.x names).
-   Without them the OIDs print numerically and all 22 named trap items sit
+   Without them the OIDs print numerically and all 20 named trap items sit
    idle while everything lands in `snmptrap.fallback` (still visible, just
    unrouted).
 7. **Source-IP caveat:** traps sent from the proxy host itself (or through

@@ -3,6 +3,22 @@
 All notable changes to this template are documented here.
 Template format target: Zabbix 8.0 (JSON import).
 
+## [0.2.1] - 2026-11-17
+
+### Added
+- GitHub Actions CI (`.github/workflows/verify-template.yml`): regenerates
+  the template with `scripts/gen_template.py` and fails if the committed
+  `template_sangfor_ngaf_snmp.json` differs, plus JSON sanity checks
+  (object counts, duplicate-UUID guard). The generator and the shipped JSON
+  can no longer drift apart silently.
+
+### Changed
+- Unpaired trap triggers now recover only when the silence window has
+  elapsed **and** `zabbix[host,snmp,available]=1`: a collector/network
+  outage no longer looks like "attack ended" (review follow-up).
+- README: explicit ⚠️ example of the per-trap-pair (not per-interface)
+  pairing limitation; trap item counts corrected (20 named + fallback).
+
 ## [0.2.0] - 2026-11-16
 
 ### Added

@@ -1,0 +1,48 @@
+name: Verify template JSON matches generator
+
+# Guards the #1 maintenance rule: template_sangfor_ngaf_snmp.json must be
+# exactly what scripts/gen_template.py produces. Any PR/push where they
+# diverge fails this check.
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  consistency:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Regenerate template from generator
+        run: python3 scripts/gen_template.py
+
+      - name: Fail if committed JSON differs from generated JSON
+        run: |
+          if ! git diff --exit-code -- template_sangfor_ngaf_snmp.json; then
+            echo "::error::template_sangfor_ngaf_snmp.json is out of sync."
+            echo "Run 'python3 scripts/gen_template.py' and commit the result."
+            git diff --stat -- template_sangfor_ngaf_snmp.json
+            exit 1
+          fi
+
+      - name: Sanity checks (well-formed, expected object counts)
+        run: |
+          python3 - <<'EOF'
+          import json
+          t = json.load(open("template_sangfor_ngaf_snmp.json"))["zabbix_export"]["templates"][0]
+          assert t["template"] == "Sangfor NGAF by SNMP"
+          assert len(t["items"]) >= 50, len(t["items"])
+          assert len(t["discovery_rules"]) == 6
+          keys = [i["key"] for i in t["items"]]
+          assert "snmptrap.fallback" in keys
+          assert "icmpping" in keys
+          uu = [i["uuid"] for i in t["items"]]
+          assert len(uu) == len(set(uu)), "duplicate item uuids"
+          print("sanity OK:", len(t["items"]), "items,",
+                len(t["discovery_rules"]), "LLD rules")
+          EOF

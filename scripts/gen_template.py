@@ -481,8 +481,12 @@ for keyname, title, prio, desc in [
                        " and nodata(/%s/snmptrap[%s],{$SANGFOR.TRAP_PROBLEM_HOURS})=0"
                        % (TPL, keyname)),
         "recovery_mode": "RECOVERY_EXPRESSION",
-        "recovery_expression":
-            "nodata(/%s/snmptrap[%s],{$SANGFOR.TRAP_PROBLEM_HOURS})=1" % (TPL, keyname),
+        # Recover ONLY when traps went silent but SNMP polling still works.
+        # Silence + dead polling = collector/network outage, NOT a resolved
+        # attack - keep the problem open until data collection proves alive.
+        "recovery_expression": (
+            "nodata(/%s/snmptrap[%s],{$SANGFOR.TRAP_PROBLEM_HOURS})=1"
+            " and last(/%s/zabbix[host,snmp,available])=1" % (TPL, keyname, TPL)),
         "name": "Sangfor: " + title + " on {HOST.NAME}",
         "priority": prio,
     })
