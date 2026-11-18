@@ -60,8 +60,8 @@ Rejected (with evidence):
 
 ## From review #4 (DeepSeek share link, 2026-11-18, score 8.0/10)
 
-Accepted (pending approval, candidate v0.5.2):
-- [ ] **DISCARD_UNCHANGED_HEARTBEAT (1h) on discrete-state poll items**:
+Accepted — DONE in v0.5.2 (2026-11-18):
+- [x] **DISCARD_UNCHANGED_HEARTBEAT (1h) on discrete-state poll items**:
   device.status, ha.enabled/mode/status/ctrllink/datalink/sync, plus
   per-interface operstatus/adminstatus and fan/psu state prototypes.
   Cuts DB writes for values that rarely change; last()-based triggers
@@ -69,8 +69,12 @@ Accepted (pending approval, candidate v0.5.2):
   recovery), to uptime items (change()-based restart trigger), or to
   system.name (rename trigger compares consecutive values).
 
-Accepted as an ops note (server-side, not this template):
-- [ ] Trapper-health monitoring: if snmptrapd/the Zabbix snmp trapper
+Accepted as an ops note — DONE on the live server (2026-11-18, host
+wflx06): liveness trigger "Zabbix SNMP trapper process is not running"
+(nodata 5m, HIGH) on the official health template's existing
+zabbix[process,snmp trapper,avg,busy] item. Not part of this template
+(server-side concern). Original note:
+- [x] Trapper-health monitoring: if snmptrapd/the Zabbix snmp trapper
   dies while SNMP polling stays up, trap silence after
   {$SANGFOR.TRAP_PROBLEM_HOURS} looks like recovery. The recovery gate
   checks SNMP availability, not trapper liveness. Mitigation belongs on

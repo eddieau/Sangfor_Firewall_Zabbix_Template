@@ -86,6 +86,14 @@
             "value_type": "FLOAT",
             "description": "sfDeviceStatus: 0 - Warning, 1 - Normal.",
             "trends": "365d",
+            "preprocessing": [
+              {
+                "type": "DISCARD_UNCHANGED_HEARTBEAT",
+                "parameters": [
+                  "1h"
+                ]
+              }
+            ],
             "tags": [
               {
                 "tag": "component",
@@ -459,6 +467,14 @@
             "value_type": "FLOAT",
             "description": "sfHAEnable: 0 - disabled, 1 - enabled.",
             "trends": "365d",
+            "preprocessing": [
+              {
+                "type": "DISCARD_UNCHANGED_HEARTBEAT",
+                "parameters": [
+                  "1h"
+                ]
+              }
+            ],
             "tags": [
               {
                 "tag": "component",
@@ -480,6 +496,14 @@
             "value_type": "FLOAT",
             "description": "sfHAMode: 0 - invalid, 1 - master-master, 2 - master-slave, 3 - mirror.",
             "trends": "365d",
+            "preprocessing": [
+              {
+                "type": "DISCARD_UNCHANGED_HEARTBEAT",
+                "parameters": [
+                  "1h"
+                ]
+              }
+            ],
             "tags": [
               {
                 "tag": "component",
@@ -501,6 +525,14 @@
             "value_type": "FLOAT",
             "description": "sfHACurStatus: 0 - invalid, 1 - init, 4 - master, 5 - slave.",
             "trends": "365d",
+            "preprocessing": [
+              {
+                "type": "DISCARD_UNCHANGED_HEARTBEAT",
+                "parameters": [
+                  "1h"
+                ]
+              }
+            ],
             "tags": [
               {
                 "tag": "component",
@@ -522,6 +554,14 @@
             "value_type": "FLOAT",
             "description": "sfHACtrlLinkStatus: 0 - invalid, 1 - normal, 2 - abnormal.",
             "trends": "365d",
+            "preprocessing": [
+              {
+                "type": "DISCARD_UNCHANGED_HEARTBEAT",
+                "parameters": [
+                  "1h"
+                ]
+              }
+            ],
             "tags": [
               {
                 "tag": "component",
@@ -548,6 +588,14 @@
             "value_type": "FLOAT",
             "description": "sfHADataLinkStatus: 0 - invalid, 1 - normal, 2 - abnormal.",
             "trends": "365d",
+            "preprocessing": [
+              {
+                "type": "DISCARD_UNCHANGED_HEARTBEAT",
+                "parameters": [
+                  "1h"
+                ]
+              }
+            ],
             "tags": [
               {
                 "tag": "component",
@@ -574,6 +622,14 @@
             "value_type": "FLOAT",
             "description": "sfHASyncState: 0 - invalid, 1 - sync running, 2 - sync end, 3 - unknown.",
             "trends": "365d",
+            "preprocessing": [
+              {
+                "type": "DISCARD_UNCHANGED_HEARTBEAT",
+                "parameters": [
+                  "1h"
+                ]
+              }
+            ],
             "tags": [
               {
                 "tag": "component",
@@ -1561,6 +1617,14 @@
                 "value_type": "FLOAT",
                 "description": "IF-MIB::ifOperStatus - authoritative per-interface link state (verified exposed on AF8.0.108; indexes match sfIfTable).",
                 "trends": "365d",
+                "preprocessing": [
+                  {
+                    "type": "DISCARD_UNCHANGED_HEARTBEAT",
+                    "parameters": [
+                      "1h"
+                    ]
+                  }
+                ],
                 "tags": [
                   {
                     "tag": "component",
@@ -1582,6 +1646,14 @@
                 "value_type": "FLOAT",
                 "description": "IF-MIB::ifAdminStatus - used to suppress link-down alerts on administratively disabled ports.",
                 "trends": "365d",
+                "preprocessing": [
+                  {
+                    "type": "DISCARD_UNCHANGED_HEARTBEAT",
+                    "parameters": [
+                      "1h"
+                    ]
+                  }
+                ],
                 "tags": [
                   {
                     "tag": "component",
@@ -1957,6 +2029,14 @@
                 "value_type": "FLOAT",
                 "description": "sfFanState: 0 - abnormal, 1 - normal.",
                 "trends": "365d",
+                "preprocessing": [
+                  {
+                    "type": "DISCARD_UNCHANGED_HEARTBEAT",
+                    "parameters": [
+                      "1h"
+                    ]
+                  }
+                ],
                 "tags": [
                   {
                     "tag": "component",
@@ -2002,6 +2082,14 @@
                 "value_type": "FLOAT",
                 "description": "sfPowerState: 0 - abnormal, 1 - normal.",
                 "trends": "365d",
+                "preprocessing": [
+                  {
+                    "type": "DISCARD_UNCHANGED_HEARTBEAT",
+                    "parameters": [
+                      "1h"
+                    ]
+                  }
+                ],
                 "tags": [
                   {
                     "tag": "component",

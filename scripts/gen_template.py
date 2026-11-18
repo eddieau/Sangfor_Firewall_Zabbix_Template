@@ -78,6 +78,10 @@ M2B = [P("MULTIPLIER", "1048576")]
 # NOTE: a REGEX step with a second "output type" parameter misbehaves on
 # this Zabbix build (echoed the constant). Numeric extraction from strings is
 # done with a JAVASCRIPT step instead (verified approach).
+# Discrete-state items rarely change; discard duplicates, keep a 1h
+# heartbeat. Safe with last()-based triggers. NEVER apply to trap items
+# (breaks nodata() recovery), uptime (change()) or system.name (#1<>#2).
+DCH = P("DISCARD_UNCHANGED_HEARTBEAT", "1h")
 JSNUM = [P("JAVASCRIPT",
       "var n = value.replace(/[^0-9.]/g, '');"
       "if (n === '' || isNaN(parseFloat(n))) { throw 'non-numeric: ' + value; }"
@@ -106,7 +110,7 @@ _serial["status"] = "DISABLED"
 
 snmp_item("Sangfor: Device status", "sangfor.device.status",
           "get[" + GEN + ".12.0]",
-          desc="sfDeviceStatus: 0 - Warning, 1 - Normal.",
+          desc="sfDeviceStatus: 0 - Warning, 1 - Normal.", pre=[DCH],
           tags=[("component", "health")], valuemap="Sangfor: device status",
           trig=TR("WARNING", "last(/%s/sangfor.device.status)=0" % TPL,
                   "Sangfor: Device reports WARNING status on {HOST.NAME}"))
@@ -183,34 +187,35 @@ snmp_item("Sangfor: Outbound throughput", "sangfor.throughput.out",
 
 snmp_item("Sangfor: HA enabled", "sangfor.ha.enabled",
           "get[" + GEN + ".64.1.0]",
-          desc="sfHAEnable: 0 - disabled, 1 - enabled.",
+          desc="sfHAEnable: 0 - disabled, 1 - enabled.", pre=[DCH],
           tags=[("component", "ha")], history="31d",
           valuemap="Sangfor: HA enable")
 snmp_item("Sangfor: HA mode", "sangfor.ha.mode",
           "get[" + GEN + ".64.2.0]",
           desc="sfHAMode: 0 - invalid, 1 - master-master, 2 - master-slave, "
-               "3 - mirror.", tags=[("component", "ha")], history="31d",
+               "3 - mirror.", pre=[DCH],
+               tags=[("component", "ha")], history="31d",
                valuemap="Sangfor: HA mode")
 snmp_item("Sangfor: HA current status", "sangfor.ha.status",
           "get[" + GEN + ".64.3.0]",
           desc="sfHACurStatus: 0 - invalid, 1 - init, 4 - master, 5 - slave.",
-          tags=[("component", "ha")], valuemap="Sangfor: HA status")
+          pre=[DCH], tags=[("component", "ha")], valuemap="Sangfor: HA status")
 snmp_item("Sangfor: HA control link status", "sangfor.ha.ctrllink",
           "get[" + GEN + ".64.6.0]",
           desc="sfHACtrlLinkStatus: 0 - invalid, 1 - normal, 2 - abnormal.",
-          tags=[("component", "ha")],
+          pre=[DCH], tags=[("component", "ha")],
           trig=TR("HIGH", "last(/%s/sangfor.ha.ctrllink)=2" % TPL,
                   "Sangfor: HA control link ABNORMAL on {HOST.NAME}"))
 snmp_item("Sangfor: HA data link status", "sangfor.ha.datalink",
           "get[" + GEN + ".64.7.0]",
           desc="sfHADataLinkStatus: 0 - invalid, 1 - normal, 2 - abnormal.",
-          tags=[("component", "ha")],
+          pre=[DCH], tags=[("component", "ha")],
           trig=TR("HIGH", "last(/%s/sangfor.ha.datalink)=2" % TPL,
                   "Sangfor: HA data link ABNORMAL on {HOST.NAME}"))
 snmp_item("Sangfor: HA sync state", "sangfor.ha.sync",
           "get[" + GEN + ".64.8.0]",
           desc="sfHASyncState: 0 - invalid, 1 - sync running, 2 - sync end, "
-               "3 - unknown.", tags=[("component", "ha")],
+               "3 - unknown.", pre=[DCH], tags=[("component", "ha")],
                valuemap="Sangfor: HA sync state")
 
 # ================= LLD =================
@@ -304,13 +309,13 @@ lld("Interface discovery", "sangfor.if.discovery",
            "1.3.6.1.2.1.2.2.1.8.{#SNMPINDEX}",
            desc="IF-MIB::ifOperStatus - authoritative per-interface link "
                 "state (verified exposed on AF8.0.108; indexes match "
-                "sfIfTable).",
+                "sfIfTable).", pre=[DCH],
            tags=[("component", "network")], valuemap="Sangfor: if oper status"),
      proto("Interface {#SNMPVALUE}: Admin status",
            "sangfor.if.adminstatus[{#SNMPINDEX}]",
            "1.3.6.1.2.1.2.2.1.7.{#SNMPINDEX}",
            desc="IF-MIB::ifAdminStatus - used to suppress link-down alerts "
-                "on administratively disabled ports.",
+                "on administratively disabled ports.", pre=[DCH],
            tags=[("component", "network")], valuemap="Sangfor: if admin status",
            trig=TR("HIGH",
                    "last(/%s/sangfor.if.operstatus[{#SNMPINDEX}])=2"
@@ -379,7 +384,7 @@ lld("Fan discovery", "sangfor.fan.discovery",
            tags=[("component", "hardware")]),
      proto("Fan {#SNMPVALUE}: State", "sangfor.fan.state[{#SNMPINDEX}]",
            FN + ".4.{#SNMPINDEX}", desc="sfFanState: 0 - abnormal, 1 - normal.",
-           tags=[("component", "hardware")], valuemap="Sangfor: hw state",
+           pre=[DCH], tags=[("component", "hardware")], valuemap="Sangfor: hw state",
            trig=TR("AVERAGE",
                    "last(/%s/sangfor.fan.state[{#SNMPINDEX}])=0" % TPL,
                    "Sangfor: Fan {#SNMPVALUE} ABNORMAL on {HOST.NAME}")),
@@ -392,7 +397,7 @@ lld("Power supply discovery", "sangfor.psu.discovery",
     [
      proto("PSU {#SNMPVALUE}: State", "sangfor.psu.state[{#SNMPINDEX}]",
            PW + ".3.{#SNMPINDEX}", desc="sfPowerState: 0 - abnormal, 1 - normal.",
-           tags=[("component", "hardware")], valuemap="Sangfor: hw state",
+           pre=[DCH], tags=[("component", "hardware")], valuemap="Sangfor: hw state",
            trig=TR("HIGH",
                    "last(/%s/sangfor.psu.state[{#SNMPINDEX}])=0" % TPL,
                    "Sangfor: Power supply {#SNMPVALUE} ABNORMAL on {HOST.NAME}")),

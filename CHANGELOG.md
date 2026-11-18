@@ -3,6 +3,21 @@
 All notable changes to this template are documented here.
 Template format target: Zabbix 8.0 (JSON import).
 
+## [0.5.2] - 2026-11-18
+
+### Changed
+- **DISCARD_UNCHANGED_HEARTBEAT (1h)** on discrete-state items: device
+  status, HA enable/mode/status/ctrllink/datalink/sync (7 scalars) and the
+  interface oper/admin status + fan/PSU state prototypes (4). Cuts DB
+  writes for values that rarely change; `last()`-based triggers are
+  unaffected. Deliberately NOT applied to trap items (would break
+  `nodata()` recovery), uptime items (`change()`), or system.name
+  (consecutive-value comparison). From review #4 triage.
+
+### Upgrade notes
+- Normal updateExisting re-import; discovered status items pick up the
+  new preprocessing on the next LLD run.
+
 ## [0.5.1] - 2026-11-17
 
 P0 polish from the triaged external review (see BACKLOG.md):
