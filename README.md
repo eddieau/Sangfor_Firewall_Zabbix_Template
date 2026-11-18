@@ -325,6 +325,11 @@ portal and comply with the vendor's licensing and redistribution terms.
 The MIT license in this repository applies to the original template JSON,
 generator script and documentation only.
 
+See **[docs/mibs.md](docs/mibs.md)** for the exact file versions this
+template was verified against (SHA-256 manifest), how to verify your
+copies, and how to install them into the trap receiver. Polling needs no
+MIB files at all — they are only required for trap name resolution.
+
 ## Disclaimer
 
 This project is **unofficial** and is not affiliated with, endorsed by, or
