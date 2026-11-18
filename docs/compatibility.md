@@ -6,6 +6,8 @@ Sangfor's private MIB coverage varies per model and firmware.
 | NGAF model | Firmware | Transport | Zabbix | Result |
 | --- | --- | --- | --- | --- |
 | nsf-1050a-i | AF8.0.108.657 Build20260923 (SangforOS.4.9.4) | SNMPv3 authPriv (SHA1/AES128) via Zabbix proxy 8.0 | 8.0.0 (Docker) | Fully working: 60 template items + ~163 discovered, 0 unsupported; live traps received and routed |
+| nsf-1050a-i (2nd unit, WFFW02-WH) | AF8.0.108.657 Build20260923 (SangforOS.4.9.4) | SNMPv3 authPriv, server-direct | 8.0.0 | Working, 0 unsupported; same semantics as HQ unit |
+| af-1000-sk1308a (WFFW03-CN) | AF8.0.95.2062 Build20240712 (SangforOS.4.8.0) | **SNMPv2c**, server-direct | 8.0.0 | Working, 0 unsupported. Two-sample check confirms sfIfInRate = instantaneous gauge and sfIfInPkts = cumulative counter (same as AF8.0.108); fan/PSU/temp tables absent (LLD silent). SNMPv2c satisfies the Counter64 requirement. |
 
 ## Known coverage differences by firmware (from the one verified device)
 
@@ -41,6 +43,19 @@ Sangfor's private MIB coverage varies per model and firmware.
   (.27.3) 1,206,009→1,206,211 and `sfNewSessionPerSec` (.27.4) 10→10 are
   gauges. All four are stored raw; applying CHANGE_PER_SECOND would be
   wrong. `sfTotalSessions` exact meaning stays unverified.
+
+## Per-site tuning notes
+
+- **Link-alert opt-in macros are per-host and must match each site's real
+  critical ports.** Copying one site's `{$SANGFOR.IF.LINK.ALERT:"ethN"}`
+  macros to another site whose ethN is admin-up but oper-down (unused or
+  genuinely faulted) raises link-down HIGH problems. Review each host's
+  oper/admin status and set the macros only for ports that should be up.
+- **Trap destination is device-side config.** Each firewall must be pointed
+  at the collector (server or its proxy) IP:1162 with a matching
+  community/version; a host whose traps never arrive keeps its trap items
+  idle (polling still works). Verify with the receiver's snmptraps.log
+  source-IP histogram.
 
 ## SNMP version notes
 
