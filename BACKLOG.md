@@ -106,6 +106,60 @@ Rejected / stale (with evidence):
   8.0.0 (nested dashboards silently dropped by configuration.import);
   install_dashboard.py is the documented working path.
 
+## From review #6 (main v0.5.3→v0.5.5 diff review, 2026-11-18)
+
+Accurate reviewer; all claims verified against code, point 2 settled by
+live scratch tests.
+
+Accepted — fix package candidate v0.5.6 (pending approval):
+- [ ] **BUG (most severe): configure_link_alerts.py deletes alert macros
+  for ports that are down or have no value at run time** (line ~145
+  `elif not want_on and cur is not None`). A critical WAN port down during
+  a helper run loses its manually-enabled macro -> fault alerting silently
+  disabled. Also fires when the device is unreachable (empty lastvalue).
+  Fix: NEVER remove macros because of down/unknown state; skip ports with
+  no status value; restrict removal to virtual interfaces and vanished
+  interfaces, behind an explicit --prune flag. Docs must state this.
+- [ ] **Scope misclassification**: "High ICMP ping loss/response time"
+  fall to availability (should be performance); fan/PSU ABNORMAL fall to
+  availability (should be fault - checker allows fault, nothing uses it).
+  Descriptions are one generic sentence per scope. Fix: explicit
+  scope+description per trigger at definition site, drop name-substring
+  guessing (_scope_for/_decorate).
+- [ ] **Virtual-interface regex drift**: template override uses
+  `^(vpntun|ssltun|veth|tun|tap|lo)` (matches ANY lo* name), helper uses
+  `...|lo$`. Two copies drift. Fix: single macro
+  {$SANGFOR.IF.VIRTUAL.MATCHES} referenced by the LLD override; helper
+  reads the template macro (or shares one constant).
+- [ ] Version string duplicated (generator + CHANGELOG): single VERSION
+  constant in generator.
+- [ ] api() duplicated in install_dashboard.py + configure_link_alerts.py:
+  shared module.
+- [ ] Docs: first deployment on hosts with macro default 0 produces a
+  burst of coverage INFO notices (expected; mention in README).
+
+Point 2 settled by LIVE scratch tests (both cleaned up):
+- Reviewer's literal form `{$MACRO:regex:"..."}` AT THE USAGE SITE
+  (inside the trigger expression): DOES NOT WORK on 8.0 (scratch trigger
+  never fired).
+- Documented form - regex in the macro DEFINITION
+  ({$ZZ.CTX:regex:"^cpu"}=2), concrete context at usage
+  ({$ZZ.CTX:"cpu.num"}): WORKS (scratch problem fired).
+- CONSEQUENCE: the template ALREADY uses {$SANGFOR.IF.LINK.ALERT:"{#SNMPVALUE}"}
+  at usage, so a host macro {$SANGFOR.IF.LINK.ALERT:regex:"^(eth9|eth10)$"}=1
+  already covers multiple ports with NO template change. Optional helper
+  enhancement: emit grouped regex macros; per-port macros stay the
+  default (explicit/auditable). Document the regex-definition option.
+
+Priority bump (reviewer argument accepted - the v0.5.4 incident proved
+static checks cannot catch import-time failures):
+- [ ] **TOP PRIORITY: live-import CI job** - spin Zabbix 8.0 server+web+db
+  containers in CI, configuration.import (two-pass tolerated), then assert
+  via trigger.get/triggerprototype.get that live counts == JSON counts
+  (export under-reports prototypes - use the get APIs). Also validates
+  vendor block acceptance ("Community (eddieau)" already imports fine on
+  the live server, but CI should pin it).
+
 ## Coverage-drift solution (Eddie question 2026-11-18, shipped v0.5.5)
 
 - [x] New-port-added-later blind spot: INFO coverage-notice trigger
