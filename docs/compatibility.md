@@ -23,6 +23,15 @@ Sangfor's private MIB coverage varies per model and firmware.
   `hrSystemUptime` (HOST-RESOURCES-MIB). Models without `hrSystemUptime`
   get an unsupported hardware-uptime item, and the restart trigger then
   silently never fires — re-verify it when testing a new model.
+- **Interface index alignment is a firmware-verified assumption, not a
+  guarantee**: the interface LLD discovers names from the proprietary
+  `sfIfTable` (35047.1.34) but polls link state from standard IF-MIB
+  `ifOperStatus`/`ifAdminStatus` using the same `{#SNMPINDEX}`. On
+  AF8.0.108.657 the indexes match exactly (eth0–eth10 = 1–11, tunnels =
+  122–126, verified by walking both tables). On other models/firmware,
+  re-verify with `snmpwalk ... 35047.1.34.1.2` vs `1.3.6.1.2.1.31.1.1.1.1`
+  before trusting per-interface link alerts; a mismatch would attach
+  link state to the wrong interface.
 
 ## SNMP version notes
 

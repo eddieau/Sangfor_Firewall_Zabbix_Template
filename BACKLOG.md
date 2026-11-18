@@ -23,6 +23,41 @@ implemented; anything shipped moves to CHANGELOG.md.
   enabled_lifetime default 0 + enabled_lifetime_type 2 (disable
   immediately); shipped lifetime 30d / enabled_lifetime 0.
 
+## From review #3 (2026-11-17, score 9.2/10 — mostly accurate)
+
+Accepted:
+- [x] Document sfIfTable↔IF-MIB index alignment as a firmware-verified
+  assumption with a re-verification procedure (done in
+  docs/compatibility.md; valid catch — alignment was verified live but
+  only stated in item descriptions).
+- [ ] HA split-brain composite trigger idea: `sangfor.ha.status` = slave
+  AND `sangfor.ha.ctrllink` = abnormal (failed failover indicator).
+  Needs semantics review against a real HA pair before shipping; single
+  verified device runs standalone (HA disabled), so cannot test live.
+
+Rejected (with evidence):
+- **Patch 1 "JSNUM return null + DISCARD_UNCHANGED_HEARTBEAT"**: technically
+  wrong — returning null from JS preprocessing does not produce a graceful
+  skip (numeric conversion still fails), and DISCARD_UNCHANGED_HEARTBEAT is
+  a value-deduplication step, NOT an error handler. If stale-value
+  tolerance is ever wanted, the correct mechanism is the step's
+  `error_handler: DISCARD_VALUE`; current explicit-throw behaviour is
+  deliberate (visible unsupported beats silently stale usage data).
+- **Patch 3 "recovery OR icmpping=1"**: would reintroduce false recovery —
+  a dead SNMP agent stops trap delivery while the device still pings, so
+  trap silence + ICMP up is NOT evidence the attack ended. The existing
+  AND `zabbix[host,snmp,available]=1` design is deliberate; a permanently
+  broken SNMP agent is surfaced by the "No SNMP data collection" trigger.
+- **"Built-in dashboards provide immediate value upon import"**: false on
+  8.0.0 — nested dashboards are silently dropped by configuration.import
+  (documented; install_dashboard.py is the working path).
+- **"~60% SNMP load reduction" from dependent items**: invented figure;
+  host already uses bulk=1 GETBULK aggregation and measured load is
+  negligible (see walk[] entry below).
+- Note: review #3's quoted trap keys ("snmpTrapOID.0s=") lost backslashes
+  in its web-extractor ingestion; the shipped keys correctly use
+  `\.0\s=\s` and are live-verified.
+
 ## P1 — considered (needs design/verification first)
 
 - [ ] **walk[] master + dependent items** for sfIfTable / disk / CPU-core
