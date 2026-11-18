@@ -191,6 +191,9 @@ Via the API, interfaces are embedded in `host.create` / `host.update`
 | `{$SANGFOR.DISK_TEMP.MAX}` | `70` | Disk temperature (°C) warning |
 | `{$SANGFOR.IF_DROP.MAX}` | `1000` | Interface discard rate (drops/s) warning |
 | `{$SANGFOR.INFO.FREQ}` | `15m` | System-info item interval |
+| `{$SANGFOR.UPTIME.FREQ}` | `1m` | Uptime poll interval (restart detection) |
+| `{$SANGFOR.IF.NAME.MATCHES}` | `.*` | Interface discovery: include regex |
+| `{$SANGFOR.IF.NAME.NOT_MATCHES}` | `^$` | Interface discovery: exclude regex (e.g. `^(veth\|ssltun\|vpntun)`) |
 | `{$SANGFOR.TRAP_PROBLEM_HOURS}` | `4h` | Auto-recovery window for unpaired trap problems |
 | `{$ICMP_LOSS_WARN}` | `20` | ICMP loss (%) warning (5 m window) |
 | `{$ICMP_RESPONSE_TIME_WARN}` | `0.15` | Avg response time (s) warning (5 m avg) |

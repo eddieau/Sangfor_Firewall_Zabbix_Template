@@ -50,7 +50,23 @@
             "delay": "{$SANGFOR.INFO.FREQ}",
             "history": "7d",
             "value_type": "CHAR",
-            "description": "sfSysSoftVersion."
+            "description": "sfSysSoftVersion.",
+            "triggers": [
+              {
+                "uuid": "08d93bb662be4cc297cd01e767c7de1d",
+                "expression": "change(/Sangfor NGAF by SNMP/sangfor.software.version)<>0 and length(last(/Sangfor NGAF by SNMP/sangfor.software.version))>0",
+                "name": "Sangfor: Software version changed on {HOST.NAME}",
+                "priority": "INFO",
+                "manual_close": "YES",
+                "tags": [
+                  {
+                    "tag": "scope",
+                    "value": "notice"
+                  }
+                ],
+                "description": "Informational change event; acknowledge to close."
+              }
+            ]
           },
           {
             "uuid": "666b6dc7814b41229cae88ed808bf5c5",
@@ -108,7 +124,14 @@
                 "uuid": "379872cc9e9546fe94ff82de625d06e9",
                 "expression": "last(/Sangfor NGAF by SNMP/sangfor.device.status)=0",
                 "name": "Sangfor: Device reports WARNING status on {HOST.NAME}",
-                "priority": "WARNING"
+                "priority": "WARNING",
+                "tags": [
+                  {
+                    "tag": "scope",
+                    "value": "availability"
+                  }
+                ],
+                "description": "Verify device reachability, HA and service state; see docs/troubleshooting.md."
               }
             ]
           },
@@ -156,7 +179,14 @@
                 "name": "Sangfor: High CPU utilization over {$SANGFOR.CPU.MAX}% on {HOST.NAME}",
                 "priority": "AVERAGE",
                 "recovery_mode": "RECOVERY_EXPRESSION",
-                "recovery_expression": "last(/Sangfor NGAF by SNMP/sangfor.cpu.util.1m)<{$SANGFOR.CPU.MAX}*0.9"
+                "recovery_expression": "last(/Sangfor NGAF by SNMP/sangfor.cpu.util.1m)<{$SANGFOR.CPU.MAX}*0.9",
+                "tags": [
+                  {
+                    "tag": "scope",
+                    "value": "performance"
+                  }
+                ],
+                "description": "Check device load and traffic patterns; consider policy or capacity tuning."
               }
             ]
           },
@@ -284,7 +314,14 @@
                 "name": "Sangfor: High memory usage over {$SANGFOR.MEM.MAX}% on {HOST.NAME}",
                 "priority": "AVERAGE",
                 "recovery_mode": "RECOVERY_EXPRESSION",
-                "recovery_expression": "last(/Sangfor NGAF by SNMP/sangfor.mem.util)<{$SANGFOR.MEM.MAX}*0.9"
+                "recovery_expression": "last(/Sangfor NGAF by SNMP/sangfor.mem.util)<{$SANGFOR.MEM.MAX}*0.9",
+                "tags": [
+                  {
+                    "tag": "scope",
+                    "value": "performance"
+                  }
+                ],
+                "description": "Check device load and traffic patterns; consider policy or capacity tuning."
               }
             ]
           },
@@ -573,7 +610,14 @@
                 "uuid": "6eee60d82240411db0d7a3015359e31c",
                 "expression": "last(/Sangfor NGAF by SNMP/sangfor.ha.ctrllink)=2",
                 "name": "Sangfor: HA control link ABNORMAL on {HOST.NAME}",
-                "priority": "HIGH"
+                "priority": "HIGH",
+                "tags": [
+                  {
+                    "tag": "scope",
+                    "value": "availability"
+                  }
+                ],
+                "description": "Verify device reachability, HA and service state; see docs/troubleshooting.md."
               }
             ]
           },
@@ -607,7 +651,14 @@
                 "uuid": "4d127901f6b84cfe8c246e64e4bac370",
                 "expression": "last(/Sangfor NGAF by SNMP/sangfor.ha.datalink)=2",
                 "name": "Sangfor: HA data link ABNORMAL on {HOST.NAME}",
-                "priority": "HIGH"
+                "priority": "HIGH",
+                "tags": [
+                  {
+                    "tag": "scope",
+                    "value": "availability"
+                  }
+                ],
+                "description": "Verify device reachability, HA and service state; see docs/troubleshooting.md."
               }
             ]
           },
@@ -694,7 +745,14 @@
                 "recovery_mode": "RECOVERY_EXPRESSION",
                 "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-AF-MIB::sfFirewallTrapFwAttack],{$SANGFOR.TRAP_PROBLEM_HOURS})=1 and last(/Sangfor NGAF by SNMP/zabbix[host,snmp,available])=1",
                 "name": "Sangfor: Firewall under attack on {HOST.NAME}",
-                "priority": "HIGH"
+                "priority": "HIGH",
+                "tags": [
+                  {
+                    "tag": "scope",
+                    "value": "security"
+                  }
+                ],
+                "description": "Investigate in the NGAF security logs and confirm whether the event is genuine; see docs/troubleshooting.md."
               }
             ]
           },
@@ -720,7 +778,14 @@
                 "recovery_mode": "RECOVERY_EXPRESSION",
                 "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-AF-MIB::sfFirewallTrapNetworkAttack],{$SANGFOR.TRAP_PROBLEM_HOURS})=1 and last(/Sangfor NGAF by SNMP/zabbix[host,snmp,available])=1",
                 "name": "Sangfor: Protected network under attack on {HOST.NAME}",
-                "priority": "HIGH"
+                "priority": "HIGH",
+                "tags": [
+                  {
+                    "tag": "scope",
+                    "value": "security"
+                  }
+                ],
+                "description": "Investigate in the NGAF security logs and confirm whether the event is genuine; see docs/troubleshooting.md."
               }
             ]
           },
@@ -746,7 +811,14 @@
                 "recovery_mode": "RECOVERY_EXPRESSION",
                 "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-AF-MIB::sfFirewallTrapDualSwitch],{$SANGFOR.TRAP_PROBLEM_HOURS})=1 and last(/Sangfor NGAF by SNMP/zabbix[host,snmp,available])=1",
                 "name": "Sangfor: HA dual-active switch event on {HOST.NAME}",
-                "priority": "HIGH"
+                "priority": "HIGH",
+                "tags": [
+                  {
+                    "tag": "scope",
+                    "value": "availability"
+                  }
+                ],
+                "description": "Verify device reachability, HA and service state; see docs/troubleshooting.md."
               }
             ]
           },
@@ -772,7 +844,14 @@
                 "recovery_mode": "RECOVERY_EXPRESSION",
                 "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfTemperatureWarnTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=1 and last(/Sangfor NGAF by SNMP/zabbix[host,snmp,available])=1",
                 "name": "Sangfor: Temperature alert on {HOST.NAME}",
-                "priority": "HIGH"
+                "priority": "HIGH",
+                "tags": [
+                  {
+                    "tag": "scope",
+                    "value": "availability"
+                  }
+                ],
+                "description": "Verify device reachability, HA and service state; see docs/troubleshooting.md."
               }
             ]
           },
@@ -798,7 +877,14 @@
                 "recovery_mode": "RECOVERY_EXPRESSION",
                 "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfCPUWarnTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=1 and last(/Sangfor NGAF by SNMP/zabbix[host,snmp,available])=1",
                 "name": "Sangfor: CPU alert on {HOST.NAME}",
-                "priority": "WARNING"
+                "priority": "WARNING",
+                "tags": [
+                  {
+                    "tag": "scope",
+                    "value": "performance"
+                  }
+                ],
+                "description": "Check device load and traffic patterns; consider policy or capacity tuning."
               }
             ]
           },
@@ -824,7 +910,14 @@
                 "recovery_mode": "RECOVERY_EXPRESSION",
                 "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfMemoryWarnTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=1 and last(/Sangfor NGAF by SNMP/zabbix[host,snmp,available])=1",
                 "name": "Sangfor: Memory alert on {HOST.NAME}",
-                "priority": "WARNING"
+                "priority": "WARNING",
+                "tags": [
+                  {
+                    "tag": "scope",
+                    "value": "performance"
+                  }
+                ],
+                "description": "Check device load and traffic patterns; consider policy or capacity tuning."
               }
             ]
           },
@@ -850,7 +943,14 @@
                 "recovery_mode": "RECOVERY_EXPRESSION",
                 "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfDiskWarnTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=1 and last(/Sangfor NGAF by SNMP/zabbix[host,snmp,available])=1",
                 "name": "Sangfor: Hard disk alert on {HOST.NAME}",
-                "priority": "HIGH"
+                "priority": "HIGH",
+                "tags": [
+                  {
+                    "tag": "scope",
+                    "value": "availability"
+                  }
+                ],
+                "description": "Verify device reachability, HA and service state; see docs/troubleshooting.md."
               }
             ]
           },
@@ -876,7 +976,14 @@
                 "recovery_mode": "RECOVERY_EXPRESSION",
                 "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfPowerWarnTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=1 and last(/Sangfor NGAF by SNMP/zabbix[host,snmp,available])=1",
                 "name": "Sangfor: Power alert on {HOST.NAME}",
-                "priority": "HIGH"
+                "priority": "HIGH",
+                "tags": [
+                  {
+                    "tag": "scope",
+                    "value": "availability"
+                  }
+                ],
+                "description": "Verify device reachability, HA and service state; see docs/troubleshooting.md."
               }
             ]
           },
@@ -902,7 +1009,14 @@
                 "recovery_mode": "RECOVERY_EXPRESSION",
                 "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfInterfaceDownTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=1 and last(/Sangfor NGAF by SNMP/zabbix[host,snmp,available])=1",
                 "name": "Sangfor: Interface alert on {HOST.NAME}",
-                "priority": "HIGH"
+                "priority": "HIGH",
+                "tags": [
+                  {
+                    "tag": "scope",
+                    "value": "availability"
+                  }
+                ],
+                "description": "Verify device reachability, HA and service state; see docs/troubleshooting.md."
               }
             ]
           },
@@ -928,7 +1042,14 @@
                 "recovery_mode": "RECOVERY_EXPRESSION",
                 "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfFanWarnTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=1 and last(/Sangfor NGAF by SNMP/zabbix[host,snmp,available])=1",
                 "name": "Sangfor: Fan alert on {HOST.NAME}",
-                "priority": "HIGH"
+                "priority": "HIGH",
+                "tags": [
+                  {
+                    "tag": "scope",
+                    "value": "availability"
+                  }
+                ],
+                "description": "Verify device reachability, HA and service state; see docs/troubleshooting.md."
               }
             ]
           },
@@ -954,7 +1075,14 @@
                 "recovery_mode": "RECOVERY_EXPRESSION",
                 "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfHAStatusTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=1 and last(/Sangfor NGAF by SNMP/zabbix[host,snmp,available])=1",
                 "name": "Sangfor: HA status alert on {HOST.NAME}",
-                "priority": "HIGH"
+                "priority": "HIGH",
+                "tags": [
+                  {
+                    "tag": "scope",
+                    "value": "availability"
+                  }
+                ],
+                "description": "Verify device reachability, HA and service state; see docs/troubleshooting.md."
               }
             ]
           },
@@ -980,7 +1108,14 @@
                 "recovery_mode": "RECOVERY_EXPRESSION",
                 "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfBypassChangeTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=1 and last(/Sangfor NGAF by SNMP/zabbix[host,snmp,available])=1",
                 "name": "Sangfor: Passthrough status alert on {HOST.NAME}",
-                "priority": "WARNING"
+                "priority": "WARNING",
+                "tags": [
+                  {
+                    "tag": "scope",
+                    "value": "availability"
+                  }
+                ],
+                "description": "Verify device reachability, HA and service state; see docs/troubleshooting.md."
               }
             ]
           },
@@ -1006,7 +1141,14 @@
                 "recovery_mode": "RECOVERY_EXPRESSION",
                 "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfPortResourceWarnTrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=1 and last(/Sangfor NGAF by SNMP/zabbix[host,snmp,available])=1",
                 "name": "Sangfor: Insufficient port resources on {HOST.NAME}",
-                "priority": "WARNING"
+                "priority": "WARNING",
+                "tags": [
+                  {
+                    "tag": "scope",
+                    "value": "capacity"
+                  }
+                ],
+                "description": "Free or extend capacity before it is exhausted."
               }
             ]
           },
@@ -1032,7 +1174,14 @@
                 "recovery_mode": "RECOVERY_EXPRESSION",
                 "recovery_expression": "nodata(/Sangfor NGAF by SNMP/snmptrap[snmpTrapOID\\.0\\s=\\sSANGFOR-MIB::sfSLATrap],{$SANGFOR.TRAP_PROBLEM_HOURS})=1 and last(/Sangfor NGAF by SNMP/zabbix[host,snmp,available])=1",
                 "name": "Sangfor: SLA-based link failover on {HOST.NAME}",
-                "priority": "WARNING"
+                "priority": "WARNING",
+                "tags": [
+                  {
+                    "tag": "scope",
+                    "value": "availability"
+                  }
+                ],
+                "description": "Verify device reachability, HA and service state; see docs/troubleshooting.md."
               }
             ]
           },
@@ -1137,7 +1286,14 @@
                 "uuid": "0637f4ff04784c3fbb52f45cbeaf6b2d",
                 "expression": "max(/Sangfor NGAF by SNMP/icmpping,#3)=0",
                 "name": "Device unavailable by ICMP ping on {HOST.NAME}",
-                "priority": "HIGH"
+                "priority": "HIGH",
+                "tags": [
+                  {
+                    "tag": "scope",
+                    "value": "availability"
+                  }
+                ],
+                "description": "Verify device reachability, HA and service state; see docs/troubleshooting.md."
               }
             ]
           },
@@ -1169,7 +1325,14 @@
                     "name": "Device unavailable by ICMP ping on {HOST.NAME}",
                     "expression": "max(/Sangfor NGAF by SNMP/icmpping,#3)=0"
                   }
-                ]
+                ],
+                "tags": [
+                  {
+                    "tag": "scope",
+                    "value": "availability"
+                  }
+                ],
+                "description": "Verify device reachability, HA and service state; see docs/troubleshooting.md."
               }
             ]
           },
@@ -1205,7 +1368,14 @@
                     "name": "Device unavailable by ICMP ping on {HOST.NAME}",
                     "expression": "max(/Sangfor NGAF by SNMP/icmpping,#3)=0"
                   }
-                ]
+                ],
+                "tags": [
+                  {
+                    "tag": "scope",
+                    "value": "availability"
+                  }
+                ],
+                "description": "Verify device reachability, HA and service state; see docs/troubleshooting.md."
               }
             ]
           },
@@ -1236,7 +1406,14 @@
                     "name": "Device unavailable by ICMP ping on {HOST.NAME}",
                     "expression": "max(/Sangfor NGAF by SNMP/icmpping,#3)=0"
                   }
-                ]
+                ],
+                "tags": [
+                  {
+                    "tag": "scope",
+                    "value": "availability"
+                  }
+                ],
+                "description": "Verify device reachability, HA and service state; see docs/troubleshooting.md."
               }
             ]
           },
@@ -1315,7 +1492,13 @@
                 "description": "The name of the system has changed. Acknowledge to close the problem manually.",
                 "name": "System name has changed (new name: {ITEM.LASTVALUE1})",
                 "priority": "INFO",
-                "manual_close": "YES"
+                "manual_close": "YES",
+                "tags": [
+                  {
+                    "tag": "scope",
+                    "value": "notice"
+                  }
+                ]
               }
             ]
           },
@@ -1341,7 +1524,7 @@
             "name": "Uptime (network)",
             "type": "SNMP_AGENT",
             "key": "system.net.uptime[sysUpTime.0]",
-            "delay": "30s",
+            "delay": "{$SANGFOR.UPTIME.FREQ}",
             "history": "7d",
             "value_type": "FLOAT",
             "description": "Time since the network management portion of the system was last re-initialized (RFC1213-MIB::sysUpTime, timeticks -> s). Ported.",
@@ -1376,7 +1559,14 @@
                     "name": "No SNMP data collection from {HOST.NAME}",
                     "expression": "max(/Sangfor NGAF by SNMP/zabbix[host,snmp,available],{$SNMP.TIMEOUT})=0"
                   }
-                ]
+                ],
+                "tags": [
+                  {
+                    "tag": "scope",
+                    "value": "notice"
+                  }
+                ],
+                "description": "Informational change event; acknowledge to close."
               }
             ]
           },
@@ -1385,7 +1575,7 @@
             "name": "Uptime (hardware)",
             "type": "SNMP_AGENT",
             "key": "system.hw.uptime[hrSystemUptime.0]",
-            "delay": "30s",
+            "delay": "{$SANGFOR.UPTIME.FREQ}",
             "history": "7d",
             "value_type": "FLOAT",
             "description": "Time since the whole system was last re-initialized (HOST-RESOURCES-MIB::hrSystemUptime, timeticks -> s). Ported.",
@@ -1436,7 +1626,19 @@
             "enabled_lifetime": "0",
             "description": "Interfaces from SANGFOR-MIB::sfIfTable (sfIfName column).",
             "filter": {
-              "evaltype": "AND"
+              "evaltype": "AND",
+              "conditions": [
+                {
+                  "macro": "{#SNMPVALUE}",
+                  "value": "{$SANGFOR.IF.NAME.MATCHES}",
+                  "operator": "MATCHES_REGEX"
+                },
+                {
+                  "macro": "{#SNMPVALUE}",
+                  "value": "{$SANGFOR.IF.NAME.NOT_MATCHES}",
+                  "operator": "NOT_MATCHES_REGEX"
+                }
+              ]
             },
             "item_prototypes": [
               {
@@ -1670,19 +1872,40 @@
                 "uuid": "70225890be904161bcdc2c97ef3f1d8d",
                 "expression": "last(/Sangfor NGAF by SNMP/sangfor.if.in.drop[{#SNMPINDEX}])>{$SANGFOR.IF_DROP.MAX}",
                 "name": "Interface {#SNMPVALUE}: high inbound discard rate on {HOST.NAME}",
-                "priority": "WARNING"
+                "priority": "WARNING",
+                "tags": [
+                  {
+                    "tag": "scope",
+                    "value": "performance"
+                  }
+                ],
+                "description": "Check device load and traffic patterns; consider policy or capacity tuning."
               },
               {
                 "uuid": "8ed3bd26a467474392d1f5a1868bef9b",
                 "expression": "last(/Sangfor NGAF by SNMP/sangfor.if.out.drop[{#SNMPINDEX}])>{$SANGFOR.IF_DROP.MAX}",
                 "name": "Interface {#SNMPVALUE}: high outbound discard rate on {HOST.NAME}",
-                "priority": "WARNING"
+                "priority": "WARNING",
+                "tags": [
+                  {
+                    "tag": "scope",
+                    "value": "performance"
+                  }
+                ],
+                "description": "Check device load and traffic patterns; consider policy or capacity tuning."
               },
               {
                 "uuid": "97836798a5214a218419e582f3bcea6a",
-                "expression": "last(/Sangfor NGAF by SNMP/sangfor.if.operstatus[{#SNMPINDEX}])=2 and last(/Sangfor NGAF by SNMP/sangfor.if.adminstatus[{#SNMPINDEX}])=1 and {$SANGFOR.IF.LINK.ALERT:\"{#SNMPVALUE}\"}=1",
+                "expression": "min(/Sangfor NGAF by SNMP/sangfor.if.operstatus[{#SNMPINDEX}],#2)=2 and last(/Sangfor NGAF by SNMP/sangfor.if.adminstatus[{#SNMPINDEX}])=1 and {$SANGFOR.IF.LINK.ALERT:\"{#SNMPVALUE}\"}=1",
                 "name": "Interface {#SNMPVALUE}: link down on {HOST.NAME}",
-                "priority": "HIGH"
+                "priority": "HIGH",
+                "tags": [
+                  {
+                    "tag": "scope",
+                    "value": "availability"
+                  }
+                ],
+                "description": "Verify device reachability, HA and service state; see docs/troubleshooting.md."
               }
             ],
             "graph_prototypes": [
@@ -1890,7 +2113,14 @@
                 "name": "Disk {#SNMPVALUE}: space usage over {$SANGFOR.DISK.MAX}% on {HOST.NAME}",
                 "priority": "WARNING",
                 "recovery_mode": "RECOVERY_EXPRESSION",
-                "recovery_expression": "last(/Sangfor NGAF by SNMP/sangfor.disk.pused[{#SNMPINDEX}])<{$SANGFOR.DISK.MAX}*0.9"
+                "recovery_expression": "last(/Sangfor NGAF by SNMP/sangfor.disk.pused[{#SNMPINDEX}])<{$SANGFOR.DISK.MAX}*0.9",
+                "tags": [
+                  {
+                    "tag": "scope",
+                    "value": "capacity"
+                  }
+                ],
+                "description": "Free or extend capacity before it is exhausted."
               },
               {
                 "uuid": "f2d4de7751324d7cb0c26003777a2913",
@@ -1898,7 +2128,14 @@
                 "name": "Disk {#SNMPVALUE}: high temperature ({ITEM.LASTVALUE1}) on {HOST.NAME}",
                 "priority": "WARNING",
                 "recovery_mode": "RECOVERY_EXPRESSION",
-                "recovery_expression": "last(/Sangfor NGAF by SNMP/sangfor.disk.temp[{#SNMPINDEX}])<{$SANGFOR.DISK_TEMP.MAX}-5"
+                "recovery_expression": "last(/Sangfor NGAF by SNMP/sangfor.disk.temp[{#SNMPINDEX}])<{$SANGFOR.DISK_TEMP.MAX}-5",
+                "tags": [
+                  {
+                    "tag": "scope",
+                    "value": "performance"
+                  }
+                ],
+                "description": "Check device load and traffic patterns; consider policy or capacity tuning."
               }
             ]
           },
@@ -1981,7 +2218,14 @@
                 "name": "CPU core {#SNMPVALUE}: utilization over {$SANGFOR.CPU_CORE.MAX}% on {HOST.NAME}",
                 "priority": "WARNING",
                 "recovery_mode": "RECOVERY_EXPRESSION",
-                "recovery_expression": "last(/Sangfor NGAF by SNMP/sangfor.cpu.util[{#SNMPINDEX}])<{$SANGFOR.CPU_CORE.MAX}*0.9"
+                "recovery_expression": "last(/Sangfor NGAF by SNMP/sangfor.cpu.util[{#SNMPINDEX}])<{$SANGFOR.CPU_CORE.MAX}*0.9",
+                "tags": [
+                  {
+                    "tag": "scope",
+                    "value": "performance"
+                  }
+                ],
+                "description": "Check device load and traffic patterns; consider policy or capacity tuning."
               }
             ]
           },
@@ -2053,7 +2297,14 @@
                 "uuid": "a132f019b8f74393aa2a9fe461224256",
                 "expression": "last(/Sangfor NGAF by SNMP/sangfor.fan.state[{#SNMPINDEX}])=0",
                 "name": "Sangfor: Fan {#SNMPVALUE} ABNORMAL on {HOST.NAME}",
-                "priority": "AVERAGE"
+                "priority": "AVERAGE",
+                "tags": [
+                  {
+                    "tag": "scope",
+                    "value": "availability"
+                  }
+                ],
+                "description": "Verify device reachability, HA and service state; see docs/troubleshooting.md."
               }
             ]
           },
@@ -2106,7 +2357,14 @@
                 "uuid": "ec3e88d0b9144392852cdb98353311ae",
                 "expression": "last(/Sangfor NGAF by SNMP/sangfor.psu.state[{#SNMPINDEX}])=0",
                 "name": "Sangfor: Power supply {#SNMPVALUE} ABNORMAL on {HOST.NAME}",
-                "priority": "HIGH"
+                "priority": "HIGH",
+                "tags": [
+                  {
+                    "tag": "scope",
+                    "value": "availability"
+                  }
+                ],
+                "description": "Verify device reachability, HA and service state; see docs/troubleshooting.md."
               }
             ]
           },
@@ -2146,6 +2404,10 @@
             ]
           }
         ],
+        "vendor": {
+          "name": "Community (eddieau)",
+          "version": "0.5.3"
+        },
         "tags": [
           {
             "tag": "class",
@@ -2214,6 +2476,21 @@
             "macro": "{$SANGFOR.INFO.FREQ}",
             "value": "15m",
             "description": "Update interval for system info items (ported from generic template)."
+          },
+          {
+            "macro": "{$SANGFOR.UPTIME.FREQ}",
+            "value": "1m",
+            "description": "Uptime poll interval (restart detection needs ~1m resolution)."
+          },
+          {
+            "macro": "{$SANGFOR.IF.NAME.MATCHES}",
+            "value": ".*",
+            "description": "Interface discovery filter: names matching this regex are discovered."
+          },
+          {
+            "macro": "{$SANGFOR.IF.NAME.NOT_MATCHES}",
+            "value": "^$",
+            "description": "Interface discovery filter: names matching this regex are excluded (default ^$ excludes nothing). E.g. ^(veth|ssltun|vpntun) to drop tunnel interfaces."
           },
           {
             "macro": "{$ICMP_LOSS_WARN}",

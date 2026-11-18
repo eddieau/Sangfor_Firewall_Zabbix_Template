@@ -3,6 +3,45 @@
 All notable changes to this template are documented here.
 Template format target: Zabbix 8.0 (JSON import).
 
+## [0.5.3] - 2026-11-18
+
+Review #5 implementation (all nine accepted items):
+
+### Added
+- **Trigger scope tags + descriptions on all 34 triggers** (official
+  taxonomy: availability/performance/capacity/security/notice), applied
+  centrally in the generator so no call site can forget them. Enables
+  event routing (e.g. security -> SOC).
+- **Firmware-change trigger** on `sangfor.software.version`
+  (`change()<>0`, INFO, manual close) - official pattern.
+- **Interface LLD operator filters**: `{$SANGFOR.IF.NAME.MATCHES}`
+  (default `.*`) and `{$SANGFOR.IF.NAME.NOT_MATCHES}` (default `^$` =
+  exclude nothing; non-breaking). Drop tunnels/unused ports without
+  editing the template.
+- **Vendor block** `{name: "Community (eddieau)", version: "0.5.3"}` -
+  traceable upgrades from the UI. Deliberately NOT "Sangfor": the project
+  is unofficial and must not imply vendor endorsement.
+- **`{$SANGFOR.UPTIME.FREQ}`** (default 1m) replaces hardcoded 30s uptime
+  polls (~halves that polling load; restart detection needs ~1m).
+- Checker: trigger scope/description required; hysteresis recovery must
+  sit strictly below the problem threshold; README item count must match
+  the JSON; DISCARD_UNCHANGED_HEARTBEAT forbidden on trap/uptime/name
+  items is now enforced, not just commented.
+- `.gitattributes` (`* text=auto eol=lf`) + generator writes LF
+  explicitly - Windows contributors cannot CRLF-break the CI diff.
+
+### Changed
+- **Link-down debounce**: `min(operstatus,#2)=2` instead of `last()=2` -
+  two consecutive down samples required, so one dropped poll or a brief
+  flap no longer raises HIGH. Opt-in context macro unchanged.
+- install_dashboard.py: closes the template file handle; verifies the
+  host is actually linked to the template before importing; distinguishes
+  invalid/expired API tokens from other failures.
+
+### Verified
+- Session counters resolved by live two-sample check (see
+  docs/compatibility.md): gauges, not cumulative - raw storage correct.
+
 ## [0.5.2] - 2026-11-18
 
 ### Changed

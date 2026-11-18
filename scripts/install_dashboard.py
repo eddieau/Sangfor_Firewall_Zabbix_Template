@@ -47,8 +47,13 @@ def api_call(url, token, method, params):
                          % (method, e))
             time.sleep(2 * (attempt + 1))
     if "error" in resp:
-        sys.exit("API ERROR %s: %s" % (method,
-                 json.dumps(resp["error"])[:400]))
+        msg = json.dumps(resp["error"])
+        low = msg.lower()
+        if "not authorised" in low or "not authorized" in low \
+                or "session terminated" in low or "re-login" in low:
+            sys.exit("API token invalid/expired (%s): check ZABBIX_API_KEY "
+                     "in the environment" % method)
+        sys.exit("API ERROR %s: %s" % (method, msg[:400]))
     return resp["result"]
 
 
@@ -69,7 +74,8 @@ def main():
                  "(--url accepted; the API key is intentionally NOT a CLI "
                  "argument)")
 
-    doc = json.load(open(TEMPLATE_FILE))["zabbix_export"]
+    with open(TEMPLATE_FILE, encoding="utf-8") as fh:
+        doc = json.load(fh)["zabbix_export"]
     tpl = doc["templates"][0]
     dashboards = tpl.get("dashboards")
     if not dashboards:
@@ -91,6 +97,13 @@ def main():
         sys.exit("host %s does not have the Sangfor template items "
                  "linked - import the template and link it first"
                  % args.host)
+    linked = api_call(args.url, token, "host.get",
+                      {"hostids": [hostid], "output": ["hostid"],
+                       "selectParentTemplates": ["templateid", "host"]})
+    tnames = [x["host"] for x in linked[0].get("parentTemplates", [])]
+    if args.template not in tnames:
+        sys.exit("host %s is not linked to template %r (linked: %s)"
+                 % (args.host, args.template, tnames or "none"))
 
     # rewrite template-name references to the real host; strip uuids
     # (standalone dashboard documents do not carry them in 8.0)

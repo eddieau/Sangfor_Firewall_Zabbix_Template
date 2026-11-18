@@ -94,9 +94,17 @@ snmp_item("Sangfor: Device description", "sangfor.device.descr",
 snmp_item("Sangfor: Device name", "sangfor.device.name",
           "get[" + GEN + ".17.0]", "CHAR",
           desc="sfSysDevName.", delay="{$SANGFOR.INFO.FREQ}")
-snmp_item("Sangfor: Software version", "sangfor.software.version",
+_fw = snmp_item("Sangfor: Software version", "sangfor.software.version",
           "get[" + GEN + ".18.0]", "CHAR",
           desc="sfSysSoftVersion.", delay="{$SANGFOR.INFO.FREQ}")
+_fw["triggers"] = [{
+    "uuid": U("trig-fwchg"),
+    "expression": ("change(/%s/sangfor.software.version)<>0 and "
+                   "length(last(/%s/sangfor.software.version))>0" % (TPL, TPL)),
+    "name": "Sangfor: Software version changed on {HOST.NAME}",
+    "priority": "INFO",
+    "manual_close": "YES",
+}]
 snmp_item("Sangfor: AF version", "sangfor.af.version",
           "get[" + GEN + ".24.0]", "CHAR",
           desc="afSysSoftVersion.", delay="{$SANGFOR.INFO.FREQ}")
@@ -318,12 +326,16 @@ lld("Interface discovery", "sangfor.if.discovery",
                 "on administratively disabled ports.", pre=[DCH],
            tags=[("component", "network")], valuemap="Sangfor: if admin status",
            trig=TR("HIGH",
-                   "last(/%s/sangfor.if.operstatus[{#SNMPINDEX}])=2"
+                   "min(/%s/sangfor.if.operstatus[{#SNMPINDEX}],#2)=2"
                    " and last(/%s/sangfor.if.adminstatus[{#SNMPINDEX}])=1"
                    " and {$SANGFOR.IF.LINK.ALERT:\"{#SNMPVALUE}\"}=1" % (TPL, TPL),
                    "Interface {#SNMPVALUE}: link down on {HOST.NAME}")),
     ],
-    desc="Interfaces from SANGFOR-MIB::sfIfTable (sfIfName column).")
+    desc="Interfaces from SANGFOR-MIB::sfIfTable (sfIfName column).",
+    filter=[{"macro": "{#SNMPVALUE}", "value": "{$SANGFOR.IF.NAME.MATCHES}",
+             "operator": "MATCHES_REGEX"},
+            {"macro": "{#SNMPVALUE}", "value": "{$SANGFOR.IF.NAME.NOT_MATCHES}",
+             "operator": "NOT_MATCHES_REGEX"}])
 
 lld("Disk discovery", "sangfor.disk.discovery",
     "discovery[{#SNMPVALUE}," + DK + ".2]",
@@ -628,13 +640,13 @@ plain_item("Uptime (network)", "system.net.uptime[sysUpTime.0]", "SNMP_AGENT",
            "FLOAT", "uptime",
            desc="Time since the network management portion of the system was "
                 "last re-initialized (RFC1213-MIB::sysUpTime, timeticks -> s). "
-                "Ported.", delay="30s", pre=[P("MULTIPLIER", "0.01")],
+                "Ported.", delay="{$SANGFOR.UPTIME.FREQ}", pre=[P("MULTIPLIER", "0.01")],
            tags=[("component", "system")], oid="1.3.6.1.2.1.1.3.0")
 plain_item("Uptime (hardware)", "system.hw.uptime[hrSystemUptime.0]",
            "SNMP_AGENT", "FLOAT", "uptime",
            desc="Time since the whole system was last re-initialized "
                 "(HOST-RESOURCES-MIB::hrSystemUptime, timeticks -> s). Ported.",
-           delay="30s", pre=[P("MULTIPLIER", "0.01")],
+           delay="{$SANGFOR.UPTIME.FREQ}", pre=[P("MULTIPLIER", "0.01")],
            tags=[("component", "system")], oid="1.3.6.1.2.1.25.1.1.0")
 
 # restart + rename triggers (attached to uptime/name items)
@@ -722,6 +734,14 @@ for m, v, d in [
      "alerts)."),
     ("{$SANGFOR.INFO.FREQ}", "15m",
      "Update interval for system info items (ported from generic template)."),
+    ("{$SANGFOR.UPTIME.FREQ}", "1m",
+     "Uptime poll interval (restart detection needs ~1m resolution)."),
+    ("{$SANGFOR.IF.NAME.MATCHES}", ".*",
+     "Interface discovery filter: names matching this regex are discovered."),
+    ("{$SANGFOR.IF.NAME.NOT_MATCHES}", "^$",
+     "Interface discovery filter: names matching this regex are excluded "
+     "(default ^$ excludes nothing). E.g. ^(veth|ssltun|vpntun) to drop "
+     "tunnel interfaces."),
     ("{$ICMP_LOSS_WARN}", "20",
      "Packet loss (%) that triggers a warning."),
     ("{$SANGFOR.IF.LINK.ALERT}", "0",
@@ -865,6 +885,50 @@ valuemaps = [
              [("1", "up"), ("2", "down"), ("3", "testing")]),
 ]
 
+# ================= trigger metadata (review #5) =================
+# Every trigger gets a scope tag (official taxonomy: availability /
+# performance / capacity / security / notice) and an action-oriented
+# description. Applied centrally so no call site can forget it; existing
+# tags/descriptions are preserved. UUIDs are name-seeded and unchanged.
+_SCOPE_ACTIONS = {
+    "security": "Investigate in the NGAF security logs and confirm whether "
+                "the event is genuine; see docs/troubleshooting.md.",
+    "availability": "Verify device reachability, HA and service state; see "
+                    "docs/troubleshooting.md.",
+    "performance": "Check device load and traffic patterns; consider policy "
+                   "or capacity tuning.",
+    "capacity": "Free or extend capacity before it is exhausted.",
+    "notice": "Informational change event; acknowledge to close.",
+}
+
+def _scope_for(name):
+    n = name.lower()
+    if "under attack" in n:
+        return "security"
+    if ("has been restarted" in n or "name has changed" in n
+            or "version changed" in n):
+        return "notice"
+    if "space usage" in n or "port resources" in n:
+        return "capacity"
+    if ("cpu utilization" in n or "memory usage" in n or "cpu core" in n
+            or "discard rate" in n or "high temperature" in n
+            or "cpu alert" in n or "memory alert" in n):
+        return "performance"
+    return "availability"
+
+def _decorate(trigs):
+    for tr in trigs:
+        scope = _scope_for(tr["name"])
+        if not tr.get("tags"):
+            tr["tags"] = [{"tag": "scope", "value": scope}]
+        if not tr.get("description"):
+            tr["description"] = _SCOPE_ACTIONS[scope]
+
+for _i in items:
+    _decorate(_i.get("triggers", []))
+for _dr in drs:
+    _decorate(_dr.get("trigger_prototypes", []))
+
 # ================= assemble =================
 tpl = {"uuid": U("template"), "template": TPL, "name": TPL,
        "description": "Sangfor NGAF monitoring via private SANGFOR-MIB "
@@ -883,6 +947,7 @@ tpl = {"uuid": U("template"), "template": TPL, "name": TPL,
        "groups": [{"name": TGROUP}],
        "items": items,
        "discovery_rules": drs,
+       "vendor": {"name": "Community (eddieau)", "version": "0.5.3"},
        "tags": [{"tag": "class", "value": "network"},
                 {"tag": "target", "value": "sangfor"},
                 {"tag": "component", "value": "firewall"},
@@ -903,7 +968,7 @@ doc = {"zabbix_export": {
 
 _here = Path(__file__).resolve().parent
 out = (_here.parent if _here.name == "scripts" else _here) / "template_sangfor_ngaf_snmp.json"
-with out.open("w", encoding="utf-8") as f:
+with out.open("w", encoding="utf-8", newline="\n") as f:
     json.dump(doc, f, indent=2, ensure_ascii=False)
 print("written", out)
 print("items:", len(items), "lld:", len(drs))

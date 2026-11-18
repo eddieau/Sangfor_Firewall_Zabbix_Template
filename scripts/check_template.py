@@ -225,6 +225,67 @@ def main():
                       "prototype %s references undefined valuemap %r"
                       % (p["key"], p["valuemap"]["name"]))
 
+    # ---- trigger quality: every trigger needs a scope tag + description
+    all_trigs = [tr for i in t["items"] for tr in i.get("triggers", [])]
+    all_trigs += [tr for dr in t["discovery_rules"]
+                  for tr in dr.get("trigger_prototypes", [])]
+    valid_scopes = {"availability", "performance", "capacity", "security",
+                    "notice", "fault"}
+    for tr in all_trigs:
+        scopes = [x["value"] for x in tr.get("tags", [])
+                  if x["tag"] == "scope"]
+        check(bool(scopes) and scopes[0] in valid_scopes,
+              "trigger %r missing/invalid scope tag" % tr["name"])
+        check(bool(tr.get("description")),
+              "trigger %r missing description" % tr["name"])
+
+    # ---- hysteresis: recovery strictly below the problem threshold
+    for tr in all_trigs:
+        expr = tr.get("expression", "")
+        rec = tr.get("recovery_expression", "")
+        m = re.search(r">\{\$([A-Z0-9_.]+)\}", expr)
+        if m and rec:
+            macro = m.group(1)
+            fm = re.search(r"<\{\$" + re.escape(macro) +
+                           r"\}\*([0-9.]+)", rec)
+            sm = re.search(r"<\{\$" + re.escape(macro) +
+                           r"\}-([0-9.]+)", rec)
+            if fm:
+                check(float(fm.group(1)) < 1.0,
+                      "trigger %r hysteresis factor not <1" % tr["name"])
+            elif sm:
+                check(float(sm.group(1)) > 0.0,
+                      "trigger %r hysteresis offset not >0" % tr["name"])
+
+    # ---- DISCARD_UNCHANGED_HEARTBEAT must never sit on trap/uptime/name
+    #      items (breaks nodata()/change()/#1<>#2 trigger semantics)
+    def _has_dch(it):
+        return any(s.get("type") == "DISCARD_UNCHANGED_HEARTBEAT"
+                   for s in it.get("preprocessing", []))
+    for i in t["items"]:
+        if _has_dch(i):
+            k = i["key"]
+            check(not (k.startswith("snmptrap") or "uptime" in k
+                       or k == "system.name"),
+                  "DISCARD_UNCHANGED_HEARTBEAT on forbidden item %s" % k)
+    for dr in t["discovery_rules"]:
+        for p in dr.get("item_prototypes", []):
+            if _has_dch(p):
+                check(not (p["key"].startswith("snmptrap")
+                           or "uptime" in p["key"]),
+                      "DISCARD_UNCHANGED_HEARTBEAT on forbidden proto %s"
+                      % p["key"])
+
+    # ---- README item count must match the JSON (drift is a real risk)
+    readme_path = os.path.join(HERE, os.pardir, "README.md")
+    if os.path.exists(readme_path):
+        rd = open(readme_path, encoding="utf-8").read()
+        cm = re.search(r"(\d+) template-level items", rd)
+        if cm:
+            check(int(cm.group(1)) == len(t["items"]),
+                  "README says %s template-level items, JSON has %d"
+                  % (cm.group(1), len(t["items"])))
+
     if errors:
         print("FAILED (%d):" % len(errors))
         for e in errors:
