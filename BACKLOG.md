@@ -244,11 +244,20 @@ on-fail discard, blanket SNMP dependencies, recovery-on-ICMP-up.
 ## P1 — considered (needs design/verification first)
 
 - [ ] **walk[] master + dependent items** for sfIfTable / disk / CPU-core
-  tables (Zabbix 8.0 SNMP walk preprocessing). Biggest remaining efficiency
-  opportunity on high-port-count devices. NOTE: host interfaces already use
-  `bulk=1` (combined GETBULK requests), so current chatter is already
-  reduced; this is an optimization, not a defect fix. Large refactor —
-  target v0.6.0, keep per-item keys/UUIDs stable where possible.
+  tables (Zabbix 8.0 SNMP walk preprocessing). **DECISION (Eddie,
+  2026-11-18): DO NOT implement now — held as a v0.6 candidate.**
+  Gate: only start when polling latency or timeout problems are actually
+  MEASURED (item update lag, SNMP poller busy %, device timeouts), not on
+  guideline pressure. Current justification for holding: host interfaces
+  already use `bulk=1` (combined GETBULK), measured load negligible on all
+  three verified devices (0 unsupported, fresh data).
+  **Hard constraint when implemented: item keys AND UUIDs MUST stay
+  unchanged** so upgrades do not break history continuity (history/trends
+  are keyed by itemid; a new key/UUID = new item = history reset). Design
+  the master as an ADDITIONAL item and convert existing items to
+  DEPENDENT in place (same key, same UUID, master_itemid added, snmp_oid
+  removed); verify with the CI upgrade-path pass plus a live history
+  continuity check (pre/post values on the same itemid).
 - [ ] **HA group-table LLD** (`sfHAGroupTable`, general.64.9): MIB defines
   it, but first do a read-only walk on the reference device to confirm the
   firmware implements it (fan/PSU/temp tables turned out empty the same
