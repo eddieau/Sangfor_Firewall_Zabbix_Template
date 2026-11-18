@@ -8,7 +8,7 @@ from pathlib import Path
 
 BASE = "1.3.6.1.4.1.35047"        # sangfor
 GEN = BASE + ".1"                  # general ::= { sangfor 1 }
-VERSION = "0.5.6"
+VERSION = "0.5.7"
 TPL = "Sangfor NGAF by SNMP"
 TGROUP = "Templates/Network devices"
 

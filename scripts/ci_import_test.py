@@ -73,14 +73,38 @@ def main():
     rules = {
         "templates": {"createMissing": True, "updateExisting": True},
         "host_groups": {"createMissing": True},
-        "items": {"createMissing": True, "updateExisting": True},
-        "discoveryRules": {"createMissing": True, "updateExisting": True},
-        "triggers": {"createMissing": True, "updateExisting": True},
+        "items": {"createMissing": True, "updateExisting": True,
+                  "deleteMissing": True},
+        "discoveryRules": {"createMissing": True, "updateExisting": True,
+                           "deleteMissing": True},
+        "triggers": {"createMissing": True, "updateExisting": True,
+                     "deleteMissing": True},
         "graphs": {"createMissing": True, "updateExisting": True},
         "valueMaps": {"createMissing": True, "updateExisting": True},
         "dashboards": {"createMissing": True, "updateExisting": True},
     }
     src = json.dumps(doc)
+
+    # upgrade path: import the PREVIOUS release first (CI passes it via
+    # PREV_TEMPLATE), then the current file over it. Proves in-place update
+    # (stable UUIDs) instead of duplicate objects.
+    prev_path = os.environ.get("PREV_TEMPLATE")
+    if prev_path and os.path.exists(prev_path):
+        with open(prev_path, encoding="utf-8") as fh:
+            prev_src = fh.read()
+        if prev_src.strip() and json.loads(prev_src) != doc:
+            print("upgrade test: importing previous release first")
+            for attempt in (1, 2):
+                try:
+                    call("configuration.import", {"format": "json",
+                         "source": prev_src, "rules": rules})
+                    break
+                except RuntimeError as e:
+                    if attempt == 2:
+                        raise
+                    print("prev import pass 1 failed (%s) - retrying" % str(e)[:120])
+        else:
+            print("upgrade test: previous release identical or empty - skipped")
     # Two-pass tolerance: on an empty DB the first pass can fail resolving
     # bare-name trigger dependencies; the identical second pass succeeds.
     try:
@@ -116,9 +140,44 @@ def main():
     # under-reporting trigger prototypes. Verified live: 21 == JSON.
     live["item_protos"] = len(call("itemprototype.get",
                                    {"hostids": [tid], "output": ["itemid"]}))
-    expected = {"items": exp_items, "triggers": exp_trigs,
+    # --- object classes the count checks above do not cover
+    exp_graphs = len(doc["zabbix_export"].get("graphs", []))
+    exp_gprotos = sum(len(dr.get("graph_prototypes", []))
+                      for dr in t["discovery_rules"])
+    exp_vm = len(t.get("valuemaps", []))
+    live["graphs"] = len(call("graph.get", {"hostids": [tid],
+                                            "output": ["graphid"]}))
+    live["graph_protos"] = len(call("graphprototype.get", {"hostids": [tid],
+                                                           "output": ["graphid"]}))
+    live["valuemaps"] = len(call("valuemap.get", {"hostids": [tid],
+                                                  "output": ["valuemapid"]}))
+    # every trigger and trigger prototype must carry a scope tag
+    tr_all = call("trigger.get", {"hostids": [tid], "output": ["triggerid"],
+                                  "selectTags": ["tag"]})
+    tp_all = call("triggerprototype.get", {"hostids": [tid],
+                                           "output": ["triggerid"],
+                                           "selectTags": ["tag"]})
+    live["scope_tagged"] = sum(1 for x in tr_all + tp_all
+                               if any(g["tag"] == "scope" for g in x["tags"]))
+    exp_scope = exp_trigs + exp_protos
+    # LLD filter + override survived import (silently dropped otherwise)
+    rules_live = call("discoveryrule.get", {
+        "hostids": [tid], "output": ["key_"],
+        "selectFilter": "extend", "selectOverrides": "extend"})
+    by_key = {r["key_"]: r for r in rules_live}
+    exp_dr = {d["key"]: d for d in t["discovery_rules"]}
+    live["if_filter_conditions"] = len(
+        by_key["sangfor.if.discovery"]["filter"].get("conditions", []))
+    live["if_overrides"] = len(by_key["sangfor.if.discovery"].get("overrides", []))
+    exp_if_cond = len(exp_dr["sangfor.if.discovery"]["filter"].get("conditions", []))
+    exp_if_ovr = len(exp_dr["sangfor.if.discovery"].get("overrides", []))
+    expected = {"graphs": exp_graphs, "graph_protos": exp_gprotos,
+                "valuemaps": exp_vm, "scope_tagged": exp_scope,
+                "if_filter_conditions": exp_if_cond,
+                "if_overrides": exp_if_ovr}
+    expected.update({"items": exp_items, "triggers": exp_trigs,
                 "trig_protos": exp_protos, "item_protos": exp_iprotos,
-                "macros": exp_macros, "lld": exp_lld}
+                "macros": exp_macros, "lld": exp_lld})
     fails = []
     for k, want in expected.items():
         got = live[k]

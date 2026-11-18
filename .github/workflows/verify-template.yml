@@ -12,6 +12,10 @@ on:
   push:
   pull_request:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
@@ -51,6 +55,8 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 2
 
       - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
         with:
@@ -59,7 +65,12 @@ jobs:
       - name: Start throwaway Zabbix 8.0 stack
         run: docker compose -f ci/docker-compose.yml up -d
 
-      - name: Live import + count assertions
+      - name: Previous release template (upgrade-path test)
+        run: git show HEAD~1:template_sangfor_ngaf_snmp.json > "$RUNNER_TEMP/prev_template.json" || true
+
+      - name: Live import (fresh + upgrade) and count assertions
+        env:
+          PREV_TEMPLATE: ${{ runner.temp }}/prev_template.json
         run: python3 scripts/ci_import_test.py
 
       - name: Server log on failure

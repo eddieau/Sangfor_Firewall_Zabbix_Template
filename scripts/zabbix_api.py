@@ -25,6 +25,11 @@ def api_call(url, token, method, params, retries=3):
     payload = json.dumps({"jsonrpc": "2.0", "method": method,
                           "params": params, "id": 1}).encode()
     resp = None
+    # only idempotent reads are retried: a timed-out write may already have
+    # been applied server-side, and a blind retry would then fail on a
+    # duplicate and abort a run halfway
+    if not (method.endswith(".get") or method == "apiinfo.version"):
+        retries = 1
     for attempt in range(retries):
         req = urllib.request.Request(url, data=payload, headers={
             "Content-Type": "application/json-rpc",

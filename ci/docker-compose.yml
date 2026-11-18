@@ -1,4 +1,6 @@
 # Throwaway Zabbix 8.0 stack for the CI live-import test.
+# Images are pinned to an exact 8.0.x tag so CI results do not drift with
+# upstream point releases; bump deliberately and record it in compatibility.md.
 # Fresh DB every run; default Admin/zabbix login (CI only, never exposed).
 services:
   mysql:
@@ -22,7 +24,7 @@ services:
       retries: 30
 
   zabbix-server:
-    image: zabbix/zabbix-server-mysql:ubuntu-8.0-latest
+    image: zabbix/zabbix-server-mysql:ubuntu-8.0.0
     environment:
       DB_SERVER_HOST: mysql
       MYSQL_DATABASE: zabbix
@@ -33,7 +35,7 @@ services:
         condition: service_healthy
 
   zabbix-web:
-    image: zabbix/zabbix-web-nginx-mysql:ubuntu-8.0-latest
+    image: zabbix/zabbix-web-nginx-mysql:ubuntu-8.0.0
     environment:
       ZBX_SERVER_HOST: zabbix-server
       DB_SERVER_HOST: mysql

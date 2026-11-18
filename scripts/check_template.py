@@ -301,6 +301,21 @@ def main():
                   "README says %s template-level items, JSON has %d"
                   % (cm.group(1), len(t["items"])))
 
+    # ---- version coherence: generator VERSION == JSON vendor version ==
+    #      newest CHANGELOG heading
+    gen_src = open(os.path.join(HERE, "gen_template.py"), encoding="utf-8").read()
+    vm = re.search(r'^VERSION = "([^"]+)"', gen_src, re.M)
+    cl = os.path.join(HERE, os.pardir, "CHANGELOG.md")
+    if vm:
+        check(t.get("vendor", {}).get("version") == vm.group(1),
+              "vendor.version %r != generator VERSION %r"
+              % (t.get("vendor", {}).get("version"), vm.group(1)))
+        if os.path.exists(cl):
+            cm2 = re.search(r"^## \[([^\]]+)\]", open(cl, encoding="utf-8").read(), re.M)
+            check(cm2 and cm2.group(1) == vm.group(1),
+                  "newest CHANGELOG heading %r != generator VERSION %r"
+                  % (cm2.group(1) if cm2 else None, vm.group(1)))
+
     if errors:
         print("FAILED (%d):" % len(errors))
         for e in errors:

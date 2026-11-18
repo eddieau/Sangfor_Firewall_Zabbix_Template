@@ -79,8 +79,7 @@ def main():
                       {"hostids": [tid], "output": ["macro", "value"],
                        "filter": {"macro": [VIRTUAL_MACRO]}})
         virtual_re = tm[0]["value"] if tm else DEFAULT_VIRTUAL
-    excl = re.compile(virtual_re)
-    print("virtual-interface regex: %s" % virtual_re)
+    print("virtual-interface regex (template default): %s" % virtual_re)
 
     if args.all:
         hosts = api_call(url, token, "host.get",
@@ -104,8 +103,12 @@ def main():
     for h in hosts:
         hid = h["hostid"]
         items = api_call(url, token, "item.get",
-                         {"hostids": [hid], "output": ["name", "key_", "lastvalue"],
+                         {"hostids": [hid],
+                          "output": ["name", "key_", "lastvalue", "status"],
                           "search": {"key_": "sangfor.if.operstatus"}})
+        # LLD disables items of vanished interfaces immediately but keeps
+        # their stale lastvalue: treat disabled items as "interface gone".
+        items = [i for i in items if i.get("status") != "1"]
         adm = api_call(url, token, "item.get",
                        {"hostids": [hid], "output": ["key_", "lastvalue"],
                         "search": {"key_": "sangfor.if.adminstatus"}})
@@ -114,6 +117,14 @@ def main():
         macros = api_call(url, token, "usermacro.get",
                           {"hostids": [hid],
                            "output": ["hostmacroid", "macro", "value"]})
+        # a host-level override of the virtual regex wins (the LLD override
+        # resolves the macro per host, so the script must do the same)
+        host_virtual = virtual_re
+        if not args.exclude_regex:
+            for m in macros:
+                if m["macro"] == VIRTUAL_MACRO:
+                    host_virtual = m["value"]
+        excl = re.compile(host_virtual)
         link_macros = {}
         for m in macros:
             mm = re.match(r'^\{\$SANGFOR\.IF\.LINK\.ALERT:"(.+)"\}$', m["macro"])

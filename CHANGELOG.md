@@ -3,6 +3,28 @@
 All notable changes to this template are documented here.
 Template format target: Zabbix 8.0 (JSON import).
 
+## [0.5.7] - 2026-11-18
+
+Review #7 follow-ups (tooling and CI only; template objects unchanged,
+`vendor.version` bumped).
+
+### Fixed
+- `configure_link_alerts.py`: ignores items LLD has disabled (vanished
+  interfaces keep a stale `lastvalue`, so they were treated as "in use" and
+  never pruned); the virtual-interface regex is now read per host, so a
+  host-level override of `{$SANGFOR.IF.VIRTUAL.MATCHES}` is honoured.
+- `zabbix_api.py`: only read calls are retried; a timed-out write is no
+  longer blindly re-sent (which could abort a run on a duplicate).
+
+### Changed
+- CI live-import test also asserts graphs, graph prototypes, value maps,
+  scope tags on every trigger/prototype, and the interface LLD filter and
+  override; adds an upgrade-path pass (previous release imported first,
+  `deleteMissing` on) to prove in-place updates.
+- CI Zabbix images pinned to `ubuntu-8.0.0`; workflow cancels superseded runs.
+- `check_template.py` verifies generator `VERSION` == JSON `vendor.version`
+  == newest CHANGELOG heading.
+
 ## [0.5.6] - 2026-11-18
 
 Review #6 implementation (all accepted items) + live-import CI:
