@@ -156,6 +156,21 @@ def main():
                       "trigger %r depends on unknown trigger name %r"
                       % (tr["name"], dep["name"]))
 
+    # ---- find() regexp pattern literals must be BARE names (no
+    #      backslashes): full anchored strings with \\ escapes inside the
+    #      quoted pattern are silently rejected by some Zabbix 8.0 import
+    #      parsers, which skips the ENTIRE trigger batch of the import.
+    #      Routing precision comes from the anchored item KEY, not the
+    #      find() pattern.
+    _pat_trigs = [tr for i in t["items"] for tr in i.get("triggers", [])]
+    _pat_trigs += [tr for dr in t["discovery_rules"]
+                   for tr in dr.get("trigger_prototypes", [])]
+    for tr in _pat_trigs:
+        for pat in re.findall(r'"regexp","([^"]*)"', tr.get("expression", "")):
+            check("\\" not in pat,
+                  "trigger %r find() pattern contains backslashes "
+                  "(silent import-batch skip risk): %r" % (tr["name"], pat[:60]))
+
     # ---- trap routing anchored: named trap keys must anchor on the
     #      snmpTrapOID varbind line (prevents payload false matches and
     #      double-routing, since a trap is copied to EVERY matching item)

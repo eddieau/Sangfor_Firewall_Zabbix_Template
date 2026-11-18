@@ -532,7 +532,12 @@ for keyname, title, prio, desc in [
     anch = ANCHOR % (mod, keyname)
     trap_item(keyname, title, desc, mibs=[(mod, keyname)], trig={
         "uuid": U("trig-" + keyname),
-        "expression": (_find(anch, anch) +
+        # find() pattern is the BARE notification name: the item key is
+        # already anchored on the snmpTrapOID line, so routing is precise.
+        # A full anchored string as the quoted regexp pattern (backslash
+        # escapes + :: inside the literal) is silently rejected by some
+        # Zabbix 8.0 import parsers, skipping the whole trigger batch.
+        "expression": (_find(anch, keyname) +
                        " and nodata(/%s/snmptrap[%s],{$SANGFOR.TRAP_PROBLEM_HOURS})=0"
                        % (TPL, anch)),
         "recovery_mode": "RECOVERY_EXPRESSION",
@@ -947,7 +952,7 @@ tpl = {"uuid": U("template"), "template": TPL, "name": TPL,
        "groups": [{"name": TGROUP}],
        "items": items,
        "discovery_rules": drs,
-       "vendor": {"name": "Community (eddieau)", "version": "0.5.3"},
+       "vendor": {"name": "Community (eddieau)", "version": "0.5.4"},
        "tags": [{"tag": "class", "value": "network"},
                 {"tag": "target", "value": "sangfor"},
                 {"tag": "component", "value": "firewall"},

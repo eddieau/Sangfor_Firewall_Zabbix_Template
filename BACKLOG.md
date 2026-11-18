@@ -106,6 +106,19 @@ Rejected / stale (with evidence):
   8.0.0 (nested dashboards silently dropped by configuration.import);
   install_dashboard.py is the documented working path.
 
+## v0.5.4 incident note (2026-11-18)
+
+While applying review #5 live, discovered that re-imports had been
+silently skipping ALL trigger changes since v0.5.1 (hysteresis/tags/
+firmware trigger never applied). Root cause: full anchored strings as
+find() regexp pattern literals are rejected by this server's import
+parser, and one bad expression skips the whole trigger batch while the
+API returns true. Fixed in v0.5.4 (bare-name patterns; anchored keys
+unchanged) + checker rule. Live fully restored and verified: 94/94 host
+triggers tagged, 0 unsupported, attack alerting re-fired. Also learned:
+configuration.export under-reports trigger prototypes (use
+triggerprototype.get); partial imports can lose template macros.
+
 ## From review #5 (local HEAD f1042f6, 2026-11-18, score ~8.7/10)
 
 The most rigorous review so far: read generator/checker/CI/installer in

@@ -12,6 +12,31 @@ Fix: verify `Data collection → Hosts → <host> → Templates` lists
 `{$SANGFOR.*}`. If items are orphaned (no owning template), delete the host
 and recreate it with the template linked from the start.
 
+## Re-import returns true but trigger changes never apply
+
+Some Zabbix 8.0 builds silently skip the ENTIRE trigger batch of a
+`configuration.import` (creates and updates) when ONE trigger expression
+fails to parse - while still returning `true`. Known trigger: a quoted
+regexp pattern literal containing backslash escapes (e.g. a full
+`snmpTrapOID\.0\s=\s...` string inside `find(...,"regexp","...")`).
+This template therefore uses bare notification names as find() patterns;
+the anchored item KEY provides routing precision.
+
+Diagnose with a minimal scratch import (one new trap item + one trigger):
+if the scratch trigger is created but your real ones are not, bisect the
+expression content. Also note:
+
+- `configuration.export` under-reports trigger prototypes on some builds;
+  use `triggerprototype.get` as the authoritative source.
+- If items start reporting `Invalid update interval {$MACRO}`, check
+  `usermacro.get` on the template - partial/minimal imports were observed
+  to lose template macros during diagnosis; restore them and re-import
+  the full document.
+- `trigger.update`/`trigger.create` API parsers reject item keys
+  containing backslashes in expressions; manage such triggers via import
+  (delete + recreate the parent item if a create on an existing item is
+  skipped).
+
 ## Named trap items stay empty although traps arrive
 
 The anchored keys assume the **official `zabbix/zabbix-snmptraps` bash

@@ -3,6 +3,29 @@
 All notable changes to this template are documented here.
 Template format target: Zabbix 8.0 (JSON import).
 
+## [0.5.4] - 2026-11-18
+
+### Fixed
+- **Trap trigger find() patterns are bare notification names again** (item
+  keys stay anchored on the snmpTrapOID.0 line). A full anchored string as
+  the quoted regexp pattern (backslash escapes + `::` inside the literal)
+  is silently rejected by the Zabbix 8.0 import parser on the current
+  server build - and one bad trigger expression makes the import skip the
+  ENTIRE trigger batch (creates AND updates) while still returning true.
+  This latent bug meant the v0.5.1-v0.5.3 trigger changes (hysteresis,
+  scope tags, firmware-change trigger) never applied on re-imports.
+  Diagnosed with a scratch-item matrix; routing precision is unchanged
+  because the item KEY does the anchoring.
+- Checker: new rule - find() regexp pattern literals must not contain
+  backslashes (prevents regression to the silent-skip form).
+
+### Verified live (after the fix)
+- Full-document import applies everything in one pass: 26 template
+  triggers + 8 trigger prototypes, all scope-tagged, hysteresis recoveries
+  present, macros intact, dashboards block confirmed harmless.
+- Host: 94 triggers all tagged, 255 enabled items, 0 unsupported, live
+  attack traps routing and the HIGH problem firing again.
+
 ## [0.5.3] - 2026-11-18
 
 Review #5 implementation (all nine accepted items):
