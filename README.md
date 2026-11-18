@@ -93,7 +93,14 @@ Named keys are anchored regexes on the `snmpTrapOID.0` varbind line.
   macros for idle/down ports, and always keeps VPN tunnels
   (vpntun/ssltun*/veth*) silent. Re-run after any re-cabling. A known-
   critical port that is down RIGHT NOW is not auto-enabled - enable it
-  manually once confirmed. Note: because status items use
+  manually once confirmed.
+
+  **Coverage drift is detected automatically (v0.5.5):** every physical
+  interface also carries an INFO trigger "in use but link alerting not
+  enabled" (oper=up, admin=up, macro=0). A port cabled months later fires
+  this notice as soon as it comes up - run the helper (or enable the
+  macro) and the notice auto-recovers. Virtual interfaces are excluded by
+  an LLD override. Note: because status items use
   DISCARD_UNCHANGED_HEARTBEAT, a macro change alone re-evaluates the
   trigger only on the next value change or 1h heartbeat; to clear a stale
   problem immediately, disable+re-enable that discovered trigger.

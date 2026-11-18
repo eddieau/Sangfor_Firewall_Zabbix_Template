@@ -1895,6 +1895,19 @@
                 "description": "Check device load and traffic patterns; consider policy or capacity tuning."
               },
               {
+                "uuid": "fa340c736d624ba3a5386c23ab3e2c66",
+                "expression": "last(/Sangfor NGAF by SNMP/sangfor.if.operstatus[{#SNMPINDEX}])=1 and last(/Sangfor NGAF by SNMP/sangfor.if.adminstatus[{#SNMPINDEX}])=1 and {$SANGFOR.IF.LINK.ALERT:\"{#SNMPVALUE}\"}=0",
+                "name": "Interface {#SNMPVALUE}: in use but link alerting not enabled on {HOST.NAME}",
+                "priority": "INFO",
+                "description": "This port is up (in use) but has no link-down alerting. Run scripts/configure_link_alerts.py --apply or set {$SANGFOR.IF.LINK.ALERT:\"<ifname>\"}=1. Auto-recovers once coverage is enabled (re-evaluation may take up to the 1h dedup heartbeat).",
+                "tags": [
+                  {
+                    "tag": "scope",
+                    "value": "notice"
+                  }
+                ]
+              },
+              {
                 "uuid": "97836798a5214a218419e582f3bcea6a",
                 "expression": "min(/Sangfor NGAF by SNMP/sangfor.if.operstatus[{#SNMPINDEX}],#2)=2 and last(/Sangfor NGAF by SNMP/sangfor.if.adminstatus[{#SNMPINDEX}])=1 and {$SANGFOR.IF.LINK.ALERT:\"{#SNMPVALUE}\"}=1",
                 "name": "Interface {#SNMPVALUE}: link down on {HOST.NAME}",
@@ -1906,6 +1919,28 @@
                   }
                 ],
                 "description": "Verify device reachability, HA and service state; see docs/troubleshooting.md."
+              }
+            ],
+            "overrides": [
+              {
+                "name": "No coverage notice for virtual interfaces",
+                "step": "1",
+                "filter": {
+                  "conditions": [
+                    {
+                      "macro": "{#SNMPVALUE}",
+                      "value": "^(vpntun|ssltun|veth|tun|tap|lo)"
+                    }
+                  ]
+                },
+                "operations": [
+                  {
+                    "operationobject": "TRIGGER_PROTOTYPE",
+                    "operator": "LIKE",
+                    "value": "in use but link alerting",
+                    "discover": "NO_DISCOVER"
+                  }
+                ]
               }
             ],
             "graph_prototypes": [
@@ -2406,7 +2441,7 @@
         ],
         "vendor": {
           "name": "Community (eddieau)",
-          "version": "0.5.4"
+          "version": "0.5.5"
         },
         "tags": [
           {

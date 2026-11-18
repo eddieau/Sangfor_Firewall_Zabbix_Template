@@ -3,6 +3,26 @@
 All notable changes to this template are documented here.
 Template format target: Zabbix 8.0 (JSON import).
 
+## [0.5.5] - 2026-11-18
+
+### Added
+- **Coverage-drift detection** (handles ports added months after
+  deployment): new INFO trigger prototype on every physical interface -
+  `oper=1 AND admin=1 AND {$SANGFOR.IF.LINK.ALERT:"<ifname>"}=0` fires
+  "Interface X: in use but link alerting not enabled". A newly cabled port
+  that comes up without alerting coverage is detected automatically; the
+  operator then runs configure_link_alerts.py or enables the macro, and
+  the notice auto-recovers (re-evaluation within the 1h dedup heartbeat).
+- **LLD override** "No coverage notice for virtual interfaces": the
+  coverage trigger is never created for vpntun/ssltun*/veth*/tun*/tap*/lo
+  (tunnels flap with sessions; shape verified against the official Linux
+  template export).
+
+### Verified live (3 firewalls, 2 models, 2 firmware versions)
+- 11 coverage triggers per host (physical eth0-eth10 only), zero on
+  tunnels; no spurious problems - all currently-up ports already had
+  coverage from configure_link_alerts.py.
+
 ## [0.5.4] - 2026-11-18
 
 ### Fixed

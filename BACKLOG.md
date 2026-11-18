@@ -106,6 +106,14 @@ Rejected / stale (with evidence):
   8.0.0 (nested dashboards silently dropped by configuration.import);
   install_dashboard.py is the documented working path.
 
+## Coverage-drift solution (Eddie question 2026-11-18, shipped v0.5.5)
+
+- [x] New-port-added-later blind spot: INFO coverage-notice trigger
+  prototype (oper=1 AND admin=1 AND link-alert macro=0) + LLD override
+  excluding virtual interfaces. Auto-detects, operator decides (no
+  auto-config mutation). Optional companion: scheduled re-run of
+  configure_link_alerts.py (option B) - not requested, not implemented.
+
 ## v0.5.4 incident note (2026-11-18)
 
 While applying review #5 live, discovered that re-imports had been

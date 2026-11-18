@@ -276,6 +276,25 @@ def lld(name, key, disc_oid, protos, desc="", filter=None):
         dr["trigger_prototypes"] = tps
     drs.append(dr)
 
+def _coverage_trig():
+    # v0.5.5: detect coverage drift - a port that is UP (in use) but has no
+    # link-down alerting enabled. Fires INFO so the operator can run
+    # configure_link_alerts.py or enable the macro; auto-recovers once
+    # coverage exists. Handles ports added months after deployment without
+    # anyone remembering to re-run the helper. Virtual interfaces are
+    # excluded via the LLD override below.
+    t = TR("INFO",
+           "last(/%s/sangfor.if.operstatus[{#SNMPINDEX}])=1"
+           " and last(/%s/sangfor.if.adminstatus[{#SNMPINDEX}])=1"
+           " and {$SANGFOR.IF.LINK.ALERT:\"{#SNMPVALUE}\"}=0" % (TPL, TPL),
+           "Interface {#SNMPVALUE}: in use but link alerting not enabled on {HOST.NAME}")
+    t["description"] = ("This port is up (in use) but has no link-down "
+        "alerting. Run scripts/configure_link_alerts.py --apply or set "
+        "{$SANGFOR.IF.LINK.ALERT:\"<ifname>\"}=1. Auto-recovers once "
+        "coverage is enabled (re-evaluation may take up to the 1h dedup "
+        "heartbeat).")
+    return t
+
 lld("Interface discovery", "sangfor.if.discovery",
     "discovery[{#SNMPVALUE}," + IF + ".2]",
     [
@@ -318,7 +337,8 @@ lld("Interface discovery", "sangfor.if.discovery",
            desc="IF-MIB::ifOperStatus - authoritative per-interface link "
                 "state (verified exposed on AF8.0.108; indexes match "
                 "sfIfTable).", pre=[DCH],
-           tags=[("component", "network")], valuemap="Sangfor: if oper status"),
+           tags=[("component", "network")], valuemap="Sangfor: if oper status",
+           trig=_coverage_trig()),
      proto("Interface {#SNMPVALUE}: Admin status",
            "sangfor.if.adminstatus[{#SNMPINDEX}]",
            "1.3.6.1.2.1.2.2.1.7.{#SNMPINDEX}",
@@ -795,6 +815,22 @@ graphs = [
         gitem("sangfor.throughput.out", "FF3333", "BOLD_LINE", so=1)]),
 ]
 
+# LLD override: virtual interfaces never get the coverage-notice trigger
+# (tunnels flap with sessions; they are not physical link faults). Shape
+# verified against the official "Linux by Zabbix agent" export.
+next(d for d in drs if d["key"] == "sangfor.if.discovery")["overrides"] = [{
+    "name": "No coverage notice for virtual interfaces",
+    "step": "1",
+    "filter": {"conditions": [
+        {"macro": "{#SNMPVALUE}",
+         "value": "^(vpntun|ssltun|veth|tun|tap|lo)"}]},
+    "operations": [
+        {"operationobject": "TRIGGER_PROTOTYPE",
+         "operator": "LIKE",
+         "value": "in use but link alerting",
+         "discover": "NO_DISCOVER"}],
+}]
+
 # graph prototypes on the interface discovery (per-interface WAN traffic)
 next(d for d in drs if d["key"] == "sangfor.if.discovery")["graph_prototypes"] = [
     graph("Interface {#SNMPVALUE}: Traffic", [
@@ -911,7 +947,7 @@ def _scope_for(name):
     if "under attack" in n:
         return "security"
     if ("has been restarted" in n or "name has changed" in n
-            or "version changed" in n):
+            or "version changed" in n or "in use but link alerting" in n):
         return "notice"
     if "space usage" in n or "port resources" in n:
         return "capacity"
@@ -952,7 +988,7 @@ tpl = {"uuid": U("template"), "template": TPL, "name": TPL,
        "groups": [{"name": TGROUP}],
        "items": items,
        "discovery_rules": drs,
-       "vendor": {"name": "Community (eddieau)", "version": "0.5.4"},
+       "vendor": {"name": "Community (eddieau)", "version": "0.5.5"},
        "tags": [{"tag": "class", "value": "network"},
                 {"tag": "target", "value": "sangfor"},
                 {"tag": "component", "value": "firewall"},
