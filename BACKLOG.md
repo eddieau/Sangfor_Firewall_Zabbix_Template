@@ -58,6 +58,50 @@ Rejected (with evidence):
   in its web-extractor ingestion; the shipped keys correctly use
   `\.0\s=\s` and are live-verified.
 
+## From review #4 (DeepSeek share link, 2026-11-18, score 8.0/10)
+
+Accepted (pending approval, candidate v0.5.2):
+- [ ] **DISCARD_UNCHANGED_HEARTBEAT (1h) on discrete-state poll items**:
+  device.status, ha.enabled/mode/status/ctrllink/datalink/sync, plus
+  per-interface operstatus/adminstatus and fan/psu state prototypes.
+  Cuts DB writes for values that rarely change; last()-based triggers
+  unaffected. MUST NOT be applied to trap items (would break nodata()
+  recovery), to uptime items (change()-based restart trigger), or to
+  system.name (rename trigger compares consecutive values).
+
+Accepted as an ops note (server-side, not this template):
+- [ ] Trapper-health monitoring: if snmptrapd/the Zabbix snmp trapper
+  dies while SNMP polling stays up, trap silence after
+  {$SANGFOR.TRAP_PROBLEM_HOURS} looks like recovery. The recovery gate
+  checks SNMP availability, not trapper liveness. Mitigation belongs on
+  the Zabbix server/proxy health monitoring (internal item
+  zabbix[process,snmp trapper,avg,busy] / process check), not on the
+  firewall template.
+
+Rejected / stale (with evidence):
+- **"Missing mandatory class/target tags"** — STALE: added in v0.5.1
+  (class: network, target: sangfor, component: firewall, vendor: Sangfor;
+  verified in shipped JSON). The review read the file partially.
+- **"Add hysteresis to all threshold triggers"** — STALE: v0.5.1 already
+  ships hysteresis on all five threshold triggers (CPU scalar + per-core,
+  memory, disk space, disk temperature).
+- **Patch 3 walk[] master with JSONPATH "$"** — technically wrong as
+  written: raw SNMP walk output is not JSON; it needs the SNMP walk to
+  JSON preprocessing step first. The architecture direction itself is
+  already tracked below (walk[] master + dependent items, deferred with
+  measured justification: bulk=1 GETBULK already enabled, load negligible).
+- **"Make all metric triggers depend on No-SNMP trigger"** — not official
+  practice; unsupported items stop producing values so last()-based
+  metric triggers cannot fire new problems during an SNMP outage. The
+  official dependency chain (already ported) covers ICMP/loss/response.
+- **"CPU 30s history 7d is heavy, use 1d"** — 7d matches official
+  templates; storage cost trivial at 1/min cadence. No change.
+- **"Value map for trap severity"** — redundant: trap items are LOG text;
+  severity is already expressed per-trap via trigger priority.
+- **"Ensure dashboard auto-imports with template"** — impossible on
+  8.0.0 (nested dashboards silently dropped by configuration.import);
+  install_dashboard.py is the documented working path.
+
 ## P1 — considered (needs design/verification first)
 
 - [ ] **walk[] master + dependent items** for sfIfTable / disk / CPU-core
