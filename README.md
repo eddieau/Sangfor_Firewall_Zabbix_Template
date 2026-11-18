@@ -77,6 +77,26 @@ Named keys are anchored regexes on the `snmpTrapOID.0` varbind line.
   ⚠️ **Opt-in by design:** the macro defaults to 0 because unused but
   admin-enabled ports would otherwise alert. Enable it per critical port
   with a context macro, e.g. `{$SANGFOR.IF.LINK.ALERT:"eth1"} = 1`.
+
+  **Different sites wire different ports** (one uses eth0, another only
+  eth9/eth10) - do NOT copy one site's macros to another. Use the helper to
+  configure each host from its LIVE state:
+
+  ```bash
+  export ZABBIX_URL=https://your-zabbix.example.com/api_jsonrpc.php
+  export ZABBIX_API_KEY=...
+  python3 scripts/configure_link_alerts.py --all            # dry-run
+  python3 scripts/configure_link_alerts.py --all --apply    # commit
+  ```
+
+  It enables exactly the physical ports currently UP (in use), removes
+  macros for idle/down ports, and always keeps VPN tunnels
+  (vpntun/ssltun*/veth*) silent. Re-run after any re-cabling. A known-
+  critical port that is down RIGHT NOW is not auto-enabled - enable it
+  manually once confirmed. Note: because status items use
+  DISCARD_UNCHANGED_HEARTBEAT, a macro change alone re-evaluates the
+  trigger only on the next value change or 1h heartbeat; to clear a stale
+  problem immediately, disable+re-enable that discovered trigger.
 - **Unpaired problem traps** (attacks, dual switch, temperature/CPU/memory/
   disk/power/interface/fan/HA/bypass/port/SLA) recover after
   `{$SANGFOR.TRAP_PROBLEM_HOURS}` (default 4 h) of trap silence — but only

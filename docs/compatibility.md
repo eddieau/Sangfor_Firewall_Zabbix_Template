@@ -49,8 +49,10 @@ Sangfor's private MIB coverage varies per model and firmware.
 - **Link-alert opt-in macros are per-host and must match each site's real
   critical ports.** Copying one site's `{$SANGFOR.IF.LINK.ALERT:"ethN"}`
   macros to another site whose ethN is admin-up but oper-down (unused or
-  genuinely faulted) raises link-down HIGH problems. Review each host's
-  oper/admin status and set the macros only for ports that should be up.
+  genuinely faulted) raises link-down HIGH problems. Use
+  `scripts/configure_link_alerts.py --all --apply` to set each host's
+  macros from its live oper/admin state (enables ports currently up,
+  silences idle ports and VPN tunnels); re-run after re-cabling.
 - **Trap destination is device-side config.** Each firewall must be pointed
   at the collector (server or its proxy) IP:1162 with a matching
   community/version; a host whose traps never arrive keeps its trap items
