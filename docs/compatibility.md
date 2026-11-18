@@ -33,6 +33,15 @@ Sangfor's private MIB coverage varies per model and firmware.
   before trusting per-interface link alerts; a mismatch would attach
   link state to the wrong interface.
 
+- **Session counters are NOT cumulative per-second counters** (two-sample
+  live check, 15 s apart, 2026-11-18): `sfNewSessions` (.27.1) went
+  695→676 (a window gauge, can decrease); `sfTotalSessions` (.27.2) stayed
+  exactly 1,080,000 while ~150 new sessions occurred (round value — likely
+  a capacity/quantized figure, semantics unconfirmed); `sfCurSession`
+  (.27.3) 1,206,009→1,206,211 and `sfNewSessionPerSec` (.27.4) 10→10 are
+  gauges. All four are stored raw; applying CHANGE_PER_SECOND would be
+  wrong. `sfTotalSessions` exact meaning stays unverified.
+
 ## SNMP version notes
 
 - Counter64 objects (`sfIf*Rate`, `sfIf*Pkts`, `sfIf*Drop`) require

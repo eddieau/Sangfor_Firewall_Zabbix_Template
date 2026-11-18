@@ -106,6 +106,66 @@ Rejected / stale (with evidence):
   8.0.0 (nested dashboards silently dropped by configuration.import);
   install_dashboard.py is the documented working path.
 
+## From review #5 (local HEAD f1042f6, 2026-11-18, score ~8.7/10)
+
+The most rigorous review so far: read generator/checker/CI/installer in
+full, measured the JSON, and explicitly excluded already-fixed findings.
+All factual claims verified true against HEAD.
+
+Accepted — candidate v0.5.3 (small, low risk, pending approval):
+- [ ] **Trigger scope tags + descriptions** (0/33 tagged, 1/33 described):
+  add scope/desc args to TR/TRH; scopes availability/performance/capacity/
+  security/notice. Enables SOC routing on security events.
+- [ ] **Interface LLD operator filter macros** {$SANGFOR.IF.NAME.MATCHES}
+  (default .*) / {$SANGFOR.IF.NAME.NOT_MATCHES} (default ^$ = exclude
+  nothing) — non-breaking, lets operators drop tunnels/unused ports.
+- [ ] **Firmware-change trigger** on sangfor.software.version
+  (change()<>0, INFO, manual_close) — official pattern.
+- [ ] **Vendor block** {"name":"Sangfor","version":"0.5.x"} — official
+  templates carry it (verified present in official APC export); traceable
+  upgrades from the UI.
+- [ ] **Uptime poll macro** {$SANGFOR.UPTIME.FREQ} default 1m (currently
+  hardcoded 30s = ~2880 polls/day/item for a 1m-resolution signal).
+- [ ] **Link-down debounce**: min(oper,#2)=2 instead of last()=2 so one
+  dropped poll / brief flap doesn't raise HIGH (opt-in macro unchanged).
+- [ ] **Checker additions**: require trigger tags+descriptions; assert
+  hysteresis recovery strictly below threshold; README item-count vs JSON;
+  enforce DISCARD_UNCHANGED_HEARTBEAT absent from trap/uptime/system.name.
+- [ ] **.gitattributes** `* text=auto eol=lf` + generator newline="\n"
+  (Windows contributors would otherwise CRLF-break the CI diff).
+- [ ] install_dashboard.py: close the JSON file handle (with-open); detect
+  expired/invalid token distinctly; check host is linked to the template.
+
+Resolved by live read-only check (no code change needed):
+- [x] **Session counter types** (finding 6): two samples 15 s apart prove
+  sfNewSessions is a window gauge (695→676, decreases) and sfTotalSessions
+  is static/round (1,080,000 unchanged while ~150 sessions created) — NOT
+  cumulative per-second counters. CHANGE_PER_SECOND would be wrong; raw
+  storage is correct. Documented in docs/compatibility.md.
+
+Deferred / medium term:
+- [ ] **HA failover event trigger** change(sangfor.ha.status)<>0 (INFO/
+  WARNING, manual_close). Correct under dedup (changes always stored) but
+  UNTESTABLE on the standalone device (HA disabled) — ship only with a
+  real HA pair or clearly mark untested. Pairs with the split-brain idea.
+- [ ] **Live-import CI job** (Zabbix 8.0 server+web+db containers, call
+  configuration.import, tolerate the two-pass quirk). Catches import-time
+  failures the static checker can't (dashboard drop, bare-name deps, LINE
+  constant). ~15-20 min setup; worth it but heavier — schedule separately.
+- [ ] Session-capacity trigger with macro threshold (needs confirmed
+  sfTotalSessions semantics first).
+- [ ] Second-device verification row in compatibility.md (settles most
+  unverified caveats at once).
+
+Cosmetic / no action now:
+- {$SANGFOR.TRAP_PROBLEM_HOURS} holds "4h" (name misleads). Renaming breaks
+  existing hosts — document only; alias in a breaking v0.6 if ever.
+- Dashboard first row leaves cols 56-72 empty; nested dashboard still
+  can't import on 8.0.0 (documented). Optional.
+
+Already-rejected items the reviewer correctly did NOT re-raise: blanket
+on-fail discard, blanket SNMP dependencies, recovery-on-ICMP-up.
+
 ## P1 — considered (needs design/verification first)
 
 - [ ] **walk[] master + dependent items** for sfIfTable / disk / CPU-core
