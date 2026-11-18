@@ -110,10 +110,12 @@ def main():
         "lld": len(call("discoveryrule.get", {"hostids": [tid],
                                               "output": ["itemid"]})),
     }
-    # item prototypes: discoveryrule.get selectItemPrototypes
-    drs = call("discoveryrule.get", {"hostids": [tid], "output": ["itemid"],
-                                     "selectItemPrototypes": ["itemid"]})
-    live["item_protos"] = sum(len(d.get("itemPrototypes", [])) for d in drs)
+    # item prototypes: use the authoritative itemprototype.get. The
+    # discoveryrule.get selectItemPrototypes sub-select returns an empty
+    # list on some builds (false 0), same class of bug as export
+    # under-reporting trigger prototypes. Verified live: 21 == JSON.
+    live["item_protos"] = len(call("itemprototype.get",
+                                   {"hostids": [tid], "output": ["itemid"]}))
     expected = {"items": exp_items, "triggers": exp_trigs,
                 "trig_protos": exp_protos, "item_protos": exp_iprotos,
                 "macros": exp_macros, "lld": exp_lld}
