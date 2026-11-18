@@ -111,8 +111,8 @@ Rejected / stale (with evidence):
 Accurate reviewer; all claims verified against code, point 2 settled by
 live scratch tests.
 
-Accepted — fix package candidate v0.5.6 (pending approval):
-- [ ] **BUG (most severe): configure_link_alerts.py deletes alert macros
+Accepted — DONE in v0.5.6 (2026-11-18):
+- [x] **BUG (most severe): configure_link_alerts.py deletes alert macros
   for ports that are down or have no value at run time** (line ~145
   `elif not want_on and cur is not None`). A critical WAN port down during
   a helper run loses its manually-enabled macro -> fault alerting silently
@@ -120,22 +120,22 @@ Accepted — fix package candidate v0.5.6 (pending approval):
   Fix: NEVER remove macros because of down/unknown state; skip ports with
   no status value; restrict removal to virtual interfaces and vanished
   interfaces, behind an explicit --prune flag. Docs must state this.
-- [ ] **Scope misclassification**: "High ICMP ping loss/response time"
+- [x] **Scope misclassification**: "High ICMP ping loss/response time"
   fall to availability (should be performance); fan/PSU ABNORMAL fall to
   availability (should be fault - checker allows fault, nothing uses it).
   Descriptions are one generic sentence per scope. Fix: explicit
   scope+description per trigger at definition site, drop name-substring
   guessing (_scope_for/_decorate).
-- [ ] **Virtual-interface regex drift**: template override uses
+- [x] **Virtual-interface regex drift**: template override uses
   `^(vpntun|ssltun|veth|tun|tap|lo)` (matches ANY lo* name), helper uses
   `...|lo$`. Two copies drift. Fix: single macro
   {$SANGFOR.IF.VIRTUAL.MATCHES} referenced by the LLD override; helper
   reads the template macro (or shares one constant).
-- [ ] Version string duplicated (generator + CHANGELOG): single VERSION
+- [x] Version string duplicated (generator + CHANGELOG): single VERSION
   constant in generator.
-- [ ] api() duplicated in install_dashboard.py + configure_link_alerts.py:
+- [x] api() duplicated in install_dashboard.py + configure_link_alerts.py:
   shared module.
-- [ ] Docs: first deployment on hosts with macro default 0 produces a
+- [x] Docs: first deployment on hosts with macro default 0 produces a
   burst of coverage INFO notices (expected; mention in README).
 
 Point 2 settled by LIVE scratch tests (both cleaned up):
@@ -153,7 +153,7 @@ Point 2 settled by LIVE scratch tests (both cleaned up):
 
 Priority bump (reviewer argument accepted - the v0.5.4 incident proved
 static checks cannot catch import-time failures):
-- [ ] **TOP PRIORITY: live-import CI job** - spin Zabbix 8.0 server+web+db
+- [x] **TOP PRIORITY: live-import CI job** — DONE in v0.5.6 - spin Zabbix 8.0 server+web+db
   containers in CI, configuration.import (two-pass tolerated), then assert
   via trigger.get/triggerprototype.get that live counts == JSON counts
   (export under-reports prototypes - use the get APIs). Also validates

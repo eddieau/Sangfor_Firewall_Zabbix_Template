@@ -1,0 +1,46 @@
+# Throwaway Zabbix 8.0 stack for the CI live-import test.
+# Fresh DB every run; default Admin/zabbix login (CI only, never exposed).
+services:
+  mysql:
+    image: mysql:8.4-oracle
+    environment:
+      MYSQL_ROOT_PASSWORD: ci-root-pw
+      MYSQL_DATABASE: zabbix
+      MYSQL_USER: zabbix
+      MYSQL_PASSWORD: ci-zabbix-pw
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_bin
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h127.0.0.1 -uroot -pci-root-pw --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  zabbix-server:
+    image: zabbix/zabbix-server-mysql:ubuntu-8.0-latest
+    environment:
+      DB_SERVER_HOST: mysql
+      MYSQL_DATABASE: zabbix
+      MYSQL_USER: zabbix
+      MYSQL_PASSWORD: ci-zabbix-pw
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  zabbix-web:
+    image: zabbix/zabbix-web-nginx-mysql:ubuntu-8.0-latest
+    environment:
+      ZBX_SERVER_HOST: zabbix-server
+      DB_SERVER_HOST: mysql
+      MYSQL_DATABASE: zabbix
+      MYSQL_USER: zabbix
+      MYSQL_PASSWORD: ci-zabbix-pw
+      PHP_TZ: Europe/London
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      zabbix-server:
+        condition: service_started

@@ -89,11 +89,24 @@ Named keys are anchored regexes on the `snmpTrapOID.0` varbind line.
   python3 scripts/configure_link_alerts.py --all --apply    # commit
   ```
 
-  It enables exactly the physical ports currently UP (in use), removes
-  macros for idle/down ports, and always keeps VPN tunnels
-  (vpntun/ssltun*/veth*) silent. Re-run after any re-cabling. A known-
-  critical port that is down RIGHT NOW is not auto-enabled - enable it
-  manually once confirmed.
+  It enables exactly the physical ports currently UP (in use).
+  **Safety semantics (v0.5.6):** macros of ports that are down, idle or
+  have no value are NEVER touched - a critical line that is down during a
+  run keeps its alerting. Removal happens only with `--prune`, and only
+  for virtual interfaces (`{$SANGFOR.IF.VIRTUAL.MATCHES}`, read from the
+  template) or interfaces that no longer exist. Re-run after re-cabling.
+  A known-critical port that is down RIGHT NOW is not auto-enabled -
+  enable it manually once confirmed.
+
+  **One macro for many ports (live-verified on 8.0):** regex belongs in
+  the macro DEFINITION, not the expression - a single host macro
+  `{$SANGFOR.IF.LINK.ALERT:regex:"^(eth9|eth10)$"} = 1` covers both ports
+  because the template resolves `{$SANGFOR.IF.LINK.ALERT:"{#SNMPVALUE}"}`
+  against it. (Regex at the usage site does NOT work.)
+
+  **First deployment note:** with the default macro 0, every in-use port
+  raises a coverage INFO notice until you run the helper or enable
+  macros - this burst is expected, not a fault.
 
   **Coverage drift is detected automatically (v0.5.5):** every physical
   interface also carries an INFO trigger "in use but link alerting not

@@ -3,6 +3,48 @@
 All notable changes to this template are documented here.
 Template format target: Zabbix 8.0 (JSON import).
 
+## [0.5.6] - 2026-11-18
+
+Review #6 implementation (all accepted items) + live-import CI:
+
+### Fixed
+- **configure_link_alerts.py no longer deletes alert macros of ports that
+  are down or have no value** (the most severe review finding: a critical
+  WAN line down during a helper run lost its manually-enabled macro and
+  its fault alerting went silent). New semantics: down/idle/unknown ports
+  are PRESERVED (no-data ports skipped); removal happens only with an
+  explicit `--prune` flag and only for virtual interfaces or interfaces
+  that no longer exist.
+- **Scope classification is explicit per trigger** - the name-substring
+  guessing (_scope_for/_decorate) is gone. ICMP loss/response-time are now
+  `performance`; fan/PSU abnormal are `fault`; every trigger carries its
+  own action-oriented description instead of one generic sentence per
+  scope.
+- **Virtual-interface regex single source of truth**: new macro
+  `{$SANGFOR.IF.VIRTUAL.MATCHES}` (default `^(vpntun|ssltun|veth|tun|tap|lo$)`,
+  fixing the `lo` vs `lo$` drift); the LLD override references the macro
+  and configure_link_alerts.py reads it from the template.
+
+### Added
+- **CI live-import job** (`live-import` in verify-template.yml +
+  ci/docker-compose.yml + scripts/ci_import_test.py): spins a throwaway
+  Zabbix 8.0 server+web+mysql stack, imports the template (two-pass
+  tolerated + idempotence pass), then asserts live counts via
+  trigger.get/triggerprototype.get/item.get/usermacro.get (NOT
+  configuration.export, which under-reports prototypes) and checks the
+  vendor block round-trips. This closes the gap that let three releases
+  of trigger changes silently never apply.
+- Shared `scripts/zabbix_api.py` client (retry + token-error distinction)
+  used by install_dashboard.py and configure_link_alerts.py.
+- Single VERSION constant in the generator (vendor block derives from it).
+
+### Documented
+- Regex-context macros (live-verified): regex belongs in the macro
+  DEFINITION - `{$SANGFOR.IF.LINK.ALERT:regex:"^(eth9|eth10)$"}=1` covers
+  many ports with one host macro; regex at the usage site does NOT work.
+- First deployment on hosts with the default macro 0 produces a burst of
+  coverage INFO notices - expected; run configure_link_alerts.py --apply.
+
 ## [0.5.5] - 2026-11-18
 
 ### Added

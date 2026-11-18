@@ -24,37 +24,13 @@ Caveats:
   * Re-run this script after every template upgrade that changes items or
     graphs referenced by widgets.
 """
-import argparse, json, os, sys, time, urllib.error, urllib.request
+import argparse, json, os, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE_FILE = os.path.join(HERE, os.pardir, "template_sangfor_ngaf_snmp.json")
 
 
-def api_call(url, token, method, params):
-    payload = json.dumps({"jsonrpc": "2.0", "method": method,
-                          "params": params, "id": 1}).encode()
-    for attempt in range(3):
-        req = urllib.request.Request(url, data=payload, headers={
-            "Content-Type": "application/json-rpc",
-            "Authorization": "Bearer " + token})
-        try:
-            resp = json.loads(urllib.request.urlopen(req, timeout=30)
-                               .read().decode())
-            break
-        except (urllib.error.URLError, TimeoutError, OSError) as e:
-            if attempt == 2:
-                sys.exit("API call %s failed after 3 attempts: %s"
-                         % (method, e))
-            time.sleep(2 * (attempt + 1))
-    if "error" in resp:
-        msg = json.dumps(resp["error"])
-        low = msg.lower()
-        if "not authorised" in low or "not authorized" in low \
-                or "session terminated" in low or "re-login" in low:
-            sys.exit("API token invalid/expired (%s): check ZABBIX_API_KEY "
-                     "in the environment" % method)
-        sys.exit("API ERROR %s: %s" % (method, msg[:400]))
-    return resp["result"]
+from zabbix_api import api_call  # shared client (review #6)
 
 
 def main():

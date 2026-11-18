@@ -8,6 +8,7 @@ from pathlib import Path
 
 BASE = "1.3.6.1.4.1.35047"        # sangfor
 GEN = BASE + ".1"                  # general ::= { sangfor 1 }
+VERSION = "0.5.6"
 TPL = "Sangfor NGAF by SNMP"
 TGROUP = "Templates/Network devices"
 
@@ -53,16 +54,21 @@ def snmp_item(name, key, oid, vtype="FLOAT", units="", desc="", pre=None,
     items.append(it)
     return it
 
-def TR(prio, expr, name):
+def TR(prio, expr, name, scope, desc):
+    # scope + description are EXPLICIT per trigger (review #6): no
+    # name-substring guessing. scope in availability/performance/capacity/
+    # security/notice/fault.
     return {"uuid": U("trig-" + name), "expression": expr, "name": name,
-            "priority": prio}
+            "priority": prio, "tags": [{"tag": "scope", "value": scope}],
+            "description": desc}
 
-def TRH(prio, expr, name, rec):
+def TRH(prio, expr, name, rec, scope, desc):
     # threshold trigger with hysteresis: recover only below a lower band so
     # values hovering at the threshold do not flap problem/recovery.
-    return {"uuid": U("trig-" + name), "expression": expr, "name": name,
-            "priority": prio, "recovery_mode": "RECOVERY_EXPRESSION",
-            "recovery_expression": rec}
+    t = TR(prio, expr, name, scope, desc)
+    t["recovery_mode"] = "RECOVERY_EXPRESSION"
+    t["recovery_expression"] = rec
+    return t
 
 # preprocessing helpers
 def P(t, *params):
@@ -104,6 +110,9 @@ _fw["triggers"] = [{
     "name": "Sangfor: Software version changed on {HOST.NAME}",
     "priority": "INFO",
     "manual_close": "YES",
+    "tags": [{"tag": "scope", "value": "notice"}],
+    "description": "Firmware/software version string changed. Confirm the "
+                   "upgrade was planned; acknowledge to close.",
 }]
 snmp_item("Sangfor: AF version", "sangfor.af.version",
           "get[" + GEN + ".24.0]", "CHAR",
@@ -121,7 +130,10 @@ snmp_item("Sangfor: Device status", "sangfor.device.status",
           desc="sfDeviceStatus: 0 - Warning, 1 - Normal.", pre=[DCH],
           tags=[("component", "health")], valuemap="Sangfor: device status",
           trig=TR("WARNING", "last(/%s/sangfor.device.status)=0" % TPL,
-                  "Sangfor: Device reports WARNING status on {HOST.NAME}"))
+                  "Sangfor: Device reports WARNING status on {HOST.NAME}",
+                  "availability",
+                  "sfDeviceStatus returned Warning(0). Check the NGAF system "
+                  "status page for the underlying fault."))
 
 snmp_item("Sangfor: CPU utilization (30s)", "sangfor.cpu.util.30s",
           "get[" + GEN + ".19.4.0]", units="%",
@@ -132,7 +144,10 @@ snmp_item("Sangfor: CPU utilization (1 min)", "sangfor.cpu.util.1m",
           trig=TRH("AVERAGE",
                   "last(/%s/sangfor.cpu.util.1m)>{$SANGFOR.CPU.MAX}" % TPL,
                   "Sangfor: High CPU utilization over {$SANGFOR.CPU.MAX}% on {HOST.NAME}",
-                  "last(/%s/sangfor.cpu.util.1m)<{$SANGFOR.CPU.MAX}*0.9" % TPL))
+                  "last(/%s/sangfor.cpu.util.1m)<{$SANGFOR.CPU.MAX}*0.9" % TPL,
+                  "performance",
+                  "1-min CPU utilization above {$SANGFOR.CPU.MAX}%. Check "
+                  "traffic/policy load; recovers below 90% of the threshold."))
 snmp_item("Sangfor: CPU utilization (5 min)", "sangfor.cpu.util.5m",
           "get[" + GEN + ".19.6.0]", units="%",
           desc="sfCpuAllCostRateLast5Min.", tags=[("component", "cpu")])
@@ -156,7 +171,10 @@ snmp_item("Sangfor: Memory usage", "sangfor.mem.util",
           trig=TRH("AVERAGE",
                   "last(/%s/sangfor.mem.util)>{$SANGFOR.MEM.MAX}" % TPL,
                   "Sangfor: High memory usage over {$SANGFOR.MEM.MAX}% on {HOST.NAME}",
-                  "last(/%s/sangfor.mem.util)<{$SANGFOR.MEM.MAX}*0.9" % TPL))
+                  "last(/%s/sangfor.mem.util)<{$SANGFOR.MEM.MAX}*0.9" % TPL,
+                  "performance",
+                  "Device-reported memory usage above {$SANGFOR.MEM.MAX}%. "
+                  "Check session table growth; recovers below 90% of threshold."))
 snmp_item("Sangfor: Swap total", "sangfor.swap.total",
           "get[" + GEN + ".38.1.0]",
           desc="sfMemTotalSwap. Units as reported by device.")
@@ -213,13 +231,19 @@ snmp_item("Sangfor: HA control link status", "sangfor.ha.ctrllink",
           desc="sfHACtrlLinkStatus: 0 - invalid, 1 - normal, 2 - abnormal.",
           pre=[DCH], tags=[("component", "ha")],
           trig=TR("HIGH", "last(/%s/sangfor.ha.ctrllink)=2" % TPL,
-                  "Sangfor: HA control link ABNORMAL on {HOST.NAME}"))
+                  "Sangfor: HA control link ABNORMAL on {HOST.NAME}",
+                  "availability",
+                  "HA control link reports abnormal(2). Verify the HA "
+                  "heartbeat cabling/peer before a failover is attempted."))
 snmp_item("Sangfor: HA data link status", "sangfor.ha.datalink",
           "get[" + GEN + ".64.7.0]",
           desc="sfHADataLinkStatus: 0 - invalid, 1 - normal, 2 - abnormal.",
           pre=[DCH], tags=[("component", "ha")],
           trig=TR("HIGH", "last(/%s/sangfor.ha.datalink)=2" % TPL,
-                  "Sangfor: HA data link ABNORMAL on {HOST.NAME}"))
+                  "Sangfor: HA data link ABNORMAL on {HOST.NAME}",
+                  "availability",
+                  "HA data/sync link reports abnormal(2). Session state may "
+                  "not sync to the peer; check the sync interface."))
 snmp_item("Sangfor: HA sync state", "sangfor.ha.sync",
           "get[" + GEN + ".64.8.0]",
           desc="sfHASyncState: 0 - invalid, 1 - sync running, 2 - sync end, "
@@ -283,17 +307,17 @@ def _coverage_trig():
     # coverage exists. Handles ports added months after deployment without
     # anyone remembering to re-run the helper. Virtual interfaces are
     # excluded via the LLD override below.
-    t = TR("INFO",
+    return TR("INFO",
            "last(/%s/sangfor.if.operstatus[{#SNMPINDEX}])=1"
            " and last(/%s/sangfor.if.adminstatus[{#SNMPINDEX}])=1"
            " and {$SANGFOR.IF.LINK.ALERT:\"{#SNMPVALUE}\"}=0" % (TPL, TPL),
-           "Interface {#SNMPVALUE}: in use but link alerting not enabled on {HOST.NAME}")
-    t["description"] = ("This port is up (in use) but has no link-down "
-        "alerting. Run scripts/configure_link_alerts.py --apply or set "
-        "{$SANGFOR.IF.LINK.ALERT:\"<ifname>\"}=1. Auto-recovers once "
-        "coverage is enabled (re-evaluation may take up to the 1h dedup "
-        "heartbeat).")
-    return t
+           "Interface {#SNMPVALUE}: in use but link alerting not enabled on {HOST.NAME}",
+           "notice",
+           "This port is up (in use) but has no link-down alerting. Run "
+           "scripts/configure_link_alerts.py --apply or set "
+           "{$SANGFOR.IF.LINK.ALERT:\"<ifname>\"}=1. Auto-recovers once "
+           "coverage is enabled (re-evaluation may take up to the 1h dedup "
+           "heartbeat).")
 
 lld("Interface discovery", "sangfor.if.discovery",
     "discovery[{#SNMPVALUE}," + IF + ".2]",
@@ -320,14 +344,20 @@ lld("Interface discovery", "sangfor.if.discovery",
            tags=[("component", "network")],
            trig=TR("WARNING",
                    "last(/%s/sangfor.if.in.drop[{#SNMPINDEX}])>{$SANGFOR.IF_DROP.MAX}" % TPL,
-                   "Interface {#SNMPVALUE}: high inbound discard rate on {HOST.NAME}")),
+                   "Interface {#SNMPVALUE}: high inbound discard rate on {HOST.NAME}",
+                   "performance",
+                   "Inbound discards/s above {$SANGFOR.IF_DROP.MAX}. Check "
+                   "congestion/MTU/attacks on this interface.")),
      proto("Interface {#SNMPVALUE}: Outbound discards",
            "sangfor.if.out.drop[{#SNMPINDEX}]", IF + ".16.{#SNMPINDEX}",
            "pps", CPS, desc="sfIfOutDrop (cumulative counter -> drops/s).",
            tags=[("component", "network")],
            trig=TR("WARNING",
                    "last(/%s/sangfor.if.out.drop[{#SNMPINDEX}])>{$SANGFOR.IF_DROP.MAX}" % TPL,
-                   "Interface {#SNMPVALUE}: high outbound discard rate on {HOST.NAME}")),
+                   "Interface {#SNMPVALUE}: high outbound discard rate on {HOST.NAME}",
+                   "performance",
+                   "Outbound discards/s above {$SANGFOR.IF_DROP.MAX}. Check "
+                   "egress congestion or shaping on this interface.")),
      proto("Interface {#SNMPVALUE}: IPv4 address",
            "sangfor.if.ipv4[{#SNMPINDEX}]", IF + ".4.{#SNMPINDEX}",
            vtype="CHAR", desc="sfIfAddr.", tags=[("component", "network")]),
@@ -349,7 +379,10 @@ lld("Interface discovery", "sangfor.if.discovery",
                    "min(/%s/sangfor.if.operstatus[{#SNMPINDEX}],#2)=2"
                    " and last(/%s/sangfor.if.adminstatus[{#SNMPINDEX}])=1"
                    " and {$SANGFOR.IF.LINK.ALERT:\"{#SNMPVALUE}\"}=1" % (TPL, TPL),
-                   "Interface {#SNMPVALUE}: link down on {HOST.NAME}")),
+                   "Interface {#SNMPVALUE}: link down on {HOST.NAME}",
+                   "availability",
+                   "Opt-in port reported oper-down for two consecutive polls "
+                   "while admin-up. Verify cabling/peer; recovers when up.")),
     ],
     desc="Interfaces from SANGFOR-MIB::sfIfTable (sfIfName column).",
     filter=[{"macro": "{#SNMPVALUE}", "value": "{$SANGFOR.IF.NAME.MATCHES}",
@@ -376,14 +409,20 @@ lld("Disk discovery", "sangfor.disk.discovery",
            trig=TRH("WARNING",
                    "last(/%s/sangfor.disk.pused[{#SNMPINDEX}])>{$SANGFOR.DISK.MAX}" % TPL,
                    "Disk {#SNMPVALUE}: space usage over {$SANGFOR.DISK.MAX}% on {HOST.NAME}",
-                   "last(/%s/sangfor.disk.pused[{#SNMPINDEX}])<{$SANGFOR.DISK.MAX}*0.9" % TPL)),
+                   "last(/%s/sangfor.disk.pused[{#SNMPINDEX}])<{$SANGFOR.DISK.MAX}*0.9" % TPL,
+                   "capacity",
+                   "Filesystem usage above {$SANGFOR.DISK.MAX}%. Free or extend "
+                   "space (logs/pcap); recovers below 90% of threshold.")),
      proto("Disk {#SNMPVALUE}: Temperature", "sangfor.disk.temp[{#SNMPINDEX}]",
            DK + ".10.{#SNMPINDEX}", "\u00b0C",
            desc="sfDiskTemp.", tags=[("component", "disk")],
            trig=TRH("WARNING",
                    "last(/%s/sangfor.disk.temp[{#SNMPINDEX}])>{$SANGFOR.DISK_TEMP.MAX}" % TPL,
                    "Disk {#SNMPVALUE}: high temperature ({ITEM.LASTVALUE1}) on {HOST.NAME}",
-                   "last(/%s/sangfor.disk.temp[{#SNMPINDEX}])<{$SANGFOR.DISK_TEMP.MAX}-5" % TPL)),
+                   "last(/%s/sangfor.disk.temp[{#SNMPINDEX}])<{$SANGFOR.DISK_TEMP.MAX}-5" % TPL,
+                   "performance",
+                   "Disk temperature above {$SANGFOR.DISK_TEMP.MAX}C. Check "
+                   "chassis cooling; recovers 5C below threshold.")),
     ],
     desc="Filesystems from SANGFOR-MIB::sfDiskTable (sfFilesystemName column).",
     filter=[{"macro": "{#SNMPVALUE}", "value": "/dev/loop",
@@ -404,7 +443,10 @@ lld("CPU core discovery", "sangfor.cpu.discovery",
            trig=TRH("WARNING",
                    "last(/%s/sangfor.cpu.util[{#SNMPINDEX}])>{$SANGFOR.CPU_CORE.MAX}" % TPL,
                    "CPU core {#SNMPVALUE}: utilization over {$SANGFOR.CPU_CORE.MAX}% on {HOST.NAME}",
-                   "last(/%s/sangfor.cpu.util[{#SNMPINDEX}])<{$SANGFOR.CPU_CORE.MAX}*0.9" % TPL)),
+                   "last(/%s/sangfor.cpu.util[{#SNMPINDEX}])<{$SANGFOR.CPU_CORE.MAX}*0.9" % TPL,
+                   "performance",
+                   "Per-core utilization above {$SANGFOR.CPU_CORE.MAX}%. A single "
+                   "hot core can bottleneck forwarding; recovers below 90%.")),
     ],
     desc="Per-core load from SANGFOR-MIB::sfCpuCostRateTable.")
 
@@ -419,7 +461,10 @@ lld("Fan discovery", "sangfor.fan.discovery",
            pre=[DCH], tags=[("component", "hardware")], valuemap="Sangfor: hw state",
            trig=TR("AVERAGE",
                    "last(/%s/sangfor.fan.state[{#SNMPINDEX}])=0" % TPL,
-                   "Sangfor: Fan {#SNMPVALUE} ABNORMAL on {HOST.NAME}")),
+                   "Sangfor: Fan {#SNMPVALUE} ABNORMAL on {HOST.NAME}",
+                   "fault",
+                   "Fan reports abnormal(0). Hardware fault - arrange replacement "
+                   "before thermal shutdown.")),
     ],
     desc="Fans from SANGFOR-MIB::sfSysFanTable. Some NGAF models do not "
          "expose this table (verified empty on AF8.0.108 nsf-1050a-i).")
@@ -432,7 +477,10 @@ lld("Power supply discovery", "sangfor.psu.discovery",
            pre=[DCH], tags=[("component", "hardware")], valuemap="Sangfor: hw state",
            trig=TR("HIGH",
                    "last(/%s/sangfor.psu.state[{#SNMPINDEX}])=0" % TPL,
-                   "Sangfor: Power supply {#SNMPVALUE} ABNORMAL on {HOST.NAME}")),
+                   "Sangfor: Power supply {#SNMPVALUE} ABNORMAL on {HOST.NAME}",
+                   "fault",
+                   "PSU reports abnormal(0). Hardware fault - check feed/replace "
+                   "unit; redundancy may be lost.")),
     ],
     desc="PSUs from SANGFOR-MIB::sfSysPowerTable. Some NGAF models do not "
          "expose this table (verified empty on AF8.0.108 nsf-1050a-i).")
@@ -518,35 +566,35 @@ for keyname, mod, failn, normaln, title, desc in [
 ]:
     trap_item(keyname, title, desc, mibs=[(mod, failn), (mod, normaln)])
 
-for keyname, title, prio, desc in [
+for keyname, title, prio, desc, scope in [
     ("sfFirewallTrapFwAttack", "Firewall under attack", "HIGH",
-     "sfFirewallTrapFwAttack (.1.3.6.1.4.1.35047.200.200.6) - firewall itself under attack."),
+     "sfFirewallTrapFwAttack (.1.3.6.1.4.1.35047.200.200.6) - firewall itself under attack.", "security"),
     ("sfFirewallTrapNetworkAttack", "Protected network under attack", "HIGH",
-     "sfFirewallTrapNetworkAttack (.1.3.6.1.4.1.35047.200.200.7) - protected network under attack."),
+     "sfFirewallTrapNetworkAttack (.1.3.6.1.4.1.35047.200.200.7) - protected network under attack.", "security"),
     ("sfFirewallTrapDualSwitch", "HA dual-active switch event", "HIGH",
-     "sfFirewallTrapDualSwitch (.1.3.6.1.4.1.35047.200.200.2) - HA failover/dual switch occurred."),
+     "sfFirewallTrapDualSwitch (.1.3.6.1.4.1.35047.200.200.2) - HA failover/dual switch occurred.", "availability"),
     ("sfTemperatureWarnTrap", "Temperature alert", "HIGH",
-     "sfTemperatureWarnTrap (.1.3.6.1.4.1.35047.110.1) - Temperature Alert."),
+     "sfTemperatureWarnTrap (.1.3.6.1.4.1.35047.110.1) - Temperature Alert.", "fault"),
     ("sfCPUWarnTrap", "CPU alert", "WARNING",
-     "sfCPUWarnTrap (.1.3.6.1.4.1.35047.110.2) - CPU Alert."),
+     "sfCPUWarnTrap (.1.3.6.1.4.1.35047.110.2) - CPU Alert.", "performance"),
     ("sfMemoryWarnTrap", "Memory alert", "WARNING",
-     "sfMemoryWarnTrap (.1.3.6.1.4.1.35047.110.3) - Memory Alert."),
+     "sfMemoryWarnTrap (.1.3.6.1.4.1.35047.110.3) - Memory Alert.", "performance"),
     ("sfDiskWarnTrap", "Hard disk alert", "HIGH",
-     "sfDiskWarnTrap (.1.3.6.1.4.1.35047.110.4) - Hard Disk Alert."),
+     "sfDiskWarnTrap (.1.3.6.1.4.1.35047.110.4) - Hard Disk Alert.", "fault"),
     ("sfPowerWarnTrap", "Power alert", "HIGH",
-     "sfPowerWarnTrap (.1.3.6.1.4.1.35047.110.5) - Power Alert."),
+     "sfPowerWarnTrap (.1.3.6.1.4.1.35047.110.5) - Power Alert.", "fault"),
     ("sfInterfaceDownTrap", "Interface alert", "HIGH",
-     "sfInterfaceDownTrap (.1.3.6.1.4.1.35047.110.6) - Interface Alert."),
+     "sfInterfaceDownTrap (.1.3.6.1.4.1.35047.110.6) - Interface Alert.", "fault"),
     ("sfFanWarnTrap", "Fan alert", "HIGH",
-     "sfFanWarnTrap (.1.3.6.1.4.1.35047.110.7) - Fan Alert."),
+     "sfFanWarnTrap (.1.3.6.1.4.1.35047.110.7) - Fan Alert.", "fault"),
     ("sfHAStatusTrap", "HA status alert", "HIGH",
-     "sfHAStatusTrap (.1.3.6.1.4.1.35047.110.8) - HA Status Alert."),
+     "sfHAStatusTrap (.1.3.6.1.4.1.35047.110.8) - HA Status Alert.", "fault"),
     ("sfBypassChangeTrap", "Passthrough status alert", "WARNING",
-     "sfBypassChangeTrap (.1.3.6.1.4.1.35047.110.19) - Passthrough Status Alert (bypass mode change)."),
+     "sfBypassChangeTrap (.1.3.6.1.4.1.35047.110.19) - Passthrough Status Alert (bypass mode change).", "availability"),
     ("sfPortResourceWarnTrap", "Insufficient port resources", "WARNING",
-     "sfPortResourceWarnTrap (.1.3.6.1.4.1.35047.110.25) - Insufficient Port Resources."),
+     "sfPortResourceWarnTrap (.1.3.6.1.4.1.35047.110.25) - Insufficient Port Resources.", "capacity"),
     ("sfSLATrap", "SLA-based link failover", "WARNING",
-     "sfSLATrap (.1.3.6.1.4.1.35047.110.27) - SLA-based Link Failover."),
+     "sfSLATrap (.1.3.6.1.4.1.35047.110.27) - SLA-based Link Failover.", "availability"),
 ]:
     mod = TRAP_AF if keyname.startswith("sfFirewallTrap") else TRAP_SF
     anch = ANCHOR % (mod, keyname)
@@ -569,6 +617,10 @@ for keyname, title, prio, desc in [
             " and last(/%s/zabbix[host,snmp,available])=1" % (TPL, anch, TPL)),
         "name": "Sangfor: " + title + " on {HOST.NAME}",
         "priority": prio,
+        "tags": [{"tag": "scope", "value": scope}],
+        "description": desc + " Auto-recovers after "
+            "{$SANGFOR.TRAP_PROBLEM_HOURS} of trap silence while SNMP "
+            "polling stays up; investigate in the NGAF security/system logs.",
     })
 
 for mod, keyname, title, desc in [
@@ -619,7 +671,10 @@ plain_item("ICMP ping", "icmpping", "SIMPLE", "UNSIGNED",
                 "up/down logic.",
            tags=ICMP_TAGS,
            trig=TR("HIGH", "max(/%s/icmpping,#3)=0" % TPL,
-                   "Device unavailable by ICMP ping on {HOST.NAME}"))
+                   "Device unavailable by ICMP ping on {HOST.NAME}",
+                   "availability",
+                   "Three consecutive ICMP checks failed. Device or path down; "
+                   "other metric triggers depend on this."))
 plain_item("ICMP loss", "icmppingloss", "SIMPLE", "FLOAT", "%",
            desc="Packet loss (%) per ICMP check (fping defaults; tune via "
                 "the FpingLocation system setup, not per-item macros). "
@@ -628,13 +683,19 @@ plain_item("ICMP loss", "icmppingloss", "SIMPLE", "FLOAT", "%",
            trig=TR("WARNING",
                    "min(/%s/icmppingloss,5m)>{$ICMP_LOSS_WARN}"
                    " and min(/%s/icmppingloss,5m)<100" % (TPL, TPL),
-                   "High ICMP ping loss on {HOST.NAME}"))
+                   "High ICMP ping loss on {HOST.NAME}",
+                   "performance",
+                   "5-min ICMP loss above {$ICMP_LOSS_WARN}% (but <100%). Path "
+                   "degradation/congestion, not a full outage."))
 plain_item("ICMP response time", "icmppingsec", "SIMPLE", "FLOAT", "s",
            desc="Average ICMP response time in seconds (ported).",
            tags=ICMP_TAGS,
            trig=TR("WARNING",
                    "avg(/%s/icmppingsec,5m)>{$ICMP_RESPONSE_TIME_WARN}" % TPL,
-                   "High ICMP ping response time on {HOST.NAME}"))
+                   "High ICMP ping response time on {HOST.NAME}",
+                   "performance",
+                   "5-min average ICMP RTT above {$ICMP_RESPONSE_TIME_WARN}s. "
+                   "Latency/congestion on the path."))
 
 plain_item("SNMP agent availability", "zabbix[host,snmp,available]",
            "INTERNAL", "UNSIGNED",
@@ -643,7 +704,10 @@ plain_item("SNMP agent availability", "zabbix[host,snmp,available]",
            tags=[("component", "snmp")],
            trig=TR("WARNING",
                    "max(/%s/zabbix[host,snmp,available],{$SNMP.TIMEOUT})=0" % TPL,
-                   "No SNMP data collection from {HOST.NAME}"))
+                   "No SNMP data collection from {HOST.NAME}",
+                   "availability",
+                   "SNMP availability 0 for {$SNMP.TIMEOUT}. Check credentials, "
+                   "ACLs and UDP/161; metric items go unsupported meanwhile."))
 
 for nm, ky, oid, ds in [
     ("System contact details", "system.contact[sysContact.0]",
@@ -687,6 +751,9 @@ for it in items:
             "name": "{HOST.NAME} has been restarted",
             "event_name": "{HOST.NAME} has been restarted",
             "priority": "WARNING",
+            "tags": [{"tag": "scope", "value": "notice"}],
+            "description": "Both network and hardware uptime counters dropped "
+                           "- a real reboot (not just an SNMP stack reset).",
             "dependencies": [{
                 "name": "No SNMP data collection from {HOST.NAME}",
                 "expression":
@@ -705,6 +772,7 @@ for it in items:
             "name": "System name has changed (new name: {ITEM.LASTVALUE1})",
             "priority": "INFO",
             "manual_close": "YES",
+            "tags": [{"tag": "scope", "value": "notice"}],
         }]
     if it["key"] == "zabbix[host,snmp,available]":
         # 8.0 JSON import: dependency "name" must be the BARE trigger name
@@ -763,6 +831,10 @@ for m, v, d in [
      "Uptime poll interval (restart detection needs ~1m resolution)."),
     ("{$SANGFOR.IF.NAME.MATCHES}", ".*",
      "Interface discovery filter: names matching this regex are discovered."),
+    ("{$SANGFOR.IF.VIRTUAL.MATCHES}", "^(vpntun|ssltun|veth|tun|tap|lo$)",
+     "Virtual-interface name regex. The LLD override uses it to suppress the "
+     "coverage-notice trigger on tunnels; configure_link_alerts.py reads the "
+     "same macro so the two never drift."),
     ("{$SANGFOR.IF.NAME.NOT_MATCHES}", "^$",
      "Interface discovery filter: names matching this regex are excluded "
      "(default ^$ excludes nothing). E.g. ^(veth|ssltun|vpntun) to drop "
@@ -823,7 +895,7 @@ next(d for d in drs if d["key"] == "sangfor.if.discovery")["overrides"] = [{
     "step": "1",
     "filter": {"conditions": [
         {"macro": "{#SNMPVALUE}",
-         "value": "^(vpntun|ssltun|veth|tun|tap|lo)"}]},
+         "value": "{$SANGFOR.IF.VIRTUAL.MATCHES}"}]},
     "operations": [
         {"operationobject": "TRIGGER_PROTOTYPE",
          "operator": "LIKE",
@@ -926,50 +998,6 @@ valuemaps = [
              [("1", "up"), ("2", "down"), ("3", "testing")]),
 ]
 
-# ================= trigger metadata (review #5) =================
-# Every trigger gets a scope tag (official taxonomy: availability /
-# performance / capacity / security / notice) and an action-oriented
-# description. Applied centrally so no call site can forget it; existing
-# tags/descriptions are preserved. UUIDs are name-seeded and unchanged.
-_SCOPE_ACTIONS = {
-    "security": "Investigate in the NGAF security logs and confirm whether "
-                "the event is genuine; see docs/troubleshooting.md.",
-    "availability": "Verify device reachability, HA and service state; see "
-                    "docs/troubleshooting.md.",
-    "performance": "Check device load and traffic patterns; consider policy "
-                   "or capacity tuning.",
-    "capacity": "Free or extend capacity before it is exhausted.",
-    "notice": "Informational change event; acknowledge to close.",
-}
-
-def _scope_for(name):
-    n = name.lower()
-    if "under attack" in n:
-        return "security"
-    if ("has been restarted" in n or "name has changed" in n
-            or "version changed" in n or "in use but link alerting" in n):
-        return "notice"
-    if "space usage" in n or "port resources" in n:
-        return "capacity"
-    if ("cpu utilization" in n or "memory usage" in n or "cpu core" in n
-            or "discard rate" in n or "high temperature" in n
-            or "cpu alert" in n or "memory alert" in n):
-        return "performance"
-    return "availability"
-
-def _decorate(trigs):
-    for tr in trigs:
-        scope = _scope_for(tr["name"])
-        if not tr.get("tags"):
-            tr["tags"] = [{"tag": "scope", "value": scope}]
-        if not tr.get("description"):
-            tr["description"] = _SCOPE_ACTIONS[scope]
-
-for _i in items:
-    _decorate(_i.get("triggers", []))
-for _dr in drs:
-    _decorate(_dr.get("trigger_prototypes", []))
-
 # ================= assemble =================
 tpl = {"uuid": U("template"), "template": TPL, "name": TPL,
        "description": "Sangfor NGAF monitoring via private SANGFOR-MIB "
@@ -988,7 +1016,7 @@ tpl = {"uuid": U("template"), "template": TPL, "name": TPL,
        "groups": [{"name": TGROUP}],
        "items": items,
        "discovery_rules": drs,
-       "vendor": {"name": "Community (eddieau)", "version": "0.5.5"},
+       "vendor": {"name": "Community (eddieau)", "version": VERSION},
        "tags": [{"tag": "class", "value": "network"},
                 {"tag": "target", "value": "sangfor"},
                 {"tag": "component", "value": "firewall"},
